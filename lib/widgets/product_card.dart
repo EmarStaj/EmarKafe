@@ -49,7 +49,10 @@ class ProductCard extends StatelessWidget {
                           colors: [EmarColors.gold, EmarColors.roast],
                         ),
                       ),
-                      child: Text(product.icon, style: const TextStyle(fontSize: 26)),
+                      child: Semantics(
+                        label: product.name,
+                        child: Text(product.icon, style: const TextStyle(fontSize: 26)),
+                      ),
                     ),
                   ),
                 ),
@@ -170,8 +173,8 @@ class _StepBtn extends StatelessWidget {
       customBorder: const CircleBorder(),
       onTap: onTap,
       child: Container(
-        width: 26,
-        height: 26,
+        width: 36,
+        height: 36,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,

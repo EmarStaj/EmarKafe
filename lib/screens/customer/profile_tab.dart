@@ -124,7 +124,31 @@ class ProfileTab extends StatelessWidget {
                 ),
               );
             }),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bu özellik yakında eklenecek.')));
+              },
+              child: const Text('E-posta Güncelle'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: EmarColors.paprikaDim,
+                side: BorderSide(color: EmarColors.paprikaDim.withValues(alpha: 0.5)),
+              ),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hesap silme özelliği yakında eklenecek.')));
+              },
+              child: const Text('Hesabımı Sil'),
+            ),
+          ),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(

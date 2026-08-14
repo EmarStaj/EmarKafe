@@ -32,9 +32,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _confirmPassCtrl = TextEditingController();
   DateTime? _birthday;
   bool _registerObscure = true;
+  bool _confirmRegisterObscure = true;
   bool _birthdayTouched = false;
+  
+  bool _isLoginLoading = false;
+  bool _isRegisterLoading = false;
   UserRole _role = UserRole.customer;
   String? _branch;
   String? _registerError;
@@ -47,43 +52,62 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
     _passCtrl.dispose();
+    _confirmPassCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _pickBirthday() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(2000, 1, 1),
-      firstDate: DateTime(1930),
-      lastDate: DateTime.now(),
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)), // default 18 years old
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now().subtract(const Duration(days: 365 * 5)), // min 5 years old
       helpText: 'Doğum Tarihini Seç',
     );
     if (picked != null) setState(() => _birthday = picked);
   }
 
   void _submitLogin() async {
-    setState(() => _loginError = null);
+    if (_isLoginLoading) return;
+    setState(() {
+      _loginError = null;
+      _isLoginLoading = true;
+    });
+    
     final formOk = _loginFormKey.currentState?.validate() ?? false;
-    if (!formOk) return;
+    if (!formOk) {
+      setState(() => _isLoginLoading = false);
+      return;
+    }
 
     final error = await context.read<AppState>().loginWithCredentials(
       email: _loginEmailCtrl.text,
       password: _loginPassCtrl.text,
     );
+    
+    if (!mounted) return;
+    setState(() => _isLoginLoading = false);
+
     if (error != null) {
-      if (mounted) setState(() => _loginError = error);
+      setState(() => _loginError = error);
       return;
     }
-    if (mounted) Navigator.of(context).pop();
+    Navigator.of(context).pop();
   }
 
   void _submitRegister(String defaultBranch) async {
+    if (_isRegisterLoading) return;
     setState(() {
       _birthdayTouched = true;
       _registerError = null;
+      _isRegisterLoading = true;
     });
+    
     final formOk = _registerFormKey.currentState?.validate() ?? false;
-    if (!formOk || _birthday == null) return;
+    if (!formOk || _birthday == null) {
+      setState(() => _isRegisterLoading = false);
+      return;
+    }
 
     final error = await context.read<AppState>().register(
       name: _nameCtrl.text.trim(),
@@ -94,11 +118,15 @@ class _LoginScreenState extends State<LoginScreen> {
       selectedRole: _role,
       branch: _branch ?? defaultBranch,
     );
+    
+    if (!mounted) return;
+    setState(() => _isRegisterLoading = false);
+
     if (error != null) {
-      if (mounted) setState(() => _registerError = error);
+      setState(() => _registerError = error);
       return;
     }
-    if (mounted) Navigator.of(context).pop();
+    Navigator.of(context).pop();
   }
 
   @override
@@ -225,7 +253,9 @@ class _LoginScreenState extends State<LoginScreen> {
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(labelText: 'E-posta'),
             validator: (v) {
-              if (v == null || !v.contains('@') || !v.contains('.')) {
+              if (v == null) return 'Geçerli bir e-posta gir';
+              final emailRegex = RegExp(r'^[\w.-]+@[\w.-]+\.\w{2,}$');
+              if (!emailRegex.hasMatch(v.trim())) {
                 return 'Geçerli bir e-posta gir';
               }
               return null;
@@ -253,9 +283,67 @@ class _LoginScreenState extends State<LoginScreen> {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Bu özellik demo sürümünde yok')),
-              ),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (c) {
+                    final resetEmailCtrl = TextEditingController(text: _loginEmailCtrl.text);
+                    bool isResetting = false;
+                    return StatefulBuilder(
+                      builder: (context, setModalState) {
+                        return AlertDialog(
+                          title: const Text('Şifremi Unuttum'),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('Lütfen kayıtlı e-posta adresinizi girin. Şifre sıfırlama bağlantısı göndereceğiz.'),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: resetEmailCtrl,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: const InputDecoration(labelText: 'E-posta'),
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: isResetting ? null : () => Navigator.pop(c),
+                              child: const Text('İptal'),
+                            ),
+                            ElevatedButton(
+                              onPressed: isResetting ? null : () async {
+                                final email = resetEmailCtrl.text.trim();
+                                if (email.isEmpty) return;
+                                
+                                setModalState(() => isResetting = true);
+                                try {
+                                  await context.read<AppState>().api.forgotPassword(email);
+                                  if (context.mounted) {
+                                    Navigator.pop(c);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Şifre sıfırlama bağlantısı gönderildi.')),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Hata: ${e.toString().replaceAll('Exception: ', '')}')),
+                                    );
+                                    setModalState(() => isResetting = false);
+                                  }
+                                }
+                              },
+                              child: isResetting 
+                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                                  : const Text('Gönder'),
+                            ),
+                          ],
+                        );
+                      }
+                    );
+                  }
+                );
+              },
               child: const Text(
                 'Şifremi unuttum?',
                 style: TextStyle(fontSize: 12),
@@ -278,9 +366,12 @@ class _LoginScreenState extends State<LoginScreen> {
           PressableScale(
             child: SizedBox(
               width: double.infinity,
+              height: 50,
               child: ElevatedButton(
-                onPressed: _submitLogin,
-                child: const Text('Giriş Yap'),
+                onPressed: _isLoginLoading ? null : _submitLogin,
+                child: _isLoginLoading 
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Giriş Yap', style: TextStyle(fontSize: 16)),
               ),
             ),
           ),
@@ -308,7 +399,9 @@ class _LoginScreenState extends State<LoginScreen> {
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(labelText: 'E-posta'),
             validator: (v) {
-              if (v == null || !v.contains('@') || !v.contains('.')) {
+              if (v == null) return 'Geçerli bir e-posta gir';
+              final emailRegex = RegExp(r'^[\w.-]+@[\w.-]+\.\w{2,}$');
+              if (!emailRegex.hasMatch(v.trim())) {
                 return 'Geçerli bir e-posta gir';
               }
               return null;
@@ -342,6 +435,26 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             validator: (v) =>
                 (v == null || v.length < 6) ? 'En az 6 karakter olmalı' : null,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _confirmPassCtrl,
+            obscureText: _confirmRegisterObscure,
+            decoration: InputDecoration(
+              labelText: 'Şifre (Tekrar)',
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _confirmRegisterObscure
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  size: 20,
+                  color: EmarColors.espresso.withValues(alpha: 0.5),
+                ),
+                onPressed: () =>
+                    setState(() => _confirmRegisterObscure = !_confirmRegisterObscure),
+              ),
+            ),
+            validator: (v) => v != _passCtrl.text ? 'Şifreler eşleşmiyor' : null,
           ),
           const SizedBox(height: 12),
           InkWell(
@@ -378,33 +491,35 @@ class _LoginScreenState extends State<LoginScreen> {
             onChanged: (v) => setState(() => _branch = v ?? _branch),
           ),
           const SizedBox(height: 22),
-          Text('Rol (demo)', style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 4),
-          Text(
-            'Gerçek uygulamada rol yönetim tarafından atanır; burada akışları test etmek için seçebilirsin.',
-            style: TextStyle(
-              fontSize: 11.5,
-              color: EmarColors.espresso.withValues(alpha: 0.5),
+          if (const bool.fromEnvironment('SHOW_ROLE_SELECTOR', defaultValue: false)) ...[
+            Text('Rol (demo)', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 4),
+            Text(
+              'Gerçek uygulamada rol yönetim tarafından atanır; burada akışları test etmek için seçebilirsin.',
+              style: TextStyle(
+                fontSize: 11.5,
+                color: EmarColors.espresso.withValues(alpha: 0.5),
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: UserRole.values.map((r) {
-              final selected = r == _role;
-              return ChoiceChip(
-                label: Text(r.label),
-                selected: selected,
-                onSelected: (_) => setState(() => _role = r),
-                selectedColor: EmarColors.paprika,
-                labelStyle: TextStyle(
-                  color: selected ? EmarColors.surface : EmarColors.espresso,
-                  fontWeight: FontWeight.w700,
-                ),
-              );
-            }).toList(),
-          ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: UserRole.values.map((r) {
+                final selected = r == _role;
+                return ChoiceChip(
+                  label: Text(r.label),
+                  selected: selected,
+                  onSelected: (_) => setState(() => _role = r),
+                  selectedColor: EmarColors.paprika,
+                  labelStyle: TextStyle(
+                    color: selected ? EmarColors.surface : EmarColors.espresso,
+                    fontWeight: FontWeight.w700,
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
           if (_registerError != null) ...[
             const SizedBox(height: 14),
             Text(
@@ -420,9 +535,12 @@ class _LoginScreenState extends State<LoginScreen> {
           PressableScale(
             child: SizedBox(
               width: double.infinity,
+              height: 50,
               child: ElevatedButton(
-                onPressed: () => _submitRegister(branches.first.id),
-                child: const Text('Hesap Oluştur'),
+                onPressed: (branches.isEmpty || _isRegisterLoading) ? null : () => _submitRegister(branches.first.id),
+                child: _isRegisterLoading 
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Hesap Oluştur', style: TextStyle(fontSize: 16)),
               ),
             ),
           ),

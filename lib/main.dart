@@ -10,6 +10,7 @@ import 'data/catalog.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 import 'state/app_state.dart';
+import 'services/api_service.dart';
 import 'theme.dart';
 import 'utils/page_transitions.dart';
 
@@ -18,6 +19,9 @@ final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // App initialization requires api_service to init properly inside AuthNotifier.
+  // But for now, just load catalog.
   
   const onesignalAppId = String.fromEnvironment('ONESIGNAL_APP_ID');
   if (onesignalAppId.isNotEmpty) {
@@ -36,20 +40,69 @@ class EmarKafeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AppState()..onRateReminder = _showRateReminder,
-      child: MaterialApp(
-        title: 'EMAR Kafe',
-        debugShowCheckedModeBanner: false,
-        navigatorKey: navigatorKey,
-        scaffoldMessengerKey: scaffoldMessengerKey,
-        theme: EmarTheme.light(),
-        home: const _RootRouter(),
-      ),
+    return MultiProvider(
+      providers: [
+        Provider<ApiService>(create: (_) => ApiService()),
+        ChangeNotifierProxyProvider<ApiService, AuthNotifier>(
+          create: (ctx) => AuthNotifier(ctx.read<ApiService>()),
+          update: (_, api, auth) => auth ?? AuthNotifier(api),
+        ),
+        ChangeNotifierProxyProvider2<ApiService, AuthNotifier, CartNotifier>(
+          create: (ctx) => CartNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>()),
+          update: (_, api, auth, cart) => cart ?? CartNotifier(api, auth),
+        ),
+        ChangeNotifierProxyProvider2<ApiService, AuthNotifier, WalletNotifier>(
+          create: (ctx) => WalletNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>()),
+          update: (_, api, auth, wallet) => wallet ?? WalletNotifier(api, auth),
+        ),
+        ChangeNotifierProxyProvider4<ApiService, AuthNotifier, CartNotifier, WalletNotifier, OrderNotifier>(
+          create: (ctx) => OrderNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>(), ctx.read<CartNotifier>(), ctx.read<WalletNotifier>()),
+          update: (_, api, auth, cart, wallet, orders) => orders ?? OrderNotifier(api, auth, cart, wallet),
+        ),
+        ChangeNotifierProxyProvider2<ApiService, AuthNotifier, StockNotifier>(
+          create: (ctx) => StockNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>()),
+          update: (_, api, auth, stock) => stock ?? StockNotifier(api, auth),
+        ),
+        ChangeNotifierProxyProvider5<AuthNotifier, CartNotifier, OrderNotifier, WalletNotifier, StockNotifier, AppState>(
+          create: (ctx) => AppState(ctx.read<AuthNotifier>(), ctx.read<CartNotifier>(), ctx.read<OrderNotifier>(), ctx.read<WalletNotifier>(), ctx.read<StockNotifier>()),
+          update: (_, auth, cart, orders, wallet, stock, app) => app ?? AppState(auth, cart, orders, wallet, stock),
+        ),
+      ],
+      child: const _AppWidget(),
     );
   }
+}
 
-  static void _showRateReminder(OrderRecord order) {
+class _AppWidget extends StatefulWidget {
+  const _AppWidget();
+
+  @override
+  State<_AppWidget> createState() => _AppWidgetState();
+}
+
+class _AppWidgetState extends State<_AppWidget> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<OrderNotifier>().rateReminderNotifier.addListener(_onRateReminder);
+    });
+  }
+
+  @override
+  void dispose() {
+    context.read<OrderNotifier>().rateReminderNotifier.removeListener(_onRateReminder);
+    super.dispose();
+  }
+
+  void _onRateReminder() {
+    final order = context.read<OrderNotifier>().rateReminderNotifier.value;
+    if (order != null) {
+      _showRateReminder(order);
+    }
+  }
+
+  void _showRateReminder(OrderRecord order) {
     scaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
         duration: const Duration(seconds: 8),
@@ -58,6 +111,21 @@ class EmarKafeApp extends StatelessWidget {
           label: 'Değerlendir',
           onPressed: () => navigatorKey.currentState?.push(softRoute(const OrderHistoryScreen())),
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+        title: 'EMAR Kafe',
+        debugShowCheckedModeBanner: false,
+        navigatorKey: navigatorKey,
+        scaffoldMessengerKey: scaffoldMessengerKey,
+        theme: EmarTheme.light(),
+        darkTheme: EmarTheme.dark(),
+        themeMode: ThemeMode.system,
+        home: const _RootRouter(),
       ),
     );
   }

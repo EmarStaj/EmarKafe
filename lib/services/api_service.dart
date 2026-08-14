@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiException implements Exception {
@@ -15,27 +15,65 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  static const String baseUrl = 'https://emarkafe.duckdns.org';
+  static const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'https://emarkafe.duckdns.org');
   static const String _tokenKey = 'auth_token';
+  static const String _refreshTokenKey = 'refresh_token';
+  
+  final _storage = const FlutterSecureStorage();
 
   String? _token;
+  String? _refreshToken;
+  
   String? get token => _token;
 
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString(_tokenKey);
+    _token = await _storage.read(key: _tokenKey);
+    _refreshToken = await _storage.read(key: _refreshTokenKey);
   }
 
-  Future<void> saveToken(String token) async {
+  Future<void> saveTokens(String token, {String? refreshToken}) async {
     _token = token;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
+    await _storage.write(key: _tokenKey, value: token);
+    if (refreshToken != null) {
+      _refreshToken = refreshToken;
+      await _storage.write(key: _refreshTokenKey, value: refreshToken);
+    }
   }
 
   Future<void> clearToken() async {
     _token = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
+    _refreshToken = null;
+    await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _refreshTokenKey);
+  }
+
+  
+  Future<http.Response> _get(Uri url, {Map<String, String>? headers}) async {
+    return await _get(url, headers: headers).timeout(
+      const Duration(seconds: 15),
+      onTimeout: () => throw ApiException('Bağlantı zaman aşımına uğradı', 408),
+    );
+  }
+
+  Future<http.Response> _post(Uri url, {Map<String, String>? headers, Object? body}) async {
+    return await _post(url, headers: headers, body: body).timeout(
+      const Duration(seconds: 15),
+      onTimeout: () => throw ApiException('Bağlantı zaman aşımına uğradı', 408),
+    );
+  }
+
+  Future<http.Response> _put(Uri url, {Map<String, String>? headers, Object? body}) async {
+    return await _put(url, headers: headers, body: body).timeout(
+      const Duration(seconds: 15),
+      onTimeout: () => throw ApiException('Bağlantı zaman aşımına uğradı', 408),
+    );
+  }
+
+  Future<http.Response> _delete(Uri url, {Map<String, String>? headers}) async {
+    return await _delete(url, headers: headers).timeout(
+      const Duration(seconds: 15),
+      onTimeout: () => throw ApiException('Bağlantı zaman aşımına uğradı', 408),
+    );
   }
 
   Map<String, String> get _headers {
@@ -49,7 +87,7 @@ class ApiService {
   // --- Auth ---
 
   Future<Map<String, dynamic>> login(String email, String password) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$baseUrl/api/auth/login'),
       headers: _headers,
       body: jsonEncode({'email': email, 'password': password}),
@@ -58,7 +96,7 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> register(String email, String phone, String password, String name, String birthDate, {String? role, String? branchId}) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$baseUrl/api/auth/register'),
       headers: _headers,
       body: jsonEncode({
@@ -74,14 +112,24 @@ class ApiService {
     return _processResponse(res);
   }
 
+
+  Future<void> forgotPassword(String email) async {
+    final res = await _post(
+      Uri.parse('\/api/auth/forgot-password'),
+      headers: _headers,
+      body: jsonEncode({'email': email}),
+    );
+    _processResponse(res);
+  }
+
   Future<Map<String, dynamic>> getMe() async {
-    final res = await http.get(Uri.parse('$baseUrl/api/auth/me'), headers: _headers);
+    final res = await _get(Uri.parse('$baseUrl/api/auth/me'), headers: _headers);
     return _processResponse(res);
   }
 
   Future<void> logout() async {
     try {
-      await http.post(Uri.parse('$baseUrl/api/auth/logout'), headers: _headers);
+      await _post(Uri.parse('$baseUrl/api/auth/logout'), headers: _headers);
     } catch (_) {}
     await clearToken();
   }
@@ -89,7 +137,7 @@ class ApiService {
   // --- Profile ---
 
   Future<Map<String, dynamic>> getProfile() async {
-    final res = await http.get(Uri.parse('$baseUrl/api/profile/me'), headers: _headers);
+    final res = await _get(Uri.parse('$baseUrl/api/profile/me'), headers: _headers);
     return _processResponse(res);
   }
 
@@ -102,7 +150,7 @@ class ApiService {
     if (branch != null) body['branch'] = branch;
     if (role != null) body['role'] = role;
     
-    final res = await http.put(
+    final res = await _put(
       Uri.parse('$baseUrl/api/profile/me'),
       headers: _headers,
       body: jsonEncode(body),
@@ -111,7 +159,7 @@ class ApiService {
   }
 
   Future<void> setDefaultBranch(String branchId) async {
-    final res = await http.put(
+    final res = await _put(
       Uri.parse('$baseUrl/api/profile/me/default-branch'),
       headers: _headers,
       body: jsonEncode({'branch_id': branchId}),
@@ -122,12 +170,12 @@ class ApiService {
   // --- Wallet ---
 
   Future<Map<String, dynamic>> getWalletBalance() async {
-    final res = await http.get(Uri.parse('$baseUrl/api/wallet/balance'), headers: _headers);
+    final res = await _get(Uri.parse('$baseUrl/api/wallet/balance'), headers: _headers);
     return _processResponse(res);
   }
 
   Future<void> topupWallet(double amount) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$baseUrl/api/wallet/topup'),
       headers: _headers,
       body: jsonEncode({'amount': amount}),
@@ -136,7 +184,7 @@ class ApiService {
   }
 
   Future<String> getWalletQrToken() async {
-    final res = await http.get(Uri.parse('$baseUrl/api/wallet/qr'), headers: _headers);
+    final res = await _get(Uri.parse('$baseUrl/api/wallet/qr'), headers: _headers);
     final data = _processResponse(res);
     return data['qr_token'] as String;
   }
@@ -144,12 +192,12 @@ class ApiService {
   // --- Cart ---
 
   Future<Map<String, dynamic>> getCart() async {
-    final res = await http.get(Uri.parse('$baseUrl/api/cart'), headers: _headers);
+    final res = await _get(Uri.parse('$baseUrl/api/cart'), headers: _headers);
     return _processResponse(res);
   }
 
   Future<List<String>> addToCart(String productId, int qty) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$baseUrl/api/cart'),
       headers: _headers,
       body: jsonEncode({'product_id': productId, 'quantity': qty}),
@@ -170,7 +218,7 @@ class ApiService {
   }
 
   Future<void> updateCartItem(String cartItemId, int qty) async {
-    final res = await http.put(
+    final res = await _put(
       Uri.parse('$baseUrl/api/cart/$cartItemId'),
       headers: _headers,
       body: jsonEncode({'quantity': qty}),
@@ -179,14 +227,14 @@ class ApiService {
   }
 
   Future<void> clearCart() async {
-    final res = await http.delete(Uri.parse('$baseUrl/api/cart'), headers: _headers);
+    final res = await _delete(Uri.parse('$baseUrl/api/cart'), headers: _headers);
     _processResponse(res);
   }
 
 
 
   Future<void> placeOrder(String branchId) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$baseUrl/api/orders'),
       headers: _headers,
       body: jsonEncode({'branch_id': branchId}),
@@ -195,19 +243,19 @@ class ApiService {
   }
 
   Future<List<dynamic>> getMyOrders() async {
-    final res = await http.get(Uri.parse('$baseUrl/api/orders'), headers: _headers);
+    final res = await _get(Uri.parse('$baseUrl/api/orders'), headers: _headers);
     final data = _processResponse(res);
     return data['data'] as List<dynamic>? ?? [];
   }
 
   Future<List<dynamic>> getBranchOrders() async {
-    final res = await http.get(Uri.parse('$baseUrl/api/orders/branch'), headers: _headers);
+    final res = await _get(Uri.parse('$baseUrl/api/orders/branch'), headers: _headers);
     final data = _processResponse(res);
     return data['data'] as List<dynamic>? ?? [];
   }
 
   Future<void> scanQrOrder(String qrToken) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$baseUrl/api/orders/scan-qr'),
       headers: _headers,
       body: jsonEncode({'qr_token': qrToken}),
@@ -216,7 +264,7 @@ class ApiService {
   }
 
   Future<void> updateOrderStatus(String orderId, String status) async {
-    final res = await http.put(
+    final res = await _put(
       Uri.parse('$baseUrl/api/orders/$orderId/status'),
       headers: _headers,
       body: jsonEncode({'status': status}),
@@ -225,7 +273,7 @@ class ApiService {
   }
 
   Future<void> rateProduct(String productId, double rating) async {
-    final res = await http.post(
+    final res = await _post(
       Uri.parse('$baseUrl/api/products/$productId/ratings'),
       headers: _headers,
       body: jsonEncode({'rating': rating}),
@@ -238,7 +286,7 @@ class ApiService {
   Future<void> registerDeviceToken(String osId) async {
     if (_token == null) return;
     try {
-      await http.post(
+      await _post(
         Uri.parse('$baseUrl/api/device-tokens'),
         headers: _headers,
         body: jsonEncode({
@@ -271,12 +319,19 @@ class ApiService {
         return json;
       }
       return {};
-    } else {
       String msg = 'Sunucu hatası: ${response.statusCode}';
+      if (response.statusCode == 400 || response.statusCode == 401) {
+        msg = 'E-posta veya şifre hatalı.';
+      } else if (response.statusCode == 429) {
+        msg = 'Çok fazla deneme yaptınız. 15 dakika bekleyin.';
+      } else if (response.statusCode >= 500) {
+        msg = 'Sunucu hatası. Lütfen tekrar deneyin.';
+      }
+      
       List<dynamic>? errors;
       try {
         final err = jsonDecode(response.body);
-        if (err['message'] != null) {
+        if (err['message'] != null && (response.statusCode != 400 && response.statusCode != 401 && response.statusCode != 429 && response.statusCode < 500)) {
           msg = err['message'];
         }
         if (err['errors'] != null) {
