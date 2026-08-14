@@ -98,6 +98,7 @@ class OrderRecord {
 
   OrderStatus get computedStatus {
     if (isPendingQR) return OrderStatus.received;
+    if (remainingSeconds <= 0 && manualStatus != OrderStatus.completed) return OrderStatus.ready;
     return manualStatus;
   }
 
