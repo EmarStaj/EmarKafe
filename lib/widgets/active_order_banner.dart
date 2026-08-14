@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../state/app_state.dart';
+import '../models/order_record.dart';
 import '../theme.dart';
 import '../utils/page_transitions.dart';
 import '../screens/customer/order_tracking_screen.dart';

@@ -10,6 +10,7 @@ class Branch {
     required this.name,
     this.address,
     this.isActive = true,
+    this.workingHours,
   });
 
   factory Branch.fromDb(Map<String, dynamic> row) => Branch(

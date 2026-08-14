@@ -52,7 +52,7 @@ class AppState extends ChangeNotifier {
   
   Function(OrderRecord)? onRateReminder;
 
-  AppState(this.auth, this.cart, this.orders, this.wallet, this.stock) {
+  AppState(this.auth, this.cart, this.orders, this.wallet, this.stock, this.menu) {
     auth.addListener(notifyListeners);
     cart.addListener(notifyListeners);
     orders.addListener(notifyListeners);

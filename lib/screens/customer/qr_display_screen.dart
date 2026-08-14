@@ -1,6 +1,8 @@
+import 'package:emar_kafe/models/order_record.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../../models/order_record.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/pressable_scale.dart';
@@ -25,7 +27,7 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isWallet ? 'Cüzdan ile Öde' : 'Siparişi Onayla (QR)'),
+        title: const Text('Siparişi Onayla (QR)'),
         backgroundColor: EmarColors.oat,
       ),
       backgroundColor: EmarColors.oat,
@@ -36,23 +38,21 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(
-                isWallet ? Icons.account_balance_wallet_rounded : Icons.check_circle_outline_rounded,
+              const Icon(
+                Icons.check_circle_outline_rounded,
                 size: 64,
                 color: EmarColors.paprika,
               ),
               const SizedBox(height: 16),
-              Text(
-                isWallet ? 'QR Kodu Okutun' : 'Siparişin Hazır!',
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: EmarColors.espresso, letterSpacing: -0.5),
+              const Text(
+                'Siparişin Hazır!',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: EmarColors.espresso, letterSpacing: -0.5),
               ),
               const SizedBox(height: 12),
-              Text(
-                isWallet 
-                  ? 'Kasadaki baristaya bu QR kodu okutarak cüzdanınızdan ödeme yapabilirsiniz.\n(Kod 3 dakika geçerlidir)' 
-                  : 'Lütfen bu QR kodu baristaya okutun. Siparişiniz okutulduktan sonra hazırlanmaya başlayacaktır.',
+              const Text(
+                'Lütfen bu QR kodu baristaya okutun. Siparişiniz okutulduktan sonra hazırlanmaya başlayacaktır.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 15, color: EmarColors.moss, height: 1.4),
+                style: TextStyle(fontSize: 15, color: EmarColors.moss, height: 1.4),
               ),
               const SizedBox(height: 40),
               Container(
@@ -79,19 +79,6 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
-              if (!isWallet)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: EmarColors.espresso.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Text(
-                    'Sipariş No: ${order?.shortId ?? ''}',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: EmarColors.espresso, letterSpacing: 0.5),
-                  ),
-                ),
               const SizedBox(height: 12),
               SelectableText(
                 '(Test) QR Token:\n$token',
@@ -115,19 +102,17 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
                         setState(() => _scanning = true);
                         try {
                           final app = context.read<AppState>();
-                          // Simüle ediyoruz: Barista gerçekten okutmuş gibi backend'e sipariş oluştur diyoruz.
-                          // Aslında bunu barista yapmalı ama test için müşteri hesabı üzerinden sipariş geçiyoruz.
                           await app.placeOrder(useWallet: true);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Sipariş başarıyla tarandı ve mutfağa iletildi!'))
                             );
-                            Navigator.of(context).pop(); // Go back to home
+                            Navigator.of(context).pop();
                           }
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Hata: ${e.toString().replaceAll('Exception: ', '')}'))
+                              SnackBar(content: Text('Hata: '))
                             );
                             setState(() => _scanning = false);
                           }
@@ -159,15 +144,6 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
                       },
                       child: const Text('Sipariş Takibine Git', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                     ),
-                  ),
-                ),
-              if (isWallet)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 24.0),
-                  child: Text(
-                    'Onaylandığında siparişiniz ana sayfada belirecektir.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: EmarColors.moss, fontStyle: FontStyle.italic),
                   ),
                 ),
             ],

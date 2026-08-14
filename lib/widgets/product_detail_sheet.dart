@@ -182,7 +182,7 @@ class _RatingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final product = widget.product;
+    
     final app = context.watch<AppState>();
     final ordered = app.hasOrderedProduct(product.id);
 
@@ -232,7 +232,7 @@ class _PairRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final product = widget.product;
+    
     if (products.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

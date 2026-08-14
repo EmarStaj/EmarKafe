@@ -202,7 +202,7 @@ class ApiService {
     return _processResponse(res);
   }
 
-  Future<List<String>> addToCart(String productId, int qty) async {
+  Future<List<String>> addToCart(String productId, int qty, {List<String> options = const []}) async {
     final res = await _post(
       Uri.parse('$baseUrl/api/cart'),
       headers: _headers,
