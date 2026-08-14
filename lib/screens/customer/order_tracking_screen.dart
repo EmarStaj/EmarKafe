@@ -39,10 +39,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     super.dispose();
   }
 
-  String _format(int seconds) {
-    final m = (seconds ~/ 60).toString().padLeft(2, '0');
-    final s = (seconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
+  String _formatApprox(int seconds) {
+    if (seconds <= 0) return 'Çok Yakında';
+    final m = (seconds / 60).ceil();
+    return '~$m dk';
   }
 
   @override
@@ -81,15 +81,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         child: FadeTransition(opacity: anim, child: child),
                       ),
                       child: Text(
-                        ready ? 'Hazır! 🎉' : _format(order.remainingSeconds),
+                        ready ? 'Hazır! 🎉' : _formatApprox(order.remainingSeconds),
                         key: ValueKey(ready),
                         style: const TextStyle(fontFamily: 'Georgia', fontSize: 48, fontWeight: FontWeight.w700, color: EmarColors.espresso),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 12),
                     Text(
-                      ready ? (order.pickedUp ? 'Teslim alındı' : 'Siparişini alabilirsin') : 'tahmini kalan süre',
-                      style: const TextStyle(color: EmarColors.espresso, fontSize: 12.5),
+                      ready ? (order.pickedUp ? 'Teslim alındı' : 'Siparişini alabilirsin') : 'Siparişiniz hazır olduğunda bildirim alacaksınız',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: EmarColors.moss, fontSize: 14),
                     ),
                   ],
                 ),

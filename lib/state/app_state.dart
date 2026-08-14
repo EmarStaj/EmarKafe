@@ -82,7 +82,7 @@ class OrderRecord {
       shortId: sId,
       items: parsedItems,
       placedAt: pAt ?? fallbackPlacedAt ?? DateTime.now(),
-      prepMinutes: json['prep_minutes'] as int? ?? 5,
+      prepMinutes: _computePrep(parsedItems, pAt ?? fallbackPlacedAt ?? DateTime.now()),
       branch: json['branch']?.toString() ?? '',
       customerName: json['customer_name']?.toString() ?? 'Misafir',
       pickedUp: json['picked_up'] == true || rawStatus == 'completed',
@@ -98,13 +98,37 @@ class OrderRecord {
 
   OrderStatus get computedStatus {
     if (isPendingQR) return OrderStatus.received;
-    if (remainingSeconds <= 0 && manualStatus != OrderStatus.completed) return OrderStatus.ready;
     return manualStatus;
   }
 
   int get remainingSeconds {
     if (isPendingQR) return prepMinutes * 60;
     return (prepMinutes * 60 - DateTime.now().difference(placedAt).inSeconds).clamp(0, prepMinutes * 60);
+  }
+  static int _computePrep(Map<String, int> items, DateTime at) {
+    if (items.isEmpty) return 5;
+    try {
+      final coffeeQty = items.entries.where((e) => productById(e.key).isCoffee).fold(0, (s, e) => s + e.value);
+      final dessertQty = items.entries.where((e) => productById(e.key).category == ProductCategory.dessert).fold(0, (s, e) => s + e.value);
+      final beforeSix = at.hour < 18;
+
+      final int base;
+      if (coffeeQty > 0 && dessertQty > 0) {
+        base = beforeSix ? 4 : 6;
+      } else if (coffeeQty > 0) {
+        base = beforeSix ? 2 : 3;
+      } else if (dessertQty > 0) {
+        base = beforeSix ? 3 : 5;
+      } else {
+        return 5;
+      }
+
+      final extraCoffee = coffeeQty > 0 ? (coffeeQty - 1) : 0;
+      final extraDessert = dessertQty > 0 ? (dessertQty - 1) : 0;
+      return base + (extraCoffee / 2).ceil() + (extraDessert / 2).ceil();
+    } catch (_) {
+      return 5;
+    }
   }
 }
 
@@ -245,6 +269,34 @@ class AppState extends ChangeNotifier {
       } else {
         final list = await api.getMyOrders();
         orderHistory = list.map((json) => OrderRecord.fromJson(json)).toList();
+        
+        // Calculate loyalty progress
+        int totalCoffees = 0;
+        for (var order in orderHistory) {
+          // You could restrict this to completed orders if you want
+          for (var item in order.items.entries) {
+            try {
+              final product = productById(item.key);
+              // Check if category name implies coffee
+              if (product.category.name.toLowerCase().contains('kahve') || 
+                  product.category.name.toLowerCase().contains('espresso') ||
+                  product.category.name.toLowerCase().contains('latte') ||
+                  product.category.name.toLowerCase().contains('filtre')) {
+                totalCoffees += item.value;
+              }
+            } catch (_) {}
+          }
+        }
+        
+        // Let's assume for simplicity, any product ordered counts as 1 item for loyalty, 
+        // OR we can just check if it's a coffee. Based on the name "5 Siparişte 1 kahve hediye",
+        // maybe it's just the total number of orders?
+        // Wait, "5 Siparişte" implies 5 orders! Not 5 coffees!
+        // Let's count the number of completed orders.
+        int totalOrders = orderHistory.where((o) => !o.isPendingQR && o.computedStatus != OrderStatus.cancelled).length;
+        
+        loyaltyProgress = totalOrders % 5;
+        freeCoffeesEarned = totalOrders ~/ 5;
       }
       notifyListeners();
     } catch (e) {
@@ -421,25 +473,7 @@ class AppState extends ChangeNotifier {
   int get cartCount => cart.values.fold(0, (a, b) => a + b);
 
   int prepMinutesFor(Map<String, int> items, DateTime at) {
-    // Aynı mantık
-    final coffeeQty = items.entries.where((e) => productById(e.key).isCoffee).fold(0, (s, e) => s + e.value);
-    final dessertQty = items.entries.where((e) => productById(e.key).category == ProductCategory.dessert).fold(0, (s, e) => s + e.value);
-    final beforeSix = at.hour < 18;
-
-    final int base;
-    if (coffeeQty > 0 && dessertQty > 0) {
-      base = beforeSix ? 4 : 6;
-    } else if (coffeeQty > 0) {
-      base = beforeSix ? 2 : 3;
-    } else if (dessertQty > 0) {
-      base = beforeSix ? 3 : 5;
-    } else {
-      return 0;
-    }
-
-    final extraCoffee = coffeeQty > 0 ? (coffeeQty - 1) : 0;
-    final extraDessert = dessertQty > 0 ? (dessertQty - 1) : 0;
-    return base + (extraCoffee / 2).ceil() + (extraDessert / 2).ceil();
+    return OrderRecord._computePrep(items, at);
   }
 
   OrderRecord? get activeOrder {

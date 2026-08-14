@@ -28,76 +28,98 @@ class QRDisplayScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Icon(
+                isWallet ? Icons.account_balance_wallet_rounded : Icons.check_circle_outline_rounded,
+                size: 64,
+                color: EmarColors.paprika,
+              ),
+              const SizedBox(height: 16),
               Text(
                 isWallet ? 'QR Kodu Okutun' : 'Siparişin Hazır!',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: EmarColors.espresso),
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: EmarColors.espresso, letterSpacing: -0.5),
               ),
               const SizedBox(height: 12),
               Text(
                 isWallet 
-                  ? 'Kasadaki baristaya bu QR kodu okutarak cüzdanınızdan ödeme yapabilirsiniz. (Kod 3 dakika geçerlidir)' 
+                  ? 'Kasadaki baristaya bu QR kodu okutarak cüzdanınızdan ödeme yapabilirsiniz.\n(Kod 3 dakika geçerlidir)' 
                   : 'Lütfen bu QR kodu baristaya okutun. Siparişiniz okutulduktan sonra hazırlanmaya başlayacaktır.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, color: EmarColors.moss),
+                style: const TextStyle(fontSize: 15, color: EmarColors.moss, height: 1.4),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 40),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: EmarColors.espresso.withValues(alpha: 0.05)),
+                  boxShadow: [
+                    BoxShadow(color: EmarColors.espresso.withValues(alpha: 0.08), blurRadius: 24, offset: const Offset(0, 12))
                   ],
                 ),
                 child: QrImageView(
                   data: token,
                   version: QrVersions.auto,
-                  size: 250.0,
+                  size: 220.0,
                   dataModuleStyle: const QrDataModuleStyle(
-                    dataModuleShape: QrDataModuleShape.square,
+                    dataModuleShape: QrDataModuleShape.circle,
                     color: EmarColors.espresso,
                   ),
                   eyeStyle: const QrEyeStyle(
-                    eyeShape: QrEyeShape.square,
-                    color: EmarColors.espresso,
+                    eyeShape: QrEyeShape.circle,
+                    color: EmarColors.paprika,
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 40),
               if (!isWallet)
-                Text(
-                  'Sipariş No: ${order?.shortId ?? ''}',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: EmarColors.espresso),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: EmarColors.espresso.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child: Text(
+                    'Sipariş No: ${order?.shortId ?? ''}',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: EmarColors.espresso, letterSpacing: 0.5),
+                  ),
                 ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               SelectableText(
-                '(Test) QR Token: $token',
-                style: TextStyle(fontSize: 12, color: EmarColors.espresso.withValues(alpha: 0.6)),
+                '(Test) QR Token:\n$token',
+                style: TextStyle(fontSize: 11, color: EmarColors.espresso.withValues(alpha: 0.4), fontFamily: 'monospace'),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              const Spacer(),
               if (!isWallet && order != null)
                 PressableScale(
                   child: SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 56,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: EmarColors.paprika),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: EmarColors.espresso,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
                       onPressed: () {
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(builder: (_) => OrderTrackingScreen(order: order!)),
                         );
                       },
-                      child: const Text('Sipariş Takibine Git', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                      child: const Text('Sipariş Takibine Git', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ),
               if (isWallet)
-                const Text(
-                  'Onaylandığında siparişiniz ana sayfada belirecektir.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: EmarColors.moss),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 24.0),
+                  child: Text(
+                    'Onaylandığında siparişiniz ana sayfada belirecektir.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: EmarColors.moss, fontStyle: FontStyle.italic),
+                  ),
                 ),
             ],
           ),
