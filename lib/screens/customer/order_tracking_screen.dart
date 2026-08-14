@@ -111,21 +111,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ),
               ),
               const Spacer(),
-              if (ready && !order.pickedUp) ...[
-                PressableScale(
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        context.read<AppState>().markPickedUp(order);
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('Teslim Aldım'),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-              ],
               PressableScale(
                 child: SizedBox(
                   width: double.infinity,

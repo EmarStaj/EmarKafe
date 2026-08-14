@@ -35,10 +35,10 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner> {
     super.dispose();
   }
 
-  String _format(int seconds) {
-    final m = (seconds ~/ 60).toString().padLeft(2, '0');
-    final s = (seconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
+  String _formatApprox(int seconds) {
+    if (seconds <= 0) return 'Çok yakında';
+    final m = (seconds / 60).ceil();
+    return '~$m dk';
   }
 
   @override
@@ -76,7 +76,7 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    pendingQR ? 'Baristaya okutmak için tıklayın' : (ready ? 'Şubeden teslim alabilirsin' : '${_format(order.remainingSeconds)} kaldı — takip et'),
+                    pendingQR ? 'Baristaya okutmak için tıklayın' : (ready ? 'Şubeden teslim alabilirsin' : '${_formatApprox(order.remainingSeconds)} kaldı — takip et'),
                     style: TextStyle(color: EmarColors.surface.withValues(alpha: 0.75), fontSize: 11.5),
                   ),
                 ],

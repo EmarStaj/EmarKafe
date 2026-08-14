@@ -57,7 +57,7 @@ class ApiService {
     return _processResponse(res);
   }
 
-  Future<Map<String, dynamic>> register(String email, String phone, String password, String name, String birthDate) async {
+  Future<Map<String, dynamic>> register(String email, String phone, String password, String name, String birthDate, {String? role, String? branchId}) async {
     final res = await http.post(
       Uri.parse('$baseUrl/api/auth/register'),
       headers: _headers,
@@ -66,7 +66,9 @@ class ApiService {
         'phone': phone,
         'password': password,
         'full_name': name,
-        'birth_date': birthDate
+        'birth_date': birthDate,
+        if (role != null) 'role': role,
+        if (branchId != null) 'branch_id': branchId,
       }),
     );
     return _processResponse(res);
@@ -218,6 +220,15 @@ class ApiService {
       Uri.parse('$baseUrl/api/orders/$orderId/status'),
       headers: _headers,
       body: jsonEncode({'status': status}),
+    );
+    _processResponse(res);
+  }
+
+  Future<void> rateProduct(String productId, double rating) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/products/$productId/ratings'),
+      headers: _headers,
+      body: jsonEncode({'rating': rating}),
     );
     _processResponse(res);
   }

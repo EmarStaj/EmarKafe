@@ -336,8 +336,17 @@ class AppState extends ChangeNotifier {
     required String branch,
   }) async {
     try {
-      // Backend artık register'da token dönüyor, login yapmamıza gerek yok!
-      final res = await api.register(email.trim(), phone, password, name, birthDate.toIso8601String().split('T')[0]);
+      isUpdatingCart = true;
+      notifyListeners();
+      final res = await api.register(
+        email.trim(), 
+        phone, 
+        password, 
+        name, 
+        birthDate.toIso8601String().split('T')[0],
+        role: selectedRole.name,
+        branchId: branch,
+      );
       
       final session = res['session'] as Map<String, dynamic>?;
       final token = res['token'] ?? 
@@ -364,6 +373,9 @@ class AppState extends ChangeNotifier {
       await api.clearToken();
       _clearSession();
       return e.toString();
+    } finally {
+      isUpdatingCart = false;
+      notifyListeners();
     }
   }
 
@@ -607,6 +619,8 @@ class AppState extends ChangeNotifier {
   void rateProduct(String productId, double rating) {
     ratings[productId] = rating;
     notifyListeners();
-    // Gerekirse API cagir: POST /api/products/:productId/ratings
+    api.rateProduct(productId, rating).catchError((e) {
+      debugPrint('Failed to submit rating: $e');
+    });
   }
 }

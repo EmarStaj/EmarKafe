@@ -1,19 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/pressable_scale.dart';
 import 'order_tracking_screen.dart';
 
-class QRDisplayScreen extends StatelessWidget {
+class QRDisplayScreen extends StatefulWidget {
   final OrderRecord? order;
   final String? qrToken;
   const QRDisplayScreen({super.key, this.order, this.qrToken});
 
   @override
+  State<QRDisplayScreen> createState() => _QRDisplayScreenState();
+}
+
+class _QRDisplayScreenState extends State<QRDisplayScreen> {
+  bool _scanning = false;
+
+  @override
   Widget build(BuildContext context) {
-    final token = qrToken ?? order?.shortId ?? '';
-    final isWallet = qrToken != null;
+    final token = widget.qrToken ?? widget.order?.shortId ?? '';
+    final isWallet = widget.qrToken != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -91,7 +99,45 @@ class QRDisplayScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
-              if (!isWallet && order != null)
+              if (isWallet)
+                PressableScale(
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: EmarColors.paprika,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      onPressed: _scanning ? null : () async {
+                        setState(() => _scanning = true);
+                        try {
+                          await context.read<AppState>().api.scanQrOrder(token);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Sipariş başarıyla tarandı ve mutfağa iletildi!'))
+                            );
+                            Navigator.of(context).pop(); // Go back to home
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Hata: $e'))
+                            );
+                            setState(() => _scanning = false);
+                          }
+                        }
+                      },
+                      child: _scanning 
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('(Test) Barista Olarak Okut', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 12),
+              if (!isWallet && widget.order != null)
                 PressableScale(
                   child: SizedBox(
                     width: double.infinity,
@@ -105,7 +151,7 @@ class QRDisplayScreen extends StatelessWidget {
                       ),
                       onPressed: () {
                         Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (_) => OrderTrackingScreen(order: order!)),
+                          MaterialPageRoute(builder: (_) => OrderTrackingScreen(order: widget.order!)),
                         );
                       },
                       child: const Text('Sipariş Takibine Git', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
