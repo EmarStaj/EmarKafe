@@ -46,7 +46,7 @@ class OrderRecord {
     this.manualStatus = OrderStatus.received,
   });
 
-  factory OrderRecord.fromJson(Map<String, dynamic> json) {
+  factory OrderRecord.fromJson(Map<String, dynamic> json, {DateTime? fallbackPlacedAt}) {
     Map<String, int> parsedItems = {};
     final rawItems = json['items'] ?? json['order_items'];
     if (rawItems is Map) {
@@ -81,7 +81,7 @@ class OrderRecord {
       id: json['id']?.toString() ?? '',
       shortId: sId,
       items: parsedItems,
-      placedAt: pAt ?? DateTime.now(),
+      placedAt: pAt ?? fallbackPlacedAt ?? DateTime.now(),
       prepMinutes: json['prep_minutes'] as int? ?? 5,
       branch: json['branch']?.toString() ?? '',
       customerName: json['customer_name']?.toString() ?? 'Misafir',
