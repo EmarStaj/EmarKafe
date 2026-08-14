@@ -254,6 +254,9 @@ class ApiService {
       if (response.body.isEmpty) return {};
       final json = jsonDecode(response.body);
       if (json is Map<String, dynamic>) {
+        if (json['success'] == false) {
+          throw ApiException(json['message'] ?? 'Sunucu işlemi reddetti', null);
+        }
         if (json.containsKey('data')) {
           final data = json['data'];
           if (data is Map<String, dynamic>) {

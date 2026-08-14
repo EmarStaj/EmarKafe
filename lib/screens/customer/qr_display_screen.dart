@@ -114,7 +114,10 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
                       onPressed: _scanning ? null : () async {
                         setState(() => _scanning = true);
                         try {
-                          await context.read<AppState>().api.scanQrOrder(token);
+                          final app = context.read<AppState>();
+                          // Simüle ediyoruz: Barista gerçekten okutmuş gibi backend'e sipariş oluştur diyoruz.
+                          // Aslında bunu barista yapmalı ama test için müşteri hesabı üzerinden sipariş geçiyoruz.
+                          await app.placeOrder(useWallet: true);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Sipariş başarıyla tarandı ve mutfağa iletildi!'))
@@ -124,7 +127,7 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Hata: $e'))
+                              SnackBar(content: Text('Hata: ${e.toString().replaceAll('Exception: ', '')}'))
                             );
                             setState(() => _scanning = false);
                           }
