@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/campaigns_data.dart' show Campaign;
+import '../../data/catalog.dart';
 
 import '../../models/product.dart';
 import '../../state/app_state.dart';
@@ -395,7 +396,10 @@ class _ProductRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final products = context.watch<AppState>().menu.products.where((p) => p.category == category).toList();
+    var products = context.watch<AppState>().menu.products.where((p) => p.category == category).toList();
+    if (products.isEmpty) {
+      products = Catalog.instance.products.where((p) => p.category == category).toList();
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

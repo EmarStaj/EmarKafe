@@ -15,8 +15,10 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
   
   List<OrderRecord> orderHistory = [];
   List<OrderRecord> get activeBaristaOrders => orderHistory;
-  Timer? _pollingTimer;
+  int loyaltyProgress = 0;
+  int freeCoffeesEarned = 0;
 
+  Timer? _pollingTimer;
 
   OrderNotifier(this.api, this.auth, this.cart, this.wallet) {
     WidgetsBinding.instance.addObserver(this);
@@ -32,7 +34,6 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
       stopPolling();
     }
   }
-
 
   @override
   void dispose() {
@@ -52,21 +53,46 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
     _pollingTimer?.cancel();
   }
 
+  Future<void> fetchLoyalty() async {
+    if (!auth.loggedIn || auth.role != UserRole.customer) return;
+    try {
+      final res = await api.getLoyaltyProgress();
+      final data = res['data'] ?? res;
+      if (data is Map) {
+        final progressList = data['progress'] as List<dynamic>?;
+        final rewardsList = data['rewards'] as List<dynamic>?;
+
+        if (progressList != null && progressList.isNotEmpty) {
+          final first = progressList.first as Map<String, dynamic>;
+          loyaltyProgress = (first['current_count'] as num?)?.toInt() ?? 0;
+        } else {
+          loyaltyProgress = 0;
+        }
+
+        if (rewardsList != null) {
+          freeCoffeesEarned = rewardsList.where((r) => r['status'] == 'earned').length;
+        } else {
+          freeCoffeesEarned = 0;
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Loyalty fetch error: $e');
+    }
+  }
+
   Future<void> fetchOrders() async {
     if (!auth.loggedIn) return;
     try {
       if (auth.role == UserRole.customer) {
         final res = await api.getMyOrders();
-        if (res is List) {
-          orderHistory = res.map((json) => OrderRecord.fromJson(json)).toList();
-          notifyListeners();
-        }
+        orderHistory = res.map((json) => OrderRecord.fromJson(json)).toList();
+        await fetchLoyalty();
+        notifyListeners();
       } else {
         final res = await api.getBranchOrders();
-        if (res is List) {
-          orderHistory = res.map((json) => OrderRecord.fromJson(json)).toList();
-          notifyListeners();
-        }
+        orderHistory = res.map((json) => OrderRecord.fromJson(json)).toList();
+        notifyListeners();
       }
     } catch (_) {}
   }
@@ -126,7 +152,7 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
       await api.scanQrOrder(qrToken);
       await fetchOrders();
     } catch (e) {
-      throw Exception('QR tarama basarisiz: ');
+      throw Exception('QR tarama basarisiz: $e');
     }
   }
 
@@ -135,11 +161,11 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
       await api.updateOrderStatus(order.id, OrderStatus.completed.name);
       await fetchOrders();
     } catch (e) {
-      debugPrint('Pick up error: ');
+      debugPrint('Pick up error: $e');
     }
   }
 
   int prepMinutesFor(Map<String, int> items, DateTime at) {
-    return OrderRecord.computePrep(items, at); // Need to expose computePrep as static public
+    return OrderRecord.computePrep(items, at);
   }
 }

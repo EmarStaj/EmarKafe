@@ -23,16 +23,23 @@ class StockNotifier extends ChangeNotifier {
     return _getBranchStock(bId).contains(productId);
   }
 
-  void toggleStock(String productId, {String? branchId}) {
+  Future<void> toggleStock(String productId, {String? branchId}) async {
     final bId = branchId ?? auth.selectedBranchId;
     if (bId == null) return;
     
     final stockSet = _getBranchStock(bId);
-    if (!stockSet.add(productId)) {
+    final willBeAvailable = stockSet.contains(productId);
+    if (willBeAvailable) {
       stockSet.remove(productId);
+    } else {
+      stockSet.add(productId);
     }
     notifyListeners();
-    // In the future, sync with API: POST /api/branches/\/stock/  }
-}
 
+    try {
+      await api.updateBranchProductAvailability(bId, productId, willBeAvailable);
+    } catch (e) {
+      debugPrint('Branch stock update error: $e');
+    }
+  }
 }

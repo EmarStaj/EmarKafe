@@ -91,22 +91,27 @@ class _AppWidget extends StatefulWidget {
 }
 
 class _AppWidgetState extends State<_AppWidget> {
+  OrderNotifier? _orderNotifier;
+
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<OrderNotifier>().rateReminderNotifier.addListener(_onRateReminder);
-    });
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final notifier = context.read<OrderNotifier>();
+    if (_orderNotifier != notifier) {
+      _orderNotifier?.rateReminderNotifier.removeListener(_onRateReminder);
+      _orderNotifier = notifier;
+      _orderNotifier?.rateReminderNotifier.addListener(_onRateReminder);
+    }
   }
 
   @override
   void dispose() {
-    context.read<OrderNotifier>().rateReminderNotifier.removeListener(_onRateReminder);
+    _orderNotifier?.rateReminderNotifier.removeListener(_onRateReminder);
     super.dispose();
   }
 
   void _onRateReminder() {
-    final order = context.read<OrderNotifier>().rateReminderNotifier.value;
+    final order = _orderNotifier?.rateReminderNotifier.value;
     if (order != null) {
       _showRateReminder(order);
     }

@@ -40,6 +40,15 @@ class OrderRecord {
       for (var key in map.keys) {
         itemsMap[key.toString()] = (map[key] as num).toInt();
       }
+    } else if (db['order_items'] != null && db['order_items'] is List) {
+      final list = db['order_items'] as List;
+      for (var item in list) {
+        if (item is Map) {
+          final pid = item['product_id']?.toString() ?? '';
+          final qty = (item['quantity'] as num?)?.toInt() ?? 1;
+          if (pid.isNotEmpty) itemsMap[pid] = qty;
+        }
+      }
     }
     
     final statusStr = db['status']?.toString().toLowerCase() ?? 'created';

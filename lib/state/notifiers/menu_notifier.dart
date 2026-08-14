@@ -6,7 +6,7 @@ import 'package:emar_kafe/data/catalog.dart';
 class MenuNotifier extends ChangeNotifier {
   final ApiService api;
   
-  List<Product> _products = [];
+  final List<Product> _products = [];
   List<Product> get products => List.unmodifiable(_products);
   
   bool _isLoading = false;

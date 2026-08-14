@@ -121,9 +121,6 @@ class AuthNotifier extends ChangeNotifier {
         await api.saveTokens(token, refreshToken: refreshToken);
         try {
           await api.setDefaultBranch(branch);
-          if (selectedRole != UserRole.customer) {
-            await api.updateProfile(role: selectedRole.name);
-          }
         } catch (_) {}
         await fetchMe();
         return null;

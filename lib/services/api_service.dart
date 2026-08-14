@@ -108,22 +108,23 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> register(String email, String phone, String password, String name, String birthDate, {String? role, String? branchId}) async {
+    final body = <String, dynamic>{
+      'email': email,
+      'phone': phone,
+      'password': password,
+      'full_name': name,
+      'birth_date': birthDate,
+    };
+    if (role != null) body['role'] = role;
+    if (branchId != null) body['branch_id'] = branchId;
+
     final res = await _post(
       Uri.parse('$baseUrl/api/auth/register'),
       headers: _headers,
-      body: jsonEncode({
-        'email': email,
-        'phone': phone,
-        'password': password,
-        'full_name': name,
-        'birth_date': birthDate,
-        if (role != null) 'role': role,
-        if (branchId != null) 'branch_id': branchId,
-      }),
+      body: jsonEncode(body),
     );
     return _processResponse(res);
   }
-
 
   Future<void> forgotPassword(String email) async {
     final res = await _post(
@@ -132,11 +133,6 @@ class ApiService {
       body: jsonEncode({'email': email}),
     );
     _processResponse(res);
-  }
-
-  Future<Map<String, dynamic>> getMenu({int page = 1, int limit = 20}) async {
-    final res = await _get(Uri.parse('$baseUrl/api/menu?page=$page&limit=$limit'), headers: _headers);
-    return _processResponse(res);
   }
 
   Future<Map<String, dynamic>> getMe() async {
@@ -158,14 +154,12 @@ class ApiService {
     return _processResponse(res);
   }
 
-  Future<void> updateProfile({String? fullName, String? phone, String? avatarUrl, String? birthDate, String? branch, String? role}) async {
+  Future<void> updateProfile({String? fullName, String? phone, String? avatarUrl, String? birthDate}) async {
     final body = <String, dynamic>{};
     if (fullName != null) body['full_name'] = fullName;
     if (phone != null) body['phone'] = phone;
     if (avatarUrl != null) body['avatar_url'] = avatarUrl;
     if (birthDate != null) body['birth_date'] = birthDate;
-    if (branch != null) body['branch'] = branch;
-    if (role != null) body['role'] = role;
     
     final res = await _put(
       Uri.parse('$baseUrl/api/profile/me'),
@@ -180,6 +174,39 @@ class ApiService {
       Uri.parse('$baseUrl/api/profile/me/default-branch'),
       headers: _headers,
       body: jsonEncode({'branch_id': branchId}),
+    );
+    _processResponse(res);
+  }
+
+  // --- Catalog & Menu ---
+
+  Future<Map<String, dynamic>> getMenu({int page = 1, int limit = 20, String? categoryId, String? search}) async {
+    final params = <String, String>{'page': page.toString(), 'limit': limit.toString()};
+    if (categoryId != null) params['category_id'] = categoryId;
+    if (search != null) params['search'] = search;
+
+    final uri = Uri.parse('$baseUrl/api/menu').replace(queryParameters: params);
+    final res = await _get(uri, headers: _headers);
+    return _processResponse(res);
+  }
+
+  Future<List<dynamic>> getCategories() async {
+    final res = await _get(Uri.parse('$baseUrl/api/categories'), headers: _headers);
+    final data = _processResponse(res);
+    return data['data'] as List<dynamic>? ?? [];
+  }
+
+  Future<List<dynamic>> getBranches() async {
+    final res = await _get(Uri.parse('$baseUrl/api/branches'), headers: _headers);
+    final data = _processResponse(res);
+    return data['data'] as List<dynamic>? ?? [];
+  }
+
+  Future<void> updateBranchProductAvailability(String branchId, String productId, bool isAvailable) async {
+    final res = await _put(
+      Uri.parse('$baseUrl/api/branches/$branchId/products/$productId'),
+      headers: _headers,
+      body: jsonEncode({'is_available': isAvailable}),
     );
     _processResponse(res);
   }
@@ -213,18 +240,25 @@ class ApiService {
     return _processResponse(res);
   }
 
-  Future<List<String>> addToCart(String productId, int qty, {List<String> options = const []}) async {
+  Future<List<String>> addToCart(String productId, int qty, {List<dynamic>? options}) async {
+    final payload = <String, dynamic>{
+      'product_id': productId,
+      'quantity': qty,
+    };
+    if (options != null && options.isNotEmpty) {
+      payload['selected_options'] = options;
+    }
+
     final res = await _post(
       Uri.parse('$baseUrl/api/cart'),
       headers: _headers,
-      body: jsonEncode({'product_id': productId, 'quantity': qty}),
+      body: jsonEncode(payload),
     );
     _processResponse(res);
     
-    // Check if warnings exists in the original json body
     if (res.statusCode == 201 || res.statusCode == 200) {
       try {
-        final body = jsonDecode(res.body);
+        final body = jsonDecode(utf8.decode(res.bodyBytes));
         if (body['warnings'] != null) {
           final warnings = body['warnings'] as List<dynamic>;
           return warnings.map((w) => w['message'].toString()).toList();
@@ -248,7 +282,7 @@ class ApiService {
     _processResponse(res);
   }
 
-
+  // --- Orders ---
 
   Future<void> placeOrder(String branchId) async {
     final res = await _post(
@@ -289,11 +323,58 @@ class ApiService {
     _processResponse(res);
   }
 
-  Future<void> rateProduct(String productId, double rating) async {
+  // --- Loyalty ---
+
+  Future<Map<String, dynamic>> getLoyaltyProgress() async {
+    final res = await _get(Uri.parse('$baseUrl/api/loyalty'), headers: _headers);
+    return _processResponse(res);
+  }
+
+  Future<void> redeemLoyaltyReward(String rewardId, String branchId) async {
     final res = await _post(
-      Uri.parse('$baseUrl/api/products/$productId/ratings'),
+      Uri.parse('$baseUrl/api/loyalty/redeem'),
       headers: _headers,
-      body: jsonEncode({'rating': rating}),
+      body: jsonEncode({'reward_id': rewardId, 'branch_id': branchId}),
+    );
+    _processResponse(res);
+  }
+
+  // --- Ratings ---
+
+  Future<void> rateProduct(String productId, String orderId, int rating) async {
+    final res = await _post(
+      Uri.parse('$baseUrl/api/ratings'),
+      headers: _headers,
+      body: jsonEncode({
+        'product_id': productId,
+        'order_id': orderId,
+        'rating': rating,
+      }),
+    );
+    _processResponse(res);
+  }
+
+  // --- Favorites ---
+
+  Future<List<dynamic>> getFavorites() async {
+    final res = await _get(Uri.parse('$baseUrl/api/favorites'), headers: _headers);
+    final data = _processResponse(res);
+    return data['data'] as List<dynamic>? ?? [];
+  }
+
+  Future<void> addFavorite(String productId) async {
+    final res = await _post(
+      Uri.parse('$baseUrl/api/favorites'),
+      headers: _headers,
+      body: jsonEncode({'product_id': productId}),
+    );
+    _processResponse(res);
+  }
+
+  Future<void> removeFavorite(String productId) async {
+    final res = await _delete(
+      Uri.parse('$baseUrl/api/favorites/$productId'),
+      headers: _headers,
     );
     _processResponse(res);
   }
@@ -317,10 +398,10 @@ class ApiService {
   Map<String, dynamic> _processResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isEmpty) return {};
-      final json = jsonDecode(response.body);
+      final json = jsonDecode(utf8.decode(response.bodyBytes));
       if (json is Map<String, dynamic>) {
         if (json['success'] == false) {
-          final msg = json['message']?.toString() ?? 'Sunucu islemi reddetti';
+          final msg = json['message']?.toString() ?? 'Sunucu işlemi reddetti';
           throw ApiException(msg, response.statusCode);
         }
         if (json.containsKey('data')) {
@@ -347,7 +428,7 @@ class ApiService {
     }
     List<dynamic>? errors;
     try {
-      final err = jsonDecode(response.body);
+      final err = jsonDecode(utf8.decode(response.bodyBytes));
       if (err is Map<String, dynamic>) {
         if (err['message'] != null) {
           msg = err['message'];
@@ -356,5 +437,5 @@ class ApiService {
       }
     } catch (_) {}
     throw ApiException(msg, response.statusCode, errors: errors);
-}
+  }
 }

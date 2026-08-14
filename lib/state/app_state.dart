@@ -31,7 +31,7 @@ class AppState extends ChangeNotifier {
 
   ApiService get api => auth.api;
 
-  // Aliases for legacy UI (can be phased out)
+  // Aliases for legacy UI
   bool get loggedIn => auth.loggedIn;
   String get userName => auth.userName;
   String get userEmail => auth.userEmail;
@@ -52,25 +52,10 @@ class AppState extends ChangeNotifier {
 
   double get walletBalance => wallet.walletBalance;
 
-  int get totalCoffeesBought {
-    int total = 0;
-    for (var order in orderHistory) {
-      if (order.status != OrderStatus.cancelled.name) {
-        for (final entry in order.items.entries) {
-          try {
-            final prod = Catalog.instance.byId(entry.key);
-            if (prod.isCoffee) total += entry.value;
-          } catch (_) {}
-        }
-      }
-    }
-    return total;
-  }
-  
-  int get loyaltyProgress => totalCoffeesBought % 5;
-  int get freeCoffeesEarned => totalCoffeesBought ~/ 5;
+  int get loyaltyProgress => orders.loyaltyProgress;
+  int get freeCoffeesEarned => orders.freeCoffeesEarned;
 
-  List<Campaign> campaignList = []; // Removed from notifiers to keep simple, keep here for now
+  List<Campaign> campaignList = [];
   Map<String, double> ratings = {};
   
   Function(OrderRecord)? onRateReminder;
@@ -94,7 +79,7 @@ class AppState extends ChangeNotifier {
   }
 
   bool isOutOfStock(String productId) => stock.isOutOfStock(productId);
-  void toggleStock(String productId) => stock.toggleStock(productId);
+  Future<void> toggleStock(String productId) => stock.toggleStock(productId);
 
   Future<void> loginWithCredentials({required String email, required String password}) => auth.loginWithCredentials(email: email, password: password);
   Future<String?> register({required String name, required String email, required String phone, required String password, required DateTime birthDate, required UserRole selectedRole, required String branch}) => auth.register(name: name, email: email, phone: phone, password: password, birthDate: birthDate, selectedRole: selectedRole, branch: branch);
@@ -123,9 +108,26 @@ class AppState extends ChangeNotifier {
   bool canRateProduct(String productId) {
     return hasOrderedProduct(productId) && !ratings.containsKey(productId);
   }
-  void rateProduct(String productId, double rating) {
+  Future<void> rateProduct(String productId, double rating, {String? orderId}) async {
     ratings[productId] = rating;
     notifyListeners();
-    api.rateProduct(productId, rating).catchError((_) {});
+
+    try {
+      String targetOrderId = orderId ?? '';
+      if (targetOrderId.isEmpty) {
+        for (var order in orders.orderHistory) {
+          if (order.items.containsKey(productId)) {
+            targetOrderId = order.id;
+            break;
+          }
+        }
+      }
+
+      if (targetOrderId.isNotEmpty) {
+        await api.rateProduct(productId, targetOrderId, rating.toInt());
+      }
+    } catch (e) {
+      debugPrint('Rating submit error: $e');
+    }
   }
 }

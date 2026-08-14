@@ -71,7 +71,7 @@ class _BaristaScreenState extends State<BaristaScreen> {
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: EmarColors.espresso.withOpacity(0.03),
+                      color: EmarColors.espresso.withValues(alpha: 0.03),
                       blurRadius: 4,
                     ),
                   ],
@@ -87,7 +87,7 @@ class _BaristaScreenState extends State<BaristaScreen> {
                           children: [
                             CircleAvatar(
                               radius: 9,
-                              backgroundColor: _colColor(status).withOpacity(0.15),
+                              backgroundColor: _colColor(status).withValues(alpha: 0.15),
                               child: Text(
                                 ((o.customerName ?? '').isNotEmpty) ? (o.customerName?[0] ?? '?').toUpperCase() : '?',
                                 style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: _colColor(status)),
@@ -221,7 +221,7 @@ class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixi
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: widget.color,
-          boxShadow: [BoxShadow(color: widget.color.withOpacity(0.5 * _ctrl.value), blurRadius: 6 * _ctrl.value, spreadRadius: 1.5 * _ctrl.value)],
+          boxShadow: [BoxShadow(color: widget.color.withValues(alpha: 0.5 * _ctrl.value), blurRadius: 6 * _ctrl.value, spreadRadius: 1.5 * _ctrl.value)],
         ),
       ),
     );
