@@ -57,7 +57,7 @@ class _HomeTabState extends State<HomeTab> {
     return Column(
       children: [
         _DarkHeader(loggedIn: app.loggedIn, userName: app.userName, onProfileTap: widget.onProfileTap),
-        _BranchBar(branch: app.auth.selectedBranchId ?? '', onTap: () => showBranchPicker(context)),
+        _BranchBar(branch: app.selectedBranchName, onTap: () => showBranchPicker(context)),
         Expanded(
           child: ListView(
             controller: _scrollController,

@@ -28,6 +28,17 @@ class AuthNotifier extends ChangeNotifier {
   String? selectedBranchId;
   List<Branch> get branches => Catalog.instance.branches;
   
+  String get selectedBranchName => getBranchName(selectedBranchId);
+
+  String getBranchName(String? branchId) {
+    if (branchId == null || branchId.isEmpty) return 'Şube Seç';
+    final branch = branches.firstWhere(
+      (b) => b.id == branchId,
+      orElse: () => Branch(id: branchId, name: branchId),
+    );
+    return branch.name;
+  }
+  
   AuthNotifier(this.api) {
     selectedBranchId = branches.firstOrNull?.id;
     init();

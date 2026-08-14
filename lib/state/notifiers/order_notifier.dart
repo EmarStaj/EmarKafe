@@ -96,20 +96,28 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> advanceOrderStatus(OrderRecord order) async {
-    var newStatus = OrderStatus.received;
-    if (order.manualStatus == OrderStatus.received || order.manualStatus == OrderStatus.created) {
-      newStatus = OrderStatus.preparing;
-    } else if (order.manualStatus == OrderStatus.preparing) {
-      newStatus = OrderStatus.ready;
-    } else {
-      return;
+    OrderStatus newStatus;
+    switch (order.computedStatus) {
+      case OrderStatus.created:
+      case OrderStatus.received:
+        newStatus = OrderStatus.preparing;
+        break;
+      case OrderStatus.preparing:
+        newStatus = OrderStatus.ready;
+        break;
+      case OrderStatus.ready:
+        newStatus = OrderStatus.completed;
+        break;
+      default:
+        newStatus = OrderStatus.ready;
+        break;
     }
     
     try {
       await api.updateOrderStatus(order.id, newStatus.name);
       await fetchOrders(); 
     } catch (e) {
-      debugPrint('Order update error: ');
+      debugPrint('Order update error: $e');
     }
   }
 

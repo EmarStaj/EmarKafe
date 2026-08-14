@@ -53,14 +53,14 @@ class ProfileTab extends StatelessWidget {
             label: '🎂 Doğum Tarihi',
             value: app.birthday == null ? '—' : formatTurkishDate(app.birthday!),
           ),
-          _ProfileLine(label: '📍 Şube', value: app.auth.selectedBranchId ?? ''),
+          _ProfileLine(label: '📍 Şube', value: app.selectedBranchName),
           _ProfileLine(label: 'Rol', value: app.role.label),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(child: _StatBox(n: '${app.orderHistory.length}', l: 'Toplam Sipariş')),
               const SizedBox(width: 10),
-              Expanded(child: _StatBox(n: '${0}', l: 'Hediye Kahve')),
+              Expanded(child: _StatBox(n: '${app.freeCoffeesEarned}', l: 'Hediye Kahve')),
             ],
           ),
           const SizedBox(height: 16),

@@ -62,17 +62,14 @@ class Catalog {
       if (branchRes.statusCode == 200) {
         final branchBody = utf8.decode(branchRes.bodyBytes);
         final json = jsonDecode(branchBody);
-        if (json is Map && json.containsKey('data')) {
-           final list = json['data'] as List;
-           if (list.isNotEmpty) {
-                          _branches = list.map((b) {
-                Map<String, String>? wh;
-                if (b['working_hours'] != null && b['working_hours'] is Map) {
-                  wh = Map<String, String>.from(b['working_hours']);
-                }
-                return Branch(id: b['id'], name: b['name'], workingHours: wh);
-              }).toList();
-           }
+        List? list;
+        if (json is List) {
+          list = json;
+        } else if (json is Map && json.containsKey('data')) {
+          list = json['data'] as List?;
+        }
+        if (list != null && list.isNotEmpty) {
+          _branches = list.map((b) => Branch.fromDb(b as Map<String, dynamic>)).toList();
         }
       }
 

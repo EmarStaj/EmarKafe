@@ -38,6 +38,8 @@ class AppState extends ChangeNotifier {
   UserRole get role => auth.role;
   DateTime? get birthday => auth.birthday;
   String? get selectedBranchId => auth.selectedBranchId;
+  String get selectedBranchName => auth.selectedBranchName;
+  String getBranchName(String? id) => auth.getBranchName(id);
   List<Branch> get branches => auth.branches;
 
   Map<String, CartItem> get cartItems => cart.cart;
