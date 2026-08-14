@@ -1,3 +1,5 @@
+import 'package:emar_kafe/state/notifiers/menu_notifier.dart';
+import 'package:emar_kafe/models/order_record.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -127,10 +129,9 @@ class _AppWidgetState extends State<_AppWidget> {
         navigatorKey: navigatorKey,
         scaffoldMessengerKey: scaffoldMessengerKey,
         theme: EmarTheme.light(),
-        darkTheme: EmarTheme.dark(),
+        
         themeMode: ThemeMode.system,
         home: const _RootRouter(),
-      ),
     );
   }
 }

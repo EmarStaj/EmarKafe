@@ -1,3 +1,4 @@
+import 'package:emar_kafe/models/order_record.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -88,12 +89,12 @@ class _BaristaScreenState extends State<BaristaScreen> {
                               radius: 9,
                               backgroundColor: _colColor(status).withOpacity(0.15),
                               child: Text(
-                                o.customerName.isNotEmpty ? o.customerName[0].toUpperCase() : '?',
+                                ((o.customerName ?? '').isNotEmpty) ? (o.customerName?[0] ?? '?').toUpperCase() : '?',
                                 style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: _colColor(status)),
                               ),
                             ),
                             const SizedBox(width: 5),
-                            Text(_shortName(o.customerName), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: EmarColors.espresso)),
+                            Text(_shortName(o.customerName ?? 'Müşteri'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: EmarColors.espresso)),
                           ],
                         ),
                       ],
@@ -138,7 +139,7 @@ class _BaristaScreenState extends State<BaristaScreen> {
     final app = context.watch<AppState>();
     return Scaffold(
       appBar: AppBar(
-        title: Text('Barista – ${app.currentBranch?.name ?? ''}'),
+        title: Text('Barista – ${app.auth.selectedBranchId ?? ''}'),
         actions: [
           IconButton(
             tooltip: 'QR Okut',
@@ -179,9 +180,9 @@ class _BaristaScreenState extends State<BaristaScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _column('Yeni', OrderStatus.received, app.activeBaristaOrders, app),
-                    _column('Hazırlanıyor', OrderStatus.preparing, app.activeBaristaOrders, app),
-                    _column('Hazır', OrderStatus.ready, app.activeBaristaOrders, app),
+                    _column('Yeni', OrderStatus.received, app.orders.activeBaristaOrders, app),
+                    _column('Hazırlanıyor', OrderStatus.preparing, app.orders.activeBaristaOrders, app),
+                    _column('Hazır', OrderStatus.ready, app.orders.activeBaristaOrders, app),
                   ],
                 ),
               ),

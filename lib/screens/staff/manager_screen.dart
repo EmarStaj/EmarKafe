@@ -77,7 +77,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Yönetici – ${app.currentBranch?.name ?? ''}'),
+        title: Text('Yönetici – ${app.auth.selectedBranchId ?? ''}'),
         actions: [
           IconButton(
             tooltip: 'Stok Yönetimi',

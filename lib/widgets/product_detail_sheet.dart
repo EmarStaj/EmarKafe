@@ -137,6 +137,26 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
               Text('Bu ürünü puanla', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 6),
               _RatingSection(product: product, myRating: myRating),
+              if (product.options.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text('Opsiyonlar', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                ...product.options.map((opt) {
+                  final selected = _selectedOptions.contains(opt);
+                  return CheckboxListTile(
+                    value: selected,
+                    onChanged: (v) => _toggleOption(opt),
+                    title: Text(opt.name),
+                    subtitle: opt.priceDelta != 0 
+                        ? Text('${opt.priceDelta > 0 ? '+' : ''}${opt.priceDelta.toStringAsFixed(0)}₺', 
+                            style: TextStyle(color: opt.priceDelta > 0 ? EmarColors.paprika : EmarColors.moss))
+                        : null,
+                    activeColor: EmarColors.espresso,
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                  );
+                }),
+              ],
               const SizedBox(height: 8),
               _PairRow(title: 'Yanında bunlar iyi gider', products: pairs),
               const SizedBox(height: 16),
@@ -149,7 +169,7 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                     onPressed: outOfStock
                         ? null
                         : () async {
-                            final warnings = await context.read<AppState>().addToCart(product.id);
+                            final warnings = await context.read<AppState>().addToCart(product.id, options: _selectedOptions);
                             if (context.mounted) {
                               Navigator.of(context).pop();
                               if (warnings.isNotEmpty) {
@@ -163,7 +183,7 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                               }
                             }
                           },
-                    child: Text(outOfStock ? 'Şu An Tükendi' : 'Sepete Ekle · ${product.price.toStringAsFixed(0)}₺'),
+                    child: Text(outOfStock ? 'Şu An Tükendi' : 'Sepete Ekle · ${_currentPrice.toStringAsFixed(0)}₺'),
                   ),
                 ),
               ),

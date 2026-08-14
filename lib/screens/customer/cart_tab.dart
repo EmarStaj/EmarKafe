@@ -1,7 +1,7 @@
+import 'order_tracking_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/menu_data.dart';
 import '../../models/product.dart';
 import '../../services/api_service.dart';
 import '../../state/app_state.dart';
@@ -9,7 +9,7 @@ import '../../theme.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/pressable_scale.dart';
 import '../login_screen.dart';
-import 'qr_display_screen.dart';
+
 import 'wallet_screen.dart';
 
 class CartTab extends StatelessWidget {
@@ -183,7 +183,10 @@ class CartTab extends StatelessWidget {
                           try {
                             final token = await context.read<AppState>().generateWalletToken();
                             if (token != null && token.isNotEmpty && context.mounted) {
-                              Navigator.of(context).push(softRoute(QRDisplayScreen(qrToken: token)));
+                              final order = await context.read<AppState>().placeOrder(useWallet: true);
+                              if (order != null && context.mounted) {
+                                Navigator.of(context).push(softRoute(OrderTrackingScreen(order: order, qrToken: token)));
+                              }
                             }
                           } catch (e) {
                             if (context.mounted) {

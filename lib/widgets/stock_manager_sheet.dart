@@ -49,8 +49,8 @@ class _StockManagerSheet extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (app.outOfStock.isNotEmpty)
-                    Text('${app.outOfStock.length} tükendi', style: const TextStyle(fontSize: 11.5, color: EmarColors.paprikaDim, fontWeight: FontWeight.w700)),
+                  if (app.stock.currentBranchOutOfStock.isNotEmpty)
+                    Text('${app.stock.currentBranchOutOfStock.length} tükendi', style: const TextStyle(fontSize: 11.5, color: EmarColors.paprikaDim, fontWeight: FontWeight.w700)),
                 ],
               ),
             ),

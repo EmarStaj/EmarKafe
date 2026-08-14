@@ -1,3 +1,4 @@
+import 'package:emar_kafe/models/order_record.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -8,9 +9,12 @@ import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/pressable_scale.dart';
 
+import 'package:qr_flutter/qr_flutter.dart';
+
 class OrderTrackingScreen extends StatefulWidget {
   final OrderRecord order;
-  const OrderTrackingScreen({super.key, required this.order});
+  final String? qrToken;
+  const OrderTrackingScreen({super.key, required this.order, this.qrToken});
 
   @override
   State<OrderTrackingScreen> createState() => _OrderTrackingScreenState();
@@ -59,7 +63,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(order.branch, style: const TextStyle(color: EmarColors.espresso, fontWeight: FontWeight.w600)),
+              Text(order.branch ?? '', style: const TextStyle(color: EmarColors.espresso, fontWeight: FontWeight.w600)),
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -110,6 +114,57 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   }).toList(),
                 ),
               ),
+              if (widget.qrToken != null && status == OrderStatus.created)
+                Padding(
+                  padding: const EdgeInsets.only(top: 24),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: EmarColors.espresso.withValues(alpha: 0.05)),
+                            boxShadow: [
+                              BoxShadow(color: EmarColors.espresso.withValues(alpha: 0.08), blurRadius: 24, offset: const Offset(0, 12))
+                            ],
+                          ),
+                          child: QrImageView(
+                            data: widget.qrToken!,
+                            version: QrVersions.auto,
+                            size: 160.0,
+                            dataModuleStyle: const QrDataModuleStyle(
+                              dataModuleShape: QrDataModuleShape.circle,
+                              color: EmarColors.espresso,
+                            ),
+                            eyeStyle: const QrEyeStyle(
+                              eyeShape: QrEyeShape.circle,
+                              color: EmarColors.paprika,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SelectableText(
+                          '(Test) QR Token:\\n${widget.qrToken}',
+                          style: TextStyle(fontSize: 11, color: EmarColors.espresso.withValues(alpha: 0.4), fontFamily: 'monospace'),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: () async {
+                            final app = context.read<AppState>();
+                            await app.confirmOrderFromQR(widget.qrToken!);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sipariş baristaya başarıyla ulaştı!')));
+                            }
+                          },
+                          child: const Text('(Test) Barista Olarak Okut'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               const Spacer(),
               PressableScale(
                 child: SizedBox(

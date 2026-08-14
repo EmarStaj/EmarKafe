@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:emar_kafe/services/api_service.dart';
+import 'package:flutter/material.dart';
 import 'package:emar_kafe/models/order_record.dart';
+import 'package:emar_kafe/services/api_service.dart';
 import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
 import 'package:emar_kafe/state/notifiers/cart_notifier.dart';
 import 'package:emar_kafe/state/notifiers/wallet_notifier.dart';
@@ -14,6 +14,7 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
   final WalletNotifier wallet;
   
   List<OrderRecord> orderHistory = [];
+  List<OrderRecord> get activeBaristaOrders => orderHistory;
   Timer? _pollingTimer;
 
 
@@ -54,14 +55,18 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> fetchOrders() async {
     if (!auth.loggedIn) return;
     try {
-      final res = auth.role == UserRole.customer 
-          ? await api.getMyOrders()
-          : await api.getBranchOrders(auth.selectedBranchId ?? '');
-          
-      final data = res['data'];
-      if (data != null && data is List) {
-        orderHistory = data.map((json) => OrderRecord.fromJson(json)).toList();
-        notifyListeners();
+      if (auth.role == UserRole.customer) {
+        final res = await api.getMyOrders();
+        if (res is List) {
+          orderHistory = res.map((json) => OrderRecord.fromJson(json)).toList();
+          notifyListeners();
+        }
+      } else {
+        final res = await api.getBranchOrders();
+        if (res is List) {
+          orderHistory = res.map((json) => OrderRecord.fromJson(json)).toList();
+          notifyListeners();
+        }
       }
     } catch (_) {}
   }

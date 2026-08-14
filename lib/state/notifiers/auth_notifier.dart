@@ -1,15 +1,18 @@
+import 'package:emar_kafe/models/branch.dart';
 import 'package:flutter/foundation.dart';
 import 'package:emar_kafe/services/api_service.dart';
-import 'package:emar_kafe/models/catalog.dart';
+import 'package:emar_kafe/data/catalog.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
-enum UserRole { customer, barista, admin }
+enum UserRole { customer, barista, manager, branchManager, admin }
 extension UserRoleExt on UserRole {
   String get label {
     switch (this) {
       case UserRole.customer: return 'Müşteri';
       case UserRole.barista: return 'Barista';
-      case UserRole.admin: return 'Yönetici';
+      case UserRole.manager: return 'Yönetici';
+      case UserRole.branchManager: return 'Şube Yöneticisi';
+      case UserRole.admin: return 'Sistem Yöneticisi';
     }
   }
 }
@@ -90,11 +93,11 @@ class AuthNotifier extends ChangeNotifier {
   }) async {
     try {
       final res = await api.register(
-        name: name,
-        email: email,
-        phone: phone,
-        password: password,
-        birthDate: birthDate.toIso8601String().split('T').first,
+        email,
+        phone,
+        password,
+        name,
+        birthDate.toIso8601String().split('T').first,
         role: selectedRole.name,
         branchId: branch,
       );

@@ -57,7 +57,7 @@ class _HomeTabState extends State<HomeTab> {
     return Column(
       children: [
         _DarkHeader(loggedIn: app.loggedIn, userName: app.userName, onProfileTap: widget.onProfileTap),
-        _BranchBar(branch: app.currentBranch?.name ?? '', onTap: () => showBranchPicker(context)),
+        _BranchBar(branch: app.auth.selectedBranchId ?? '', onTap: () => showBranchPicker(context)),
         Expanded(
           child: ListView(
             controller: _scrollController,
@@ -111,7 +111,6 @@ class _HomeTabState extends State<HomeTab> {
                 child: SizedBox(
                   height: 36,
                   child: ListView(
-            controller: _scrollController,
                     scrollDirection: Axis.horizontal,
                     children: [
                       _CatChip(icon: '⭐', label: 'Öne Çıkanlar', selected: _filter == null, onTap: () => setState(() => _filter = null)),
@@ -145,7 +144,7 @@ class _HomeTabState extends State<HomeTab> {
                 transitionBuilder: (child, anim) => FadeTransition(
                   opacity: anim,
                   child: SlideTransition(
-                    position: Tween<Offset>(begin: const Offset(0, 0.03), end: Offset.zero).animate(anim),
+                    position: Tween<Offset>(begin: const Offset(0, 03), end: Offset.zero).animate(anim),
                     child: child,
                   ),
                 ),

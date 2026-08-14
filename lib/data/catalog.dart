@@ -78,7 +78,7 @@ class Catalog {
 
       // We return false to indicate we are using local seed until parsing is fully built.
       return false;
-    } catch (e, stack) {
+    } catch (e) {
       debugPrint('Katalog yüklenemedi: $e');
       return false;
     }

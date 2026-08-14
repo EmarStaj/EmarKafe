@@ -25,6 +25,7 @@ class ApiService {
   String? _refreshToken;
   
   String? get token => _token;
+  String? get refreshToken => _refreshToken;
 
   Future<void> init() async {
     _token = await _storage.read(key: _tokenKey);
@@ -115,7 +116,6 @@ class ApiService {
 
   Future<void> forgotPassword(String email) async {
     final res = await _post(
-      Uri.parse('\/api/auth/forgot-password'),
       Uri.parse('$baseUrl/api/auth/forgot-password'),
       headers: _headers,
       body: jsonEncode({'email': email}),
@@ -208,7 +208,7 @@ class ApiService {
       headers: _headers,
       body: jsonEncode({'product_id': productId, 'quantity': qty}),
     );
-    final data = _processResponse(res);
+    _processResponse(res);
     
     // Check if warnings exists in the original json body
     if (res.statusCode == 201 || res.statusCode == 200) {
@@ -309,12 +309,12 @@ class ApiService {
       final json = jsonDecode(response.body);
       if (json is Map<String, dynamic>) {
         if (json['success'] == false) {
-          throw ApiException(json['message'] ?? 'Sunucu işlemi reddetti', null);
+          final msg = json['message']?.toString() ?? 'Sunucu islemi reddetti';
+          throw ApiException(msg, response.statusCode);
         }
         if (json.containsKey('data')) {
           final data = json['data'];
           if (data is Map<String, dynamic>) {
-            // Include message if it exists so we don't lose it entirely
             if (json.containsKey('message')) data['__message'] = json['message'];
             return data;
           }
@@ -325,26 +325,25 @@ class ApiService {
         return json;
       }
       return {};
-      String msg = 'Sunucu hatası: ${response.statusCode}';
-      if (response.statusCode == 400 || response.statusCode == 401) {
-        msg = 'E-posta veya şifre hatalı.';
-      } else if (response.statusCode == 429) {
-        msg = 'Çok fazla deneme yaptınız. 15 dakika bekleyin.';
-      } else if (response.statusCode >= 500) {
-        msg = 'Sunucu hatası. Lütfen tekrar deneyin.';
-      }
-      
-      List<dynamic>? errors;
-      try {
-        final err = jsonDecode(response.body);
-        if (err['message'] != null && (response.statusCode != 400 && response.statusCode != 401 && response.statusCode != 429 && response.statusCode < 500)) {
+    }
+    String msg = 'Sunucu hatası: ';
+    if (response.statusCode == 400 || response.statusCode == 401) {
+      msg = 'E-posta veya şifre hatalı.';
+    } else if (response.statusCode == 429) {
+      msg = 'Çok fazla deneme yaptınız. 15 dakika bekleyin.';
+    } else if (response.statusCode >= 500) {
+      msg = 'Sunucu hatası. Lütfen tekrar deneyin.';
+    }
+    List<dynamic>? errors;
+    try {
+      final err = jsonDecode(response.body);
+      if (err is Map<String, dynamic>) {
+        if (err['message'] != null) {
           msg = err['message'];
         }
-        if (err['errors'] != null) {
-          errors = err['errors'];
-        }
-      } catch (_) {}
-      throw ApiException(msg, response.statusCode, errors: errors);
-    }
-  }
+        errors = err['errors'] as List<dynamic>?;
+      }
+    } catch (_) {}
+    throw ApiException(msg, response.statusCode, errors: errors);
+}
 }

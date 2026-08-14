@@ -34,3 +34,5 @@ class StockNotifier extends ChangeNotifier {
     notifyListeners();
     // In the future, sync with API: POST /api/branches/\/stock/  }
 }
+
+}

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:emar_kafe/services/api_service.dart';
-import 'package:emar_kafe/models/catalog.dart';
+import 'package:emar_kafe/data/catalog.dart';
 import 'package:emar_kafe/models/product.dart';
 import 'package:emar_kafe/models/cart_item.dart';
 import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
@@ -21,12 +21,7 @@ class CartNotifier extends ChangeNotifier {
   int get cartCount => cart.values.fold(0, (sum, item) => sum + item.quantity);
 
   Product productById(String id) {
-    for (var cat in Catalog.instance.categories) {
-      for (var p in cat.items) {
-        if (p.id == id) return p;
-      }
-    }
-    throw Exception('Product not found: ');
+    return Catalog.instance.byId(id);
   }
 
   void _recalcTotal() {
@@ -39,7 +34,7 @@ class CartNotifier extends ChangeNotifier {
   String _generateLocalId(String productId, List<ProductOption> options) {
     if (options.isEmpty) return productId;
     final optIds = options.map((e) => e.id).toList()..sort();
-    return '\-';
+    return '$productId-${optIds.join('-')}';
   }
 
   Future<void> fetchCart() async {

@@ -80,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final error = await context.read<AppState>().loginWithCredentials(
+    final error = await context.read<AppState>().auth.loginWithCredentials(
       email: _loginEmailCtrl.text,
       password: _loginPassCtrl.text,
     );

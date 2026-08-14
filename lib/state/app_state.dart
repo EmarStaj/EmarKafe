@@ -1,9 +1,12 @@
+import 'package:emar_kafe/models/branch.dart';
+import 'package:emar_kafe/models/campaign.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:emar_kafe/services/api_service.dart';
-import 'package:emar_kafe/models/catalog.dart';
+import 'package:emar_kafe/data/catalog.dart';
 import 'package:emar_kafe/models/order_record.dart';
 import 'package:emar_kafe/models/cart_item.dart';
+import 'package:emar_kafe/models/product.dart';
 import 'package:emar_kafe/state/notifiers/menu_notifier.dart';
 
 import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
@@ -47,6 +50,24 @@ class AppState extends ChangeNotifier {
 
   double get walletBalance => wallet.walletBalance;
 
+  int get totalCoffeesBought {
+    int total = 0;
+    for (var order in orderHistory) {
+      if (order.status != OrderStatus.cancelled.name) {
+        for (final entry in order.items.entries) {
+          try {
+            final prod = Catalog.instance.byId(entry.key);
+            if (prod.isCoffee) total += entry.value;
+          } catch (_) {}
+        }
+      }
+    }
+    return total;
+  }
+  
+  int get loyaltyProgress => totalCoffeesBought % 5;
+  int get freeCoffeesEarned => totalCoffeesBought ~/ 5;
+
   List<Campaign> campaignList = []; // Removed from notifiers to keep simple, keep here for now
   Map<String, double> ratings = {};
   
@@ -79,7 +100,7 @@ class AppState extends ChangeNotifier {
   void selectBranch(String branchId) => auth.selectBranch(branchId);
 
   Future<List<String>> changeQty(String productId, int delta) => cart.changeQty(productId, delta);
-  Future<List<String>> addToCart(String productId) => cart.addToCart(productId);
+  Future<List<String>> addToCart(String productId, {List<ProductOption> options = const []}) => cart.addToCart(productId, options: options);
 
   int prepMinutesFor(Map<String, int> items, DateTime at) => orders.prepMinutesFor(items, at);
   Future<OrderRecord?> placeOrder({bool useWallet = false}) => orders.placeOrder(useWallet: useWallet);

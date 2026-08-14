@@ -14,7 +14,7 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    final qty = app.cart[product.id] ?? 0;
+    final qty = app.cartItems.values.where((i) => i.product.id == product.id).fold(0, (s, i) => s + i.quantity);
     final outOfStock = app.isOutOfStock(product.id);
 
     return InkWell(
