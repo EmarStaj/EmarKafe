@@ -28,50 +28,61 @@ class ApiService {
   String? get refreshToken => _refreshToken;
 
   Future<void> init() async {
-    _token = await _storage.read(key: _tokenKey);
-    _refreshToken = await _storage.read(key: _refreshTokenKey);
+    try {
+      _token = await _storage.read(key: _tokenKey);
+      _refreshToken = await _storage.read(key: _refreshTokenKey);
+    } catch (e) {
+      debugPrint('SecureStorage read error: $e');
+    }
   }
 
   Future<void> saveTokens(String token, {String? refreshToken}) async {
     _token = token;
-    await _storage.write(key: _tokenKey, value: token);
-    if (refreshToken != null) {
-      _refreshToken = refreshToken;
-      await _storage.write(key: _refreshTokenKey, value: refreshToken);
+    try {
+      await _storage.write(key: _tokenKey, value: token);
+      if (refreshToken != null) {
+        _refreshToken = refreshToken;
+        await _storage.write(key: _refreshTokenKey, value: refreshToken);
+      }
+    } catch (e) {
+      debugPrint('SecureStorage write error: $e');
     }
   }
 
   Future<void> clearToken() async {
     _token = null;
     _refreshToken = null;
-    await _storage.delete(key: _tokenKey);
-    await _storage.delete(key: _refreshTokenKey);
+    try {
+      await _storage.delete(key: _tokenKey);
+      await _storage.delete(key: _refreshTokenKey);
+    } catch (e) {
+      debugPrint('SecureStorage delete error: $e');
+    }
   }
 
-  
   Future<http.Response> _get(Uri url, {Map<String, String>? headers}) async {
-    return await _get(url, headers: headers).timeout(
+    return await http.get(url, headers: headers).timeout(
       const Duration(seconds: 15),
       onTimeout: () => throw ApiException('Bağlantı zaman aşımına uğradı', 408),
     );
   }
 
   Future<http.Response> _post(Uri url, {Map<String, String>? headers, Object? body}) async {
-    return await _post(url, headers: headers, body: body).timeout(
+    return await http.post(url, headers: headers, body: body).timeout(
       const Duration(seconds: 15),
       onTimeout: () => throw ApiException('Bağlantı zaman aşımına uğradı', 408),
     );
   }
 
   Future<http.Response> _put(Uri url, {Map<String, String>? headers, Object? body}) async {
-    return await _put(url, headers: headers, body: body).timeout(
+    return await http.put(url, headers: headers, body: body).timeout(
       const Duration(seconds: 15),
       onTimeout: () => throw ApiException('Bağlantı zaman aşımına uğradı', 408),
     );
   }
 
   Future<http.Response> _delete(Uri url, {Map<String, String>? headers}) async {
-    return await _delete(url, headers: headers).timeout(
+    return await http.delete(url, headers: headers).timeout(
       const Duration(seconds: 15),
       onTimeout: () => throw ApiException('Bağlantı zaman aşımına uğradı', 408),
     );

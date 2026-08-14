@@ -22,18 +22,22 @@ final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // App initialization requires api_service to init properly inside AuthNotifier.
-  // But for now, just load catalog.
-  
   const onesignalAppId = String.fromEnvironment('ONESIGNAL_APP_ID');
   if (onesignalAppId.isNotEmpty) {
-    OneSignal.initialize(onesignalAppId);
-    OneSignal.Notifications.requestPermission(true);
+    try {
+      OneSignal.initialize(onesignalAppId);
+      OneSignal.Notifications.requestPermission(true);
+    } catch (e) {
+      debugPrint('OneSignal init error: $e');
+    }
   }
 
-  // Katalog arayüz kurulmadan önce yüklenir; böylece ürün id'leri oturum
-  // boyunca sabit kalır ve sepetteki id'ler geçersizleşmez.
-  await Catalog.instance.load();
+  try {
+    await Catalog.instance.load().timeout(const Duration(seconds: 3));
+  } catch (e) {
+    debugPrint('Catalog load error or timeout: $e');
+  }
+
   runApp(const EmarKafeApp());
 }
 

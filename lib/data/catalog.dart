@@ -45,7 +45,7 @@ class Catalog {
 
   Future<bool> load() async {
     try {
-      final res = await http.get(Uri.parse('https://emarkafe.duckdns.org/api/menu'));
+      final res = await http.get(Uri.parse('https://emarkafe.duckdns.org/api/menu')).timeout(const Duration(seconds: 3));
       if (res.statusCode == 200) {
         final body = utf8.decode(res.bodyBytes);
         final json = jsonDecode(body);
@@ -58,7 +58,7 @@ class Catalog {
         }
       }
 
-      final branchRes = await http.get(Uri.parse('https://emarkafe.duckdns.org/api/branches'));
+      final branchRes = await http.get(Uri.parse('https://emarkafe.duckdns.org/api/branches')).timeout(const Duration(seconds: 3));
       if (branchRes.statusCode == 200) {
         final branchBody = utf8.decode(branchRes.bodyBytes);
         final json = jsonDecode(branchBody);
