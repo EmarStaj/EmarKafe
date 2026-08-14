@@ -1,4 +1,5 @@
 class Branch {
+  final Map<String, String>? workingHours;
   final String id;
   final String name;
   final String? address;

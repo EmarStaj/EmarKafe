@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:emar_kafe/services/api_service.dart';
 import 'package:emar_kafe/models/catalog.dart';
 import 'package:emar_kafe/models/order_record.dart';
+import 'package:emar_kafe/models/cart_item.dart';
+import 'package:emar_kafe/state/notifiers/menu_notifier.dart';
 
 import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
 import 'package:emar_kafe/state/notifiers/cart_notifier.dart';
@@ -22,6 +24,7 @@ class AppState extends ChangeNotifier {
   final OrderNotifier orders;
   final WalletNotifier wallet;
   final StockNotifier stock;
+  final MenuNotifier menu;
 
   ApiService get api => auth.api;
 
@@ -34,7 +37,7 @@ class AppState extends ChangeNotifier {
   String? get selectedBranchId => auth.selectedBranchId;
   List<Branch> get branches => auth.branches;
 
-  Map<String, int> get cartItems => cart.cart;
+  Map<String, CartItem> get cartItems => cart.cart;
   double get cartTotal => cart.cartTotal;
   int get cartCount => cart.cartCount;
   bool get isUpdatingCart => cart.isUpdatingCart;

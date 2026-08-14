@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/campaigns_data.dart' show Campaign;
-import '../../data/menu_data.dart';
+
 import '../../models/product.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
@@ -27,12 +27,28 @@ class _HomeTabState extends State<HomeTab> {
   ProductCategory? _filter;
   final _promoController = PageController();
   int _promoPage = 0;
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppState>().menu.fetchFirstPage();
+    });
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100) {
+        context.read<AppState>().menu.fetchNextPage();
+      }
+    });
+  }
 
   @override
   void dispose() {
     _promoController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +60,7 @@ class _HomeTabState extends State<HomeTab> {
         _BranchBar(branch: app.currentBranch?.name ?? '', onTap: () => showBranchPicker(context)),
         Expanded(
           child: ListView(
+            controller: _scrollController,
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
             children: [
               SizedBox(
@@ -94,6 +111,7 @@ class _HomeTabState extends State<HomeTab> {
                 child: SizedBox(
                   height: 36,
                   child: ListView(
+            controller: _scrollController,
                     scrollDirection: Axis.horizontal,
                     children: [
                       _CatChip(icon: '⭐', label: 'Öne Çıkanlar', selected: _filter == null, onTap: () => setState(() => _filter = null)),
@@ -378,7 +396,7 @@ class _ProductRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final products = menuProducts.where((p) => p.category == category).toList();
+    final products = context.watch<AppState>().menu.products.where((p) => p.category == category).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

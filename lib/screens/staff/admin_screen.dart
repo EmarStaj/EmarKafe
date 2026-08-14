@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/campaigns_data.dart';
-import '../../data/menu_data.dart';
+
 import '../../models/product.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
@@ -125,9 +125,9 @@ class _AdminScreenState extends State<AdminScreen> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    final hotCount = menuProducts.where((p) => p.category == ProductCategory.hotCoffee).length;
-    final icedCount = menuProducts.where((p) => p.category == ProductCategory.icedCoffee).length;
-    final dessertCount = menuProducts.where((p) => p.category == ProductCategory.dessert).length;
+    final hotCount = app.menu.products.where((p) => p.category == ProductCategory.hotCoffee).length;
+    final icedCount = app.menu.products.where((p) => p.category == ProductCategory.icedCoffee).length;
+    final dessertCount = app.menu.products.where((p) => p.category == ProductCategory.dessert).length;
 
     final ranked = List.of(app.branches)..sort((a, b) => _orderCountFor(b).compareTo(_orderCountFor(a)));
     final maxCount = ranked.isEmpty ? 1 : _orderCountFor(ranked.first);

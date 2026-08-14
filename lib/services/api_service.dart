@@ -116,10 +116,16 @@ class ApiService {
   Future<void> forgotPassword(String email) async {
     final res = await _post(
       Uri.parse('\/api/auth/forgot-password'),
+      Uri.parse('$baseUrl/api/auth/forgot-password'),
       headers: _headers,
       body: jsonEncode({'email': email}),
     );
     _processResponse(res);
+  }
+
+  Future<Map<String, dynamic>> getMenu({int page = 1, int limit = 20}) async {
+    final res = await _get(Uri.parse('$baseUrl/api/menu?page=$page&limit=$limit'), headers: _headers);
+    return _processResponse(res);
   }
 
   Future<Map<String, dynamic>> getMe() async {

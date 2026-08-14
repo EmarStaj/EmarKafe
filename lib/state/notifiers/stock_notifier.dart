@@ -1,20 +1,36 @@
 import 'package:flutter/foundation.dart';
 import 'package:emar_kafe/services/api_service.dart';
 import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
-import 'package:emar_kafe/models/catalog.dart';
 
 class StockNotifier extends ChangeNotifier {
   final ApiService api;
   final AuthNotifier auth;
   
-  final Set<String> outOfStock = {};
+  // branchId -> set of productIds out of stock
+  final Map<String, Set<String>> _outOfStockByBranch = {};
 
   StockNotifier(this.api, this.auth);
 
-  bool isOutOfStock(String productId) => outOfStock.contains(productId);
-
-  void toggleStock(String productId) {
-    if (!outOfStock.add(productId)) outOfStock.remove(productId);
-    notifyListeners();
+  Set<String> _getBranchStock(String? branchId) {
+    if (branchId == null) return {};
+    return _outOfStockByBranch.putIfAbsent(branchId, () => {});
   }
+
+  Set<String> get currentBranchOutOfStock => _getBranchStock(auth.selectedBranchId);
+
+  bool isOutOfStock(String productId, {String? branchId}) {
+    final bId = branchId ?? auth.selectedBranchId;
+    return _getBranchStock(bId).contains(productId);
+  }
+
+  void toggleStock(String productId, {String? branchId}) {
+    final bId = branchId ?? auth.selectedBranchId;
+    if (bId == null) return;
+    
+    final stockSet = _getBranchStock(bId);
+    if (!stockSet.add(productId)) {
+      stockSet.remove(productId);
+    }
+    notifyListeners();
+    // In the future, sync with API: POST /api/branches/\/stock/  }
 }

@@ -1,7 +1,7 @@
+
 enum ProductCategory { hotCoffee, icedCoffee, dessert }
 
 extension ProductCategoryLabel on ProductCategory {
-  /// Arayüzde görünen ad — veritabanındaki `categories.name` ile birebir aynı.
   String get label => switch (this) {
         ProductCategory.hotCoffee => 'Sıcak Kahve',
         ProductCategory.icedCoffee => 'Soğuk Kahve',
@@ -9,16 +9,37 @@ extension ProductCategoryLabel on ProductCategory {
       };
 }
 
-/// Veritabanındaki kategori adını enum'a çevirir.
-///
-/// Not: Admin panelinden yeni bir kategori eklenirse burada karşılığı olmaz ve
-/// `hotCoffee` sayılır. Kategori listesi genişleyecekse `categories` tablosuna
-/// bir tür sütunu (ör. `kind: 'coffee' | 'dessert'`) eklemek gerekir.
 ProductCategory productCategoryFromName(String name) => switch (name.trim()) {
       'Soğuk Kahve' => ProductCategory.icedCoffee,
       'Tatlı' => ProductCategory.dessert,
       _ => ProductCategory.hotCoffee,
     };
+
+class ProductOption {
+  final String id;
+  final String name;
+  final double priceDelta;
+
+  const ProductOption({
+    required this.id,
+    required this.name,
+    this.priceDelta = 0.0,
+  });
+
+  factory ProductOption.fromJson(Map<String, dynamic> json) {
+    return ProductOption(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      priceDelta: (json['price_delta'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+  
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'price_delta': priceDelta,
+  };
+}
 
 class Product {
   final String id;
@@ -28,15 +49,12 @@ class Product {
   final String icon;
   final double rating;
   final int ratingCount;
-
-  /// Bu ürünle iyi giden ürünlerin id'leri ("Yanında bunlar iyi gider").
   final List<String> pairsWith;
-
-  /// Veritabanı alanları. Yerel yedek menüde boş/varsayılan kalır.
   final String categoryId;
   final String? description;
   final bool isActive;
   final bool isLoyaltyEligible;
+  final List<ProductOption> options; // ADDED
 
   const Product({
     required this.id,
@@ -51,11 +69,17 @@ class Product {
     this.description,
     this.isActive = true,
     this.isLoyaltyEligible = true,
+    this.options = const [], // ADDED
   });
 
-  /// `products` satırından üretir. `categories(name)` join'i beklenir.
   factory Product.fromDb(Map<String, dynamic> row, {List<String> pairsWith = const []}) {
     final categoryName = (row['categories'] as Map<String, dynamic>?)?['name'] as String? ?? '';
+    
+    List<ProductOption> parsedOptions = [];
+    if (row['options'] != null && row['options'] is List) {
+      parsedOptions = (row['options'] as List).map((o) => ProductOption.fromJson(o)).toList();
+    }
+    
     return Product(
       id: row['id'] as String,
       name: row['name'] as String,
@@ -69,12 +93,10 @@ class Product {
       isActive: row['is_active'] as bool? ?? true,
       isLoyaltyEligible: row['is_loyalty_eligible'] as bool? ?? true,
       pairsWith: pairsWith,
+      options: parsedOptions,
     );
   }
 
   bool get isDessert => category == ProductCategory.dessert;
-
-  /// Hazırlanma süresi kuralı tatlı/kahve ayrımına dayandığı için, tatlı
-  /// olmayan her şey kahve sayılır.
   bool get isCoffee => !isDessert;
 }

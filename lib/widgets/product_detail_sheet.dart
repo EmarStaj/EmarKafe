@@ -17,12 +17,39 @@ Future<void> showProductDetail(BuildContext context, Product product) {
   );
 }
 
-class _ProductDetailSheet extends StatelessWidget {
+
+class _ProductDetailSheet extends StatefulWidget {
   final Product product;
   const _ProductDetailSheet({required this.product});
 
   @override
+  State<_ProductDetailSheet> createState() => _ProductDetailSheetState();
+}
+
+class _ProductDetailSheetState extends State<_ProductDetailSheet> {
+  final List<ProductOption> _selectedOptions = [];
+
+  void _toggleOption(ProductOption opt) {
+    setState(() {
+      if (_selectedOptions.contains(opt)) {
+        _selectedOptions.remove(opt);
+      } else {
+        _selectedOptions.add(opt);
+      }
+    });
+  }
+
+  double get _currentPrice {
+    double total = widget.product.price;
+    for (var opt in _selectedOptions) {
+      total += opt.priceDelta;
+    }
+    return total < 0 ? 0 : total;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final product = widget.product;
     final app = context.watch<AppState>();
     final pairs = product.pairsWith.map(productById).toList();
     final similar = similarTo(product);
@@ -155,6 +182,7 @@ class _RatingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final product = widget.product;
     final app = context.watch<AppState>();
     final ordered = app.hasOrderedProduct(product.id);
 
@@ -204,6 +232,7 @@ class _PairRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final product = widget.product;
     if (products.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

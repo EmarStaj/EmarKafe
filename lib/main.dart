@@ -59,13 +59,17 @@ class EmarKafeApp extends StatelessWidget {
           create: (ctx) => OrderNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>(), ctx.read<CartNotifier>(), ctx.read<WalletNotifier>()),
           update: (_, api, auth, cart, wallet, orders) => orders ?? OrderNotifier(api, auth, cart, wallet),
         ),
+        ChangeNotifierProxyProvider<ApiService, MenuNotifier>(
+          create: (ctx) => MenuNotifier(ctx.read<ApiService>()),
+          update: (_, api, menu) => menu ?? MenuNotifier(api),
+        ),
         ChangeNotifierProxyProvider2<ApiService, AuthNotifier, StockNotifier>(
           create: (ctx) => StockNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>()),
           update: (_, api, auth, stock) => stock ?? StockNotifier(api, auth),
         ),
-        ChangeNotifierProxyProvider5<AuthNotifier, CartNotifier, OrderNotifier, WalletNotifier, StockNotifier, AppState>(
-          create: (ctx) => AppState(ctx.read<AuthNotifier>(), ctx.read<CartNotifier>(), ctx.read<OrderNotifier>(), ctx.read<WalletNotifier>(), ctx.read<StockNotifier>()),
-          update: (_, auth, cart, orders, wallet, stock, app) => app ?? AppState(auth, cart, orders, wallet, stock),
+        ChangeNotifierProxyProvider6<AuthNotifier, CartNotifier, OrderNotifier, WalletNotifier, StockNotifier, MenuNotifier, AppState>(
+          create: (ctx) => AppState(ctx.read<AuthNotifier>(), ctx.read<CartNotifier>(), ctx.read<OrderNotifier>(), ctx.read<WalletNotifier>(), ctx.read<StockNotifier>(), ctx.read<MenuNotifier>()),
+          update: (_, auth, cart, orders, wallet, stock, menu, app) => app ?? AppState(auth, cart, orders, wallet, stock, menu),
         ),
       ],
       child: const _AppWidget(),
