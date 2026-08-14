@@ -41,23 +41,31 @@ class CartNotifier extends ChangeNotifier {
     if (!auth.loggedIn) return;
     try {
       final res = await api.getCart();
-      final items = res['items'] as List<dynamic>? ?? [];
+      List<dynamic> items = [];
+      if (res['items'] is List) {
+        items = res['items'] as List<dynamic>;
+      } else if (res['data'] is Map && res['data']['items'] is List) {
+        items = res['data']['items'] as List<dynamic>;
+      } else if (res['data'] is List) {
+        items = res['data'] as List<dynamic>;
+      }
       
-      cart.clear();
+      final Map<String, CartItem> newCart = {};
       for (var item in items) {
-        final productId = item['product_id'] as String;
-        final qty = item['quantity'] as int;
-        final cartItemId = item['id'] as String;
+        final productId = item['product_id']?.toString() ?? item['productId']?.toString() ?? '';
+        if (productId.isEmpty) continue;
+        final qty = (item['quantity'] as num?)?.toInt() ?? 1;
+        final cartItemId = item['id']?.toString() ?? '';
         
         List<ProductOption> options = [];
-        if (item['options'] != null) {
+        if (item['options'] != null && item['options'] is List) {
            options = (item['options'] as List).map((o) => ProductOption.fromJson(o)).toList();
         }
         
         try {
           final product = productById(productId);
           final localId = _generateLocalId(productId, options);
-          cart[localId] = CartItem(
+          newCart[localId] = CartItem(
             cartItemId: cartItemId,
             product: product,
             quantity: qty,
@@ -65,14 +73,22 @@ class CartNotifier extends ChangeNotifier {
           );
         } catch (_) {}
       }
+      cart = newCart;
       _recalcTotal();
       notifyListeners();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('fetchCart error: $e');
+    }
   }
 
   Future<List<String>> changeQty(String localId, int delta) async {
     final originalItem = cart[localId];
-    if (originalItem == null) return [];
+    if (originalItem == null) {
+      if (delta > 0) {
+        return addToCart(localId);
+      }
+      return [];
+    }
     
     final nextQty = originalItem.quantity + delta;
     
@@ -91,7 +107,7 @@ class CartNotifier extends ChangeNotifier {
     isUpdatingCart = true;
     notifyListeners();
 
-    _cartDebounceTimers[localId] = Timer(const Duration(milliseconds: 600), () async {
+    _cartDebounceTimers[localId] = Timer(const Duration(milliseconds: 400), () async {
       _cartDebounceTimers.remove(localId);
       
       try {
@@ -101,13 +117,11 @@ class CartNotifier extends ChangeNotifier {
         if (originalItem.cartItemId.isNotEmpty && originalItem.cartItemId != 'local') {
           await api.updateCartItem(originalItem.cartItemId, finalQty);
         } else if (finalQty > 0 && finalItem != null) {
-          // If it's a new item, we might need to add it with options
           await api.addToCart(finalItem.product.id, finalQty, options: finalItem.selectedOptions.map((e) => e.id).toList());
         }
         await fetchCart();
       } catch (e) {
-        cart[localId] = originalItem;
-        _recalcTotal();
+        debugPrint('Cart sync error: $e');
       } finally {
         if (_cartDebounceTimers.isEmpty) {
           isUpdatingCart = false;
@@ -125,22 +139,30 @@ class CartNotifier extends ChangeNotifier {
     
     if (existing != null) {
       return changeQty(localId, 1);
-    } else {
-      try {
-        final product = productById(productId);
-        cart[localId] = CartItem(cartItemId: 'local', product: product, quantity: 1, selectedOptions: options);
-        _recalcTotal();
+    }
+    
+    try {
+      final product = productById(productId);
+      cart[localId] = CartItem(cartItemId: 'local', product: product, quantity: 1, selectedOptions: options);
+      _recalcTotal();
+      notifyListeners();
+      
+      if (auth.loggedIn) {
+        isUpdatingCart = true;
         notifyListeners();
-        
-        if (auth.loggedIn) {
-           isUpdatingCart = true;
-           notifyListeners();
-           await api.addToCart(productId, 1, options: options.map((e) => e.id).toList());
-           await fetchCart();
-           isUpdatingCart = false;
-           notifyListeners();
+        try {
+          final warnings = await api.addToCart(productId, 1, options: options.map((e) => e.id).toList());
+          await fetchCart();
+          return warnings;
+        } catch (e) {
+          debugPrint('addToCart API error: $e');
+        } finally {
+          isUpdatingCart = false;
+          notifyListeners();
         }
-      } catch (_) {}
+      }
+    } catch (e) {
+      debugPrint('addToCart error: $e');
     }
     return [];
   }

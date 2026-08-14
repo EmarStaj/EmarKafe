@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:emar_kafe/models/product.dart';
 import 'package:emar_kafe/services/api_service.dart';
+import 'package:emar_kafe/data/catalog.dart';
 
 class MenuNotifier extends ChangeNotifier {
   final ApiService api;
@@ -45,6 +46,7 @@ class MenuNotifier extends ChangeNotifier {
       } else {
         final newProducts = list.map((p) => Product.fromDb(p as Map<String, dynamic>)).toList();
         _products.addAll(newProducts);
+        Catalog.instance.registerProducts(newProducts);
         if (newProducts.length < 10) {
           _hasMore = false;
         }

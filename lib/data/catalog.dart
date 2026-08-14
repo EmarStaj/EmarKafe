@@ -23,6 +23,15 @@ class Catalog {
 
   late Map<String, Product> _byId = {for (final p in _products) p.id: p};
 
+  void registerProducts(List<Product> prods) {
+    for (final p in prods) {
+      _byId[p.id] = p;
+      if (!_products.any((existing) => existing.id == p.id)) {
+        _products.add(p);
+      }
+    }
+  }
+
   Product byId(String id) =>
       _byId[id] ??
       Product(
