@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/branch.dart';
 import '../models/campaign.dart';
 import '../models/product.dart';
+import '../config/app_config.dart';
 import 'menu_data.dart' as seed;
 
 class Catalog {
@@ -54,7 +55,7 @@ class Catalog {
 
   Future<bool> load() async {
     try {
-      final res = await http.get(Uri.parse('https://emarkafe.duckdns.org/api/menu')).timeout(const Duration(seconds: 4));
+      final res = await http.get(Uri.parse(AppConfig.menuUrl)).timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
         final body = utf8.decode(res.bodyBytes);
         final json = jsonDecode(body);
@@ -68,7 +69,7 @@ class Catalog {
         }
       }
 
-      final branchRes = await http.get(Uri.parse('https://emarkafe.duckdns.org/api/branches')).timeout(const Duration(seconds: 4));
+      final branchRes = await http.get(Uri.parse(AppConfig.branchesUrl)).timeout(const Duration(seconds: 4));
       if (branchRes.statusCode == 200) {
         final branchBody = utf8.decode(branchRes.bodyBytes);
         final json = jsonDecode(branchBody);
