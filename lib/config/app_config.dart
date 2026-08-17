@@ -8,7 +8,7 @@ class AppConfig {
   AppConfig._();
 
   /// Varsayılan Backend Sunucu Adresi (Protokol dahil, sonda slash olmadan)
-  static const String _defaultBaseUrl = 'https://emarkafe.duckdns.org';
+  static const String _defaultBaseUrl = 'https://emarkafe-backend.onrender.com';
 
   /// Aktif Base URL
   static const String baseUrl = String.fromEnvironment(
