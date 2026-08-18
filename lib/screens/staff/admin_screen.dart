@@ -1,4 +1,5 @@
 import 'package:emar_kafe/models/order_record.dart';
+import 'package:emar_kafe/models/staff_member.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,14 +12,6 @@ import '../../models/branch.dart';
 
 int _orderCountFor(Branch branch) => 20 + (branch.id.hashCode.abs() % 80);
 
-class _MockCustomer {
-  final String name;
-  final String email;
-  final int orders;
-  bool suspended;
-  _MockCustomer({required this.name, required this.email, required this.orders, this.suspended = false});
-}
-
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
 
@@ -27,14 +20,6 @@ class AdminScreen extends StatefulWidget {
 }
 
 class _AdminScreenState extends State<AdminScreen> {
-  final List<_MockCustomer> _customers = [
-    _MockCustomer(name: 'Bora Gök', email: 'boragok356@gmail.com', orders: 27),
-    _MockCustomer(name: 'Ayşe Yıldız', email: 'ayse.yildiz@mail.com', orders: 14),
-    _MockCustomer(name: 'Mert Aydın', email: 'mert.aydin@mail.com', orders: 41),
-    _MockCustomer(name: 'Sude Kaya', email: 'sude.kaya@mail.com', orders: 6),
-    _MockCustomer(name: 'Can Turan', email: 'can.turan@mail.com', orders: 19, suspended: true),
-  ];
-
   final _newBranchCtrl = TextEditingController();
   String _orderBranchFilter = 'Tümü';
 
@@ -47,6 +32,19 @@ class _AdminScreenState extends State<AdminScreen> {
   int _colorPoolIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadStaff());
+  }
+
+  Future<void> _loadStaff() async {
+    if (!mounted) return;
+    final app = context.read<AppState>();
+    await app.staff.fetchStaff();
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
     _newBranchCtrl.dispose();
     super.dispose();
@@ -55,7 +53,6 @@ class _AdminScreenState extends State<AdminScreen> {
   void _addBranch(AppState app) {
     final name = _newBranchCtrl.text.trim();
     if (name.isEmpty) return;
-    // app.addBranch(name);
     _newBranchCtrl.clear();
     setState(() {});
   }
@@ -123,6 +120,116 @@ class _AdminScreenState extends State<AdminScreen> {
     );
   }
 
+  Future<void> _openAddStaffDialog(AppState app) async {
+    final emailCtrl = TextEditingController();
+    final passwordCtrl = TextEditingController();
+    final nameCtrl = TextEditingController();
+    String selectedRole = 'barista';
+    String? selectedBranchId;
+    String? errorMsg;
+    bool isLoading = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Yeni Personel Ekle'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Ad Soyad', prefixIcon: Icon(Icons.person))),
+                const SizedBox(height: 10),
+                TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'E-posta', prefixIcon: Icon(Icons.email)), keyboardType: TextInputType.emailAddress),
+                const SizedBox(height: 10),
+                TextField(controller: passwordCtrl, decoration: const InputDecoration(labelText: 'Şifre', prefixIcon: Icon(Icons.lock)), obscureText: true),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedRole,
+                  decoration: const InputDecoration(labelText: 'Rol'),
+                  items: const [
+                    DropdownMenuItem(value: 'barista', child: Text('Barista')),
+                    DropdownMenuItem(value: 'branch_manager', child: Text('Şube Müdürü')),
+                  ],
+                  onChanged: (v) => setDialogState(() => selectedRole = v ?? 'barista'),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String?>(
+                  initialValue: selectedBranchId,
+                  decoration: const InputDecoration(labelText: 'Şube'),
+                  items: [
+                    const DropdownMenuItem<String?>(value: null, child: Text('Şube seçin')),
+                    ...app.branches.map((b) => DropdownMenuItem<String?>(value: b.id, child: Text(b.name))),
+                  ],
+                  onChanged: (v) => setDialogState(() => selectedBranchId = v),
+                ),
+                if (errorMsg != null) ...[
+                  const SizedBox(height: 8),
+                  Text(errorMsg!, style: const TextStyle(color: EmarColors.paprikaDim, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Vazgeç')),
+            ElevatedButton(
+              onPressed: isLoading ? null : () async {
+                final name = nameCtrl.text.trim();
+                final email = emailCtrl.text.trim();
+                final password = passwordCtrl.text;
+                if (name.isEmpty || email.isEmpty || password.length < 8) {
+                  setDialogState(() => errorMsg = 'Ad, e-posta ve en az 8 karakterli şifre zorunlu.');
+                  return;
+                }
+                if (selectedBranchId == null) {
+                  setDialogState(() => errorMsg = 'Lütfen bir şube seçin.');
+                  return;
+                }
+                setDialogState(() { isLoading = true; errorMsg = null; });
+                final ok = await app.staff.createStaff(
+                  email: email, password: password, fullName: name,
+                  role: selectedRole, branchId: selectedBranchId,
+                );
+                if (ok) {
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                } else {
+                  setDialogState(() { isLoading = false; errorMsg = app.staff.error; });
+                }
+              },
+              child: isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Ekle'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteStaff(AppState app, StaffMember s) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Personeli Sil'),
+        content: Text('${s.fullName} adlı personel silinecek. Bu işlem geri alınamaz.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Vazgeç')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: EmarColors.paprika),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Sil', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true && mounted) {
+      final ok = await app.staff.deleteStaff(s.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ok ? '${s.fullName} silindi.' : 'Hata: ${app.staff.error}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
@@ -133,11 +240,19 @@ class _AdminScreenState extends State<AdminScreen> {
     final ranked = List.of(app.branches)..sort((a, b) => _orderCountFor(b).compareTo(_orderCountFor(a)));
     final maxCount = ranked.isEmpty ? 1 : _orderCountFor(ranked.first);
     final totalOrders = app.branches.fold(0, (sum, b) => sum + _orderCountFor(b));
+    final staffList = app.staff.staffList;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin · Genel Bakış'),
         actions: [IconButton(icon: const Icon(Icons.logout), onPressed: () => context.read<AppState>().logout())],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: EmarColors.espresso,
+        foregroundColor: EmarColors.surface,
+        icon: const Icon(Icons.person_add),
+        label: const Text('Personel Ekle'),
+        onPressed: () => _openAddStaffDialog(app),
       ),
       body: SafeArea(
         child: ListView(
@@ -153,7 +268,7 @@ class _AdminScreenState extends State<AdminScreen> {
               children: [
                 _StatTile(n: '${app.branches.length}', l: 'Aktif Şube'),
                 _StatTile(n: '$totalOrders', l: 'Bugünkü Sipariş'),
-                _StatTile(n: '58', l: 'Aktif Personel'),
+                _StatTile(n: '${staffList.length}', l: 'Aktif Personel'),
                 _StatTile(n: '${hotCount + icedCount}+$dessertCount', l: 'Kahve + Tatlı'),
               ],
             ),
@@ -248,7 +363,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Text(
-                    'Bu şubede henüz gerçek sipariş yok (demo oturumunda sadece bu cihazdan verilen siparişler görünür).',
+                    'Bu şubede henüz gerçek sipariş yok.',
                     style: TextStyle(fontSize: 11.5, color: EmarColors.espresso.withValues(alpha: 0.5)),
                   ),
                 );
@@ -295,10 +410,62 @@ class _AdminScreenState extends State<AdminScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Şubeler', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
-                Text('${app.branches.length} şube', style: TextStyle(fontSize: 11.5, color: EmarColors.espresso.withValues(alpha: 0.5))),
+                Text('Personel Yönetimi', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
+                if (app.staff.isLoading)
+                  const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                else
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 18),
+                    onPressed: _loadStaff,
+                    tooltip: 'Yenile',
+                  ),
               ],
             ),
+            const SizedBox(height: 10),
+            if (staffList.isEmpty && !app.staff.isLoading)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  app.staff.error != null ? 'Personel yüklenirken hata: ${app.staff.error}' : 'Henüz personel yok. Sağ alttaki butona tıklayarak ekleyin.',
+                  style: TextStyle(fontSize: 12, color: EmarColors.espresso.withValues(alpha: 0.5)),
+                ),
+              )
+            else
+              ...staffList.map((s) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(color: EmarColors.oatDark, borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 15,
+                      backgroundColor: s.role == 'branch_manager' ? EmarColors.gold : EmarColors.moss,
+                      child: Text(s.fullName.isNotEmpty ? s.fullName[0].toUpperCase() : '?',
+                          style: const TextStyle(color: EmarColors.surface, fontSize: 12, fontWeight: FontWeight.w700)),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(s.fullName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+                          Text('${s.email ?? '-'} · ${s.roleLabel}${s.branchName != null ? ' · ${s.branchName}' : ''}',
+                              style: TextStyle(fontSize: 10.5, color: EmarColors.espresso.withValues(alpha: 0.55))),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      color: EmarColors.paprikaDim,
+                      tooltip: 'Sil',
+                      onPressed: () => _deleteStaff(app, s),
+                    ),
+                  ],
+                ),
+              )),
+
+            const SizedBox(height: 22),
+            Text('Şubeler', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -325,11 +492,6 @@ class _AdminScreenState extends State<AdminScreen> {
                       const SizedBox(width: 8),
                       Expanded(child: Text(b.name, style: const TextStyle(fontSize: 13))),
                       Text('${_orderCountFor(b)} sipariş', style: TextStyle(fontSize: 12, color: EmarColors.espresso.withValues(alpha: 0.6))),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 16),
-                        color: EmarColors.espresso.withValues(alpha: 0.4),
-                        onPressed: () { /* app.removeBranch(b); */ },
-                      ),
                     ],
                   ),
                 )),
@@ -392,55 +554,7 @@ class _AdminScreenState extends State<AdminScreen> {
                     ],
                   ),
                 )),
-
-            const SizedBox(height: 26),
-            Text('Müşteri Yönetimi', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
-            const SizedBox(height: 4),
-            Text(
-              'Hesapları görüntüle, gerekirse askıya al',
-              style: TextStyle(fontSize: 11.5, color: EmarColors.espresso.withValues(alpha: 0.55)),
-            ),
-            const SizedBox(height: 10),
-            ...(_customers.map((cust) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: cust.suspended ? EmarColors.oatDark.withValues(alpha: 0.5) : EmarColors.oatDark,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 15,
-                        backgroundColor: cust.suspended ? EmarColors.espresso.withValues(alpha: 0.25) : EmarColors.moss,
-                        child: Text(cust.name[0].toUpperCase(), style: const TextStyle(color: EmarColors.surface, fontSize: 12, fontWeight: FontWeight.w700)),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              cust.name,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 12.5,
-                                color: cust.suspended ? EmarColors.espresso.withValues(alpha: 0.5) : EmarColors.espresso,
-                                decoration: cust.suspended ? TextDecoration.lineThrough : null,
-                              ),
-                            ),
-                            Text('${cust.email} · ${cust.orders} sipariş', style: TextStyle(fontSize: 10.5, color: EmarColors.espresso.withValues(alpha: 0.55))),
-                          ],
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => setState(() => cust.suspended = !cust.suspended),
-                        style: TextButton.styleFrom(foregroundColor: cust.suspended ? EmarColors.moss : EmarColors.paprikaDim),
-                        child: Text(cust.suspended ? 'Aktif Et' : 'Askıya Al', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                      ),
-                    ],
-                  ),
-                ))),
+            const SizedBox(height: 80),
           ],
         ),
       ),

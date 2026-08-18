@@ -32,7 +32,8 @@ void main() {
       orders = OrderNotifier(api, auth, cart, wallet);
       stock = StockNotifier(api, auth);
       menu = MenuNotifier(api);
-      appState = AppState(auth, cart, orders, wallet, stock, menu);
+      final staff = StaffNotifier(api);
+      appState = AppState(auth, cart, orders, wallet, stock, menu, staff);
     });
 
     test('Initial state should be logged out with empty cart', () {
