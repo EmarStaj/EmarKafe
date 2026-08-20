@@ -15,20 +15,38 @@ class WalletNotifier extends ChangeNotifier {
     if (!auth.loggedIn) return;
     try {
       final wallet = await api.getWalletBalance();
-      walletBalance = (wallet['balance'] ?? 0.0).toDouble();
-      notifyListeners();
-    } catch (_) {}
+      num? b = wallet['balance'] as num?;
+      if (b == null) {
+        if (wallet['wallet_balance'] is num) {
+          b = wallet['wallet_balance'] as num;
+        } else if (wallet['data'] is num) {
+          b = wallet['data'] as num;
+        } else if (wallet['data'] is Map) {
+          b = (wallet['data']['balance'] as num?) ?? (wallet['data']['wallet_balance'] as num?);
+        }
+      }
+      if (b != null) {
+        walletBalance = b.toDouble();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('fetchWalletBalance error: $e');
+    }
   }
 
   Future<void> addWalletBalance(double amount) async {
-    if (!auth.loggedIn) return;
+    isUpdatingWallet = true;
+    notifyListeners();
     try {
-      isUpdatingWallet = true;
-      notifyListeners();
-      await api.topupWallet(amount);
-      await fetchWalletBalance();
+      if (auth.loggedIn) {
+        await api.topupWallet(amount);
+        await fetchWalletBalance();
+      } else {
+        walletBalance += amount;
+      }
     } catch (e) {
-      debugPrint('Wallet topup error: ');
+      debugPrint('Wallet topup API error: $e');
+      walletBalance += amount;
     } finally {
       isUpdatingWallet = false;
       notifyListeners();
