@@ -49,7 +49,7 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner> {
 
     return InkWell(
       borderRadius: BorderRadius.circular(18),
-      onTap: () => Navigator.of(context).push(softRoute(OrderTrackingScreen(order: order, qrToken: order.id))),
+      onTap: () => Navigator.of(context).push(softRoute(OrderTrackingScreen(order: order))),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(

@@ -15,6 +15,7 @@ class OrderRecord {
   final DateTime createdAt;
   final String status;
   final OrderStatus manualStatus;
+  final String? qrToken;
 
   OrderRecord({
     required this.id,
@@ -26,6 +27,7 @@ class OrderRecord {
     required this.createdAt,
     required this.status,
     required this.manualStatus,
+    this.qrToken,
   });
 
   bool get pickedUp => manualStatus == OrderStatus.completed || manualStatus == OrderStatus.cancelled;
@@ -74,6 +76,7 @@ class OrderRecord {
       createdAt: db['created_at'] != null ? DateTime.parse(db['created_at']).toLocal() : DateTime.now(),
       status: statusStr,
       manualStatus: parsedStatus,
+      qrToken: db['qr_token']?.toString() ?? db['qrToken']?.toString(),
     )..customerName = db['customer_name']?.toString();
   }
 

@@ -22,10 +22,12 @@ class OrderTrackingScreen extends StatefulWidget {
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Timer? _ticker;
+  String? _jwtToken;
 
   @override
   void initState() {
     super.initState();
+    _initQrToken();
     // Durum, sipariş saatinden türetildiği için burada sadece görünümü
     // her saniye tazeliyoruz — hiçbir alanı biz mutasyona uğratmıyoruz.
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -35,6 +37,23 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         _ticker?.cancel();
       }
     });
+  }
+
+  void _initQrToken() async {
+    if (widget.qrToken != null && widget.qrToken!.startsWith('ey')) {
+      setState(() => _jwtToken = widget.qrToken);
+      return;
+    }
+    if (widget.order.qrToken != null && widget.order.qrToken!.startsWith('ey')) {
+      setState(() => _jwtToken = widget.order.qrToken);
+      return;
+    }
+    try {
+      final token = await context.read<AppState>().generateWalletToken();
+      if (token != null && token.isNotEmpty && mounted) {
+        setState(() => _jwtToken = token);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -57,6 +76,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final status = order.computedStatus;
     final ready = status == OrderStatus.ready;
     final branchName = app.getBranchName(order.branch);
+    final effectiveQrToken = _jwtToken ?? widget.qrToken ?? widget.order.qrToken ?? widget.order.id;
 
     return Scaffold(
       appBar: AppBar(title: Text('Sipariş ${order.shortId}')),
@@ -117,7 +137,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   }).toList(),
                 ),
               ),
-              if (widget.qrToken != null || !ready)
+              if (!ready)
                 Padding(
                   padding: const EdgeInsets.only(top: 20),
                   child: Center(
@@ -134,7 +154,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             ],
                           ),
                           child: QrImageView(
-                            data: widget.qrToken ?? order.id,
+                            data: effectiveQrToken,
                             version: QrVersions.auto,
                             size: 160.0,
                             dataModuleStyle: const QrDataModuleStyle(
@@ -148,47 +168,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        SelectableText(
-                          '(Test) QR Token:\n${widget.qrToken ?? order.id}',
-                          style: TextStyle(fontSize: 11, color: EmarColors.espresso.withValues(alpha: 0.5), fontFamily: 'monospace'),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: EmarColors.paprika,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: SelectableText(
+                            effectiveQrToken,
+                            style: TextStyle(fontSize: 10.5, color: EmarColors.espresso.withValues(alpha: 0.6), fontFamily: 'monospace'),
+                            textAlign: TextAlign.center,
                           ),
-                          onPressed: () async {
-                            final app = context.read<AppState>();
-                            final tokenToScan = widget.qrToken ?? order.id;
-                            try {
-                              try {
-                                await app.confirmOrderFromQR(tokenToScan);
-                              } catch (_) {}
-                              await app.advanceOrderStatus(order);
-                              await app.orders.fetchOrders();
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).clearSnackBars();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Sipariş baristaya okutuldu ve durumu güncellendi!'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).clearSnackBars();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Hata: $e'), duration: const Duration(seconds: 2)),
-                                );
-                              }
-                            }
-                          },
-                          child: const Text('(Test) Barista Olarak Okut', style: TextStyle(fontWeight: FontWeight.w700)),
                         ),
                       ],
                     ),
