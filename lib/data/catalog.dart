@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/branch.dart';
 import '../models/campaign.dart';
 import '../models/product.dart';
+import '../config/app_config.dart';
 import 'menu_data.dart' as seed;
 
 class Catalog {
@@ -13,7 +14,7 @@ class Catalog {
 
   List<Product> _products = List.of(seed.seedProducts);
   List<Branch> _branches = seed.seedBranchNames.map((n) => Branch(id: n, name: n)).toList();
-  List<Campaign> _campaigns = List.of(seed.seedCampaigns);
+  final List<Campaign> _campaigns = List.of(seed.seedCampaigns);
 
   bool isRemote = false;
 
@@ -22,6 +23,15 @@ class Catalog {
   List<Campaign> get campaigns => List.unmodifiable(_campaigns);
 
   late Map<String, Product> _byId = {for (final p in _products) p.id: p};
+
+  void registerProducts(List<Product> prods) {
+    for (final p in prods) {
+      _byId[p.id] = p;
+      if (!_products.any((existing) => existing.id == p.id)) {
+        _products.add(p);
+      }
+    }
+  }
 
   Product byId(String id) =>
       _byId[id] ??
@@ -45,7 +55,7 @@ class Catalog {
 
   Future<bool> load() async {
     try {
-      final res = await http.get(Uri.parse('https://emarkafe.duckdns.org/api/menu'));
+      final res = await http.get(Uri.parse(AppConfig.menuUrl)).timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
         final body = utf8.decode(res.bodyBytes);
         final json = jsonDecode(body);
@@ -54,26 +64,29 @@ class Catalog {
           if (list.isNotEmpty) {
             _products = list.map((p) => Product.fromDb(p as Map<String, dynamic>)).toList();
             _byId = {for (final p in _products) p.id: p};
+            isRemote = true;
           }
         }
       }
 
-      final branchRes = await http.get(Uri.parse('https://emarkafe.duckdns.org/api/branches'));
+      final branchRes = await http.get(Uri.parse(AppConfig.branchesUrl)).timeout(const Duration(seconds: 4));
       if (branchRes.statusCode == 200) {
         final branchBody = utf8.decode(branchRes.bodyBytes);
         final json = jsonDecode(branchBody);
-        if (json is Map && json.containsKey('data')) {
-           final list = json['data'] as List;
-           if (list.isNotEmpty) {
-             _branches = list.map((b) => Branch(id: b['id'], name: b['name'])).toList();
-           }
+        List? list;
+        if (json is List) {
+          list = json;
+        } else if (json is Map && json.containsKey('data')) {
+          list = json['data'] as List?;
+        }
+        if (list != null && list.isNotEmpty) {
+          _branches = list.map((b) => Branch.fromDb(b as Map<String, dynamic>)).toList();
         }
       }
 
-      // We return false to indicate we are using local seed until parsing is fully built.
-      return false;
-    } catch (e, stack) {
-      debugPrint('Katalog yüklenemedi: $e');
+      return isRemote;
+    } catch (e) {
+      debugPrint('Katalog yükleme uyarısı (yerel yedek kullanılıyor): $e');
       return false;
     }
   }

@@ -1,3 +1,4 @@
+import 'package:emar_kafe/models/order_record.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,6 +23,19 @@ class _BaristaScreenState extends State<BaristaScreen> {
       _completedToday++;
     }
     app.advanceOrderStatus(o);
+  }
+
+  Future<void> _cancelOrder(OrderRecord o, AppState app) async {
+    try {
+      await app.api.updateOrderStatus(o.id, 'cancelled');
+      await app.orders.fetchOrders();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('İptal edilemedi: $e')),
+        );
+      }
+    }
   }
 
   String _formatItems(Map<String, int> items) {
@@ -70,7 +84,7 @@ class _BaristaScreenState extends State<BaristaScreen> {
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: EmarColors.espresso.withOpacity(0.03),
+                      color: EmarColors.espresso.withValues(alpha: 0.03),
                       blurRadius: 4,
                     ),
                   ],
@@ -86,14 +100,14 @@ class _BaristaScreenState extends State<BaristaScreen> {
                           children: [
                             CircleAvatar(
                               radius: 9,
-                              backgroundColor: _colColor(status).withOpacity(0.15),
+                              backgroundColor: _colColor(status).withValues(alpha: 0.15),
                               child: Text(
-                                o.customerName.isNotEmpty ? o.customerName[0].toUpperCase() : '?',
+                                ((o.customerName ?? '').isNotEmpty) ? (o.customerName?[0] ?? '?').toUpperCase() : '?',
                                 style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: _colColor(status)),
                               ),
                             ),
                             const SizedBox(width: 5),
-                            Text(_shortName(o.customerName), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: EmarColors.espresso)),
+                            Text(_shortName(o.customerName ?? 'Müşteri'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: EmarColors.espresso)),
                           ],
                         ),
                       ],
@@ -102,18 +116,35 @@ class _BaristaScreenState extends State<BaristaScreen> {
                     Text(_formatItems(o.items), style: const TextStyle(fontSize: 11, color: EmarColors.espresso)),
                     if (status != OrderStatus.ready) ...[
                       const SizedBox(height: 6),
-                      SizedBox(
-                        width: double.infinity,
-                        child: TextButton(
-                          style: TextButton.styleFrom(
-                            backgroundColor: EmarColors.moss,
-                            foregroundColor: EmarColors.surface,
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            minimumSize: Size.zero,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor: EmarColors.moss,
+                                foregroundColor: EmarColors.surface,
+                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                minimumSize: Size.zero,
+                              ),
+                              onPressed: () => _advance(o, app),
+                              child: Text(status == OrderStatus.received ? 'Onayla' : 'Hazır', style: const TextStyle(fontSize: 10.5)),
+                            ),
                           ),
-                          onPressed: () => _advance(o, app),
-                          child: Text(status == OrderStatus.received ? 'Onayla' : 'Hazır İşaretle', style: const TextStyle(fontSize: 10.5)),
-                        ),
+                          const SizedBox(width: 4),
+                          SizedBox(
+                            width: 32,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor: EmarColors.paprikaDim.withValues(alpha: 0.15),
+                                foregroundColor: EmarColors.paprikaDim,
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                              ),
+                              onPressed: () => _cancelOrder(o, app),
+                              child: const Icon(Icons.close, size: 14),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ],
@@ -138,7 +169,7 @@ class _BaristaScreenState extends State<BaristaScreen> {
     final app = context.watch<AppState>();
     return Scaffold(
       appBar: AppBar(
-        title: Text('Barista – ${app.currentBranch?.name ?? ''}'),
+        title: Text('Barista – ${app.auth.selectedBranchId ?? ''}'),
         actions: [
           IconButton(
             tooltip: 'QR Okut',
@@ -179,9 +210,9 @@ class _BaristaScreenState extends State<BaristaScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _column('Yeni', OrderStatus.received, app.activeBaristaOrders, app),
-                    _column('Hazırlanıyor', OrderStatus.preparing, app.activeBaristaOrders, app),
-                    _column('Hazır', OrderStatus.ready, app.activeBaristaOrders, app),
+                    _column('Yeni', OrderStatus.received, app.orders.activeBaristaOrders, app),
+                    _column('Hazırlanıyor', OrderStatus.preparing, app.orders.activeBaristaOrders, app),
+                    _column('Hazır', OrderStatus.ready, app.orders.activeBaristaOrders, app),
                   ],
                 ),
               ),
@@ -220,7 +251,7 @@ class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixi
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: widget.color,
-          boxShadow: [BoxShadow(color: widget.color.withOpacity(0.5 * _ctrl.value), blurRadius: 6 * _ctrl.value, spreadRadius: 1.5 * _ctrl.value)],
+          boxShadow: [BoxShadow(color: widget.color.withValues(alpha: 0.5 * _ctrl.value), blurRadius: 6 * _ctrl.value, spreadRadius: 1.5 * _ctrl.value)],
         ),
       ),
     );

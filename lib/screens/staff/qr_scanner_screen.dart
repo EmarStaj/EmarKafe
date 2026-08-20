@@ -28,22 +28,24 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     }
   }
 
-  void _processQR(String data) {
+  Future<void> _processQR(String data) async {
+    if (_isProcessing) return;
     setState(() => _isProcessing = true);
     try {
-      // Beklenen data formatı siparişin ID'sidir (örn. #1046)
-      context.read<AppState>().confirmOrderFromQR(data.trim());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sipariş ($data) başarıyla sisteme alındı!')),
-      );
-      Navigator.of(context).pop();
+      await context.read<AppState>().confirmOrderFromQR(data.trim());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sipariş başarıyla sisteme alındı! ✅')),
+        );
+        Navigator.of(context).pop();
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Geçersiz kod veya sipariş zaten alınmış.')),
-      );
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) setState(() => _isProcessing = false);
-      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: ${e.toString().replaceAll('Exception: ', '')}')),
+        );
+        setState(() => _isProcessing = false);
+      }
     }
   }
 

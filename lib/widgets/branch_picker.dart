@@ -44,10 +44,18 @@ Future<void> showBranchPicker(BuildContext context) {
                           selected ? Icons.location_on : Icons.location_on_outlined,
                           color: selected ? EmarColors.paprika : EmarColors.espresso.withValues(alpha: 0.4),
                         ),
+                        
                         title: Text(
                           branch.name,
                           style: TextStyle(fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
                         ),
+                        subtitle: branch.workingHours != null && branch.workingHours!.isNotEmpty
+                            ? Text(
+                                'Açık: ',
+                                style: TextStyle(fontSize: 11, color: EmarColors.espresso.withValues(alpha: 0.5)),
+                              )
+                            : null,
+
                         trailing: selected ? const Icon(Icons.check, color: EmarColors.moss) : null,
                         onTap: () {
                           app.selectBranch(branch.id);

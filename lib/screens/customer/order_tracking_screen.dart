@@ -1,3 +1,4 @@
+import 'package:emar_kafe/models/order_record.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -8,9 +9,12 @@ import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/pressable_scale.dart';
 
+import 'package:qr_flutter/qr_flutter.dart';
+
 class OrderTrackingScreen extends StatefulWidget {
   final OrderRecord order;
-  const OrderTrackingScreen({super.key, required this.order});
+  final String? qrToken;
+  const OrderTrackingScreen({super.key, required this.order, this.qrToken});
 
   @override
   State<OrderTrackingScreen> createState() => _OrderTrackingScreenState();
@@ -47,9 +51,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final order = widget.order;
+    final app = context.watch<AppState>();
+    final liveOrder = app.orderHistory.firstWhere((o) => o.id == widget.order.id, orElse: () => widget.order);
+    final order = liveOrder;
     final status = order.computedStatus;
     final ready = status == OrderStatus.ready;
+    final branchName = app.getBranchName(order.branch);
 
     return Scaffold(
       appBar: AppBar(title: Text('Sipariş ${order.shortId}')),
@@ -59,7 +66,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(order.branch, style: const TextStyle(color: EmarColors.espresso, fontWeight: FontWeight.w600)),
+              Text(branchName, style: const TextStyle(color: EmarColors.espresso, fontWeight: FontWeight.w600, fontSize: 14)),
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -110,22 +117,80 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   }).toList(),
                 ),
               ),
-              const Spacer(),
-              if (ready && !order.pickedUp) ...[
-                PressableScale(
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        context.read<AppState>().markPickedUp(order);
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('Teslim Aldım'),
+              if (widget.qrToken != null || !ready)
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: EmarColors.espresso.withValues(alpha: 0.05)),
+                            boxShadow: [
+                              BoxShadow(color: EmarColors.espresso.withValues(alpha: 0.08), blurRadius: 24, offset: const Offset(0, 12))
+                            ],
+                          ),
+                          child: QrImageView(
+                            data: widget.qrToken ?? order.id,
+                            version: QrVersions.auto,
+                            size: 160.0,
+                            dataModuleStyle: const QrDataModuleStyle(
+                              dataModuleShape: QrDataModuleShape.circle,
+                              color: EmarColors.espresso,
+                            ),
+                            eyeStyle: const QrEyeStyle(
+                              eyeShape: QrEyeShape.circle,
+                              color: EmarColors.paprika,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        SelectableText(
+                          '(Test) QR Token:\n${widget.qrToken ?? order.id}',
+                          style: TextStyle(fontSize: 11, color: EmarColors.espresso.withValues(alpha: 0.5), fontFamily: 'monospace'),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: EmarColors.paprika,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () async {
+                            final app = context.read<AppState>();
+                            try {
+                              if (widget.qrToken != null) {
+                                try {
+                                  await app.confirmOrderFromQR(widget.qrToken!);
+                                } catch (_) {}
+                              }
+                              await app.advanceOrderStatus(order);
+                              await app.orders.fetchOrders();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Sipariş baristaya okutuldu ve durumu güncellendi!')),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Hata: $e')),
+                                );
+                              }
+                            }
+                          },
+                          child: const Text('(Test) Barista Olarak Okut', style: TextStyle(fontWeight: FontWeight.w700)),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
-              ],
+              const Spacer(),
               PressableScale(
                 child: SizedBox(
                   width: double.infinity,

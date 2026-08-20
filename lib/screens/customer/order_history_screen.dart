@@ -1,3 +1,4 @@
+import 'package:emar_kafe/models/order_record.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -96,7 +97,7 @@ class _OrderCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            Text('${_formatDate(order.placedAt)} · ${order.branch}', style: TextStyle(fontSize: 11, color: EmarColors.espresso.withValues(alpha: 0.55))),
+            Text('${_formatDate(order.createdAt)} · ${order.branch}', style: TextStyle(fontSize: 11, color: EmarColors.espresso.withValues(alpha: 0.55))),
             const SizedBox(height: 10),
             ...order.items.entries.map((e) {
               final product = productById(e.key);

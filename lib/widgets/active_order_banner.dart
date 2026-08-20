@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../state/app_state.dart';
+import '../models/order_record.dart';
 import '../theme.dart';
 import '../utils/page_transitions.dart';
 import '../screens/customer/order_tracking_screen.dart';
-import '../screens/customer/qr_display_screen.dart';
+
 
 /// Ana ekranda gösterilen, aktif siparişin canlı geri sayımını taşıyan banner.
 /// Takip ekranından çıkılsa bile burada görünmeye devam eder.
@@ -35,10 +35,10 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner> {
     super.dispose();
   }
 
-  String _format(int seconds) {
-    final m = (seconds ~/ 60).toString().padLeft(2, '0');
-    final s = (seconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
+  String _formatApprox(int seconds) {
+    if (seconds <= 0) return 'Çok yakında';
+    final m = (seconds / 60).ceil();
+    return '~$m dk';
   }
 
   @override
@@ -49,7 +49,7 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner> {
 
     return InkWell(
       borderRadius: BorderRadius.circular(18),
-      onTap: () => Navigator.of(context).push(softRoute(pendingQR ? QRDisplayScreen(order: order) : OrderTrackingScreen(order: order))),
+      onTap: () => Navigator.of(context).push(softRoute(OrderTrackingScreen(order: order, qrToken: order.shortId))),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -76,7 +76,7 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    pendingQR ? 'Baristaya okutmak için tıklayın' : (ready ? 'Şubeden teslim alabilirsin' : '${_format(order.remainingSeconds)} kaldı — takip et'),
+                    pendingQR ? 'Baristaya okutmak için tıklayın' : (ready ? 'Şubeden teslim alabilirsin' : '${_formatApprox(order.remainingSeconds)} kaldı — takip et'),
                     style: TextStyle(color: EmarColors.surface.withValues(alpha: 0.75), fontSize: 11.5),
                   ),
                 ],

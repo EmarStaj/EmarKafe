@@ -1,23 +1,10 @@
+import 'package:emar_kafe/models/staff_member.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/stock_manager_sheet.dart';
-
-class _Staff {
-  final String name;
-  String shift; // '09-17' or '17-01'
-  final int ordersToday;
-  _Staff(this.name, this.shift, this.ordersToday);
-}
-
-class _ShiftRequest {
-  final String staffName;
-  final String currentShift;
-  final String requestedShift;
-  _ShiftRequest({required this.staffName, required this.currentShift, required this.requestedShift});
-}
 
 enum _RevenueRange { daily, weekly }
 
@@ -29,38 +16,110 @@ class ManagerScreen extends StatefulWidget {
 }
 
 class _ManagerScreenState extends State<ManagerScreen> {
-  final List<_Staff> _staff = [
-    _Staff('Elif K.', '09-17', 34),
-    _Staff('Mert A.', '17-01', 41),
-    _Staff('Sude Y.', '09-17', 22),
-    _Staff('Can T.', '17-01', 18),
-  ];
-
-  final List<_ShiftRequest> _shiftRequests = [
-    _ShiftRequest(staffName: 'Sude Y.', currentShift: '09-17', requestedShift: '17-01'),
-    _ShiftRequest(staffName: 'Can T.', currentShift: '17-01', requestedShift: '09-17'),
-  ];
-
   _RevenueRange _range = _RevenueRange.daily;
 
   // Saat 09 - 24 arası göreli sipariş yoğunluğu (0-1)
   final List<double> _hourly = [0.30, 0.45, 0.88, 0.95, 0.40, 0.35, 0.55, 0.80, 0.92, 0.50, 0.28, 0.18];
 
-  // Günlük ciro (son 7 gün) ve haftalık ciro (son 6 hafta) — mock ₺ verisi.
+  // Günlük ciro (son 7 gün) ve haftalık ciro (son 6 hafta) — mock ₺ verisi (API bağlanana kadar).
   final List<int> _dailyRevenue = [4200, 4800, 5100, 3900, 6200, 7400, 6800];
   final List<int> _weeklyRevenue = [28400, 31200, 29800, 33500, 36100, 38900];
 
-  void _respondToRequest(_ShiftRequest r, bool approve) {
-    setState(() {
-      if (approve) {
-        final staff = _staff.firstWhere((s) => s.name == r.staffName);
-        staff.shift = r.requestedShift;
-      }
-      _shiftRequests.remove(r);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(approve ? '${r.staffName} için vardiya değişikliği onaylandı' : '${r.staffName} için talep reddedildi')),
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadStaff());
+  }
+
+  Future<void> _loadStaff() async {
+    if (!mounted) return;
+    final app = context.read<AppState>();
+    await app.staff.fetchStaff(branchId: app.selectedBranchId);
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _openAddStaffDialog(AppState app) async {
+    final emailCtrl = TextEditingController();
+    final passwordCtrl = TextEditingController();
+    final nameCtrl = TextEditingController();
+    String? errorMsg;
+    bool isLoading = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Yeni Barista Ekle'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Ad Soyad', prefixIcon: Icon(Icons.person))),
+                const SizedBox(height: 10),
+                TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'E-posta', prefixIcon: Icon(Icons.email)), keyboardType: TextInputType.emailAddress),
+                const SizedBox(height: 10),
+                TextField(controller: passwordCtrl, decoration: const InputDecoration(labelText: 'Şifre (min 8 karakter)', prefixIcon: Icon(Icons.lock)), obscureText: true),
+                if (errorMsg != null) ...[
+                  const SizedBox(height: 8),
+                  Text(errorMsg!, style: const TextStyle(color: EmarColors.paprikaDim, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Vazgeç')),
+            ElevatedButton(
+              onPressed: isLoading ? null : () async {
+                final name = nameCtrl.text.trim();
+                final email = emailCtrl.text.trim();
+                final password = passwordCtrl.text;
+                if (name.isEmpty || email.isEmpty || password.length < 8) {
+                  setDialogState(() => errorMsg = 'Ad, e-posta ve en az 8 karakterli şifre zorunlu.');
+                  return;
+                }
+                setDialogState(() { isLoading = true; errorMsg = null; });
+                final ok = await app.staff.createStaff(
+                  email: email, password: password, fullName: name,
+                  role: 'barista', branchId: app.selectedBranchId,
+                );
+                if (ok) {
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                } else {
+                  setDialogState(() { isLoading = false; errorMsg = app.staff.error; });
+                }
+              },
+              child: isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Ekle'),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  Future<void> _deleteStaff(AppState app, StaffMember s) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Personeli Çıkar'),
+        content: Text('${s.fullName} adlı personel şubenizden çıkarılacak.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Vazgeç')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: EmarColors.paprika),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Çıkar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true && mounted) {
+      final ok = await app.staff.deleteStaff(s.id, branchId: app.selectedBranchId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ok ? '${s.fullName} kaldırıldı.' : 'Hata: ${app.staff.error}')),
+        );
+      }
+    }
   }
 
   @override
@@ -72,12 +131,11 @@ class _ManagerScreenState extends State<ManagerScreen> {
         : const ['-5h', '-4h', '-3h', '-2h', '-1h', 'Bu h.'];
     final maxRevenue = revenueData.reduce((a, b) => a > b ? a : b);
     final totalRevenue = revenueData.fold(0, (a, b) => a + b);
-    final rankedStaff = List.of(_staff)..sort((a, b) => b.ordersToday.compareTo(a.ordersToday));
-    final maxOrders = rankedStaff.isEmpty ? 1 : rankedStaff.first.ordersToday;
+    final staffList = app.staff.staffList;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Yönetici – ${app.currentBranch?.name ?? ''}'),
+        title: Text('Yönetici – ${app.selectedBranchName}'),
         actions: [
           IconButton(
             tooltip: 'Stok Yönetimi',
@@ -87,104 +145,68 @@ class _ManagerScreenState extends State<ManagerScreen> {
           IconButton(icon: const Icon(Icons.logout), onPressed: () => context.read<AppState>().logout()),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: EmarColors.espresso,
+        foregroundColor: EmarColors.surface,
+        tooltip: 'Yeni Barista Ekle',
+        onPressed: () => _openAddStaffDialog(app),
+        child: const Icon(Icons.person_add),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            Text('Bugün Mesaide', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Şube Personeli', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
+                if (app.staff.isLoading)
+                  const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                else
+                  IconButton(icon: const Icon(Icons.refresh, size: 18), onPressed: _loadStaff),
+              ],
+            ),
             const SizedBox(height: 10),
-            ..._staff.map((s) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
-                      Row(
-                        children: ['09-17', '17-01'].map((shift) {
-                          final on = s.shift == shift;
-                          return Padding(
-                            padding: const EdgeInsets.only(left: 6),
-                            child: ChoiceChip(
-                              label: Text(shift),
-                              selected: on,
-                              onSelected: (_) => setState(() => s.shift = shift),
-                              selectedColor: EmarColors.gold,
-                              labelStyle: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: on ? EmarColors.espresso : EmarColors.espresso.withValues(alpha: 0.6),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
-                )),
-
-            if (_shiftRequests.isNotEmpty) ...[
-              const SizedBox(height: 22),
-              Text('Vardiya Değişikliği Talepleri', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
-              const SizedBox(height: 10),
-              ..._shiftRequests.map((r) => Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(color: EmarColors.oatDark, borderRadius: BorderRadius.circular(12)),
+            if (staffList.isEmpty && !app.staff.isLoading)
+              Text(
+                app.staff.error != null ? 'Yüklenirken hata: ${app.staff.error}' : 'Henüz personel yok.',
+                style: TextStyle(fontSize: 12, color: EmarColors.espresso.withValues(alpha: 0.5)),
+              )
+            else
+              ...staffList.map((s) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(r.staffName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
-                              Text('${r.currentShift} → ${r.requestedShift}', style: TextStyle(fontSize: 11, color: EmarColors.espresso.withValues(alpha: 0.6))),
-                            ],
-                          ),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundColor: EmarColors.moss,
+                              child: Text(s.fullName.isNotEmpty ? s.fullName[0].toUpperCase() : '?',
+                                  style: const TextStyle(color: EmarColors.surface, fontSize: 11, fontWeight: FontWeight.w800)),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(s.fullName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+                          ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close, size: 18),
-                          color: EmarColors.paprikaDim,
-                          onPressed: () => _respondToRequest(r, false),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.check, size: 18),
-                          color: EmarColors.moss,
-                          onPressed: () => _respondToRequest(r, true),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(color: EmarColors.oatDark, borderRadius: BorderRadius.circular(999)),
+                              child: Text(s.roleLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle_outline, size: 18),
+                              color: EmarColors.paprikaDim,
+                              onPressed: () => _deleteStaff(app, s),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   )),
-            ],
-
-            const SizedBox(height: 22),
-            Text('Personel Performansı', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
-            const SizedBox(height: 4),
-            Text('Bugün hazırlanan sipariş sayısına göre', style: TextStyle(fontSize: 11.5, color: EmarColors.espresso.withValues(alpha: 0.55))),
-            const SizedBox(height: 12),
-            ...rankedStaff.map((s) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    children: [
-                      SizedBox(width: 56, child: Text(s.name, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600))),
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) => Stack(
-                            children: [
-                              Container(height: 14, decoration: BoxDecoration(color: EmarColors.oatDark, borderRadius: BorderRadius.circular(7))),
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 420),
-                                height: 14,
-                                width: constraints.maxWidth * (s.ordersToday / maxOrders),
-                                decoration: BoxDecoration(color: EmarColors.moss, borderRadius: BorderRadius.circular(7)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 28, child: Text('${s.ordersToday}', textAlign: TextAlign.right, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700))),
-                    ],
-                  ),
-                )),
 
             const SizedBox(height: 24),
             Row(
@@ -208,7 +230,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              '${_range == _RevenueRange.daily ? "Son 7 gün" : "Son 6 hafta"} toplam: $totalRevenue₺',
+              '${_range == _RevenueRange.daily ? "Son 7 gün" : "Son 6 hafta"} toplam: $totalRevenue₺ (demo)',
               style: TextStyle(fontSize: 11.5, color: EmarColors.espresso.withValues(alpha: 0.55)),
             ),
             const SizedBox(height: 12),
@@ -244,7 +266,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
             ),
 
             const SizedBox(height: 24),
-            Text('Bugünün Saatlik Sipariş Yoğunluğu', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
+            Text('Bugünün Saatlik Sipariş Yoğunluğu (demo)', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
             const SizedBox(height: 12),
             SizedBox(
               height: 140,
@@ -277,6 +299,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
                   .map((t) => Text(t, style: TextStyle(fontSize: 10.5, color: EmarColors.espresso.withValues(alpha: 0.55))))
                   .toList(),
             ),
+            const SizedBox(height: 80),
           ],
         ),
       ),
@@ -284,8 +307,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
   }
 }
 
-/// [AnimatedFractionallySizedBox] Flutter'da hazır olmadığı için basit bir
-/// implicit animasyon sarmalayıcısı: yükseklik oranı değiştiğinde yumuşak geçiş yapar.
+/// Implicit animasyon sarmalayıcısı — yükseklik oranı değiştiğinde yumuşak geçiş.
 class AnimatedFractionallySizedBox extends ImplicitlyAnimatedWidget {
   final double heightFactor;
   final Alignment alignment;

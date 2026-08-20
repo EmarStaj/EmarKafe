@@ -53,7 +53,7 @@ class ProfileTab extends StatelessWidget {
             label: '🎂 Doğum Tarihi',
             value: app.birthday == null ? '—' : formatTurkishDate(app.birthday!),
           ),
-          _ProfileLine(label: '📍 Şube', value: app.currentBranch?.name ?? ''),
+          _ProfileLine(label: '📍 Şube', value: app.selectedBranchName),
           _ProfileLine(label: 'Rol', value: app.role.label),
           const SizedBox(height: 16),
           Row(
@@ -102,7 +102,7 @@ class ProfileTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          LoyaltyCard(progress: app.loyaltyProgress, freeCoffeesEarned: app.freeCoffeesEarned),
+          LoyaltyCard(progress: 0, freeCoffeesEarned: 0),
           const SizedBox(height: 20),
           Text('Puanladığın Ürünler', style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 6),
@@ -124,7 +124,31 @@ class ProfileTab extends StatelessWidget {
                 ),
               );
             }),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bu özellik yakında eklenecek.')));
+              },
+              child: const Text('E-posta Güncelle'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: EmarColors.paprikaDim,
+                side: BorderSide(color: EmarColors.paprikaDim.withValues(alpha: 0.5)),
+              ),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hesap silme özelliği yakında eklenecek.')));
+              },
+              child: const Text('Hesabımı Sil'),
+            ),
+          ),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(

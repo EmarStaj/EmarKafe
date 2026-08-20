@@ -17,12 +17,39 @@ Future<void> showProductDetail(BuildContext context, Product product) {
   );
 }
 
-class _ProductDetailSheet extends StatelessWidget {
+
+class _ProductDetailSheet extends StatefulWidget {
   final Product product;
   const _ProductDetailSheet({required this.product});
 
   @override
+  State<_ProductDetailSheet> createState() => _ProductDetailSheetState();
+}
+
+class _ProductDetailSheetState extends State<_ProductDetailSheet> {
+  final List<ProductOption> _selectedOptions = [];
+
+  void _toggleOption(ProductOption opt) {
+    setState(() {
+      if (_selectedOptions.contains(opt)) {
+        _selectedOptions.remove(opt);
+      } else {
+        _selectedOptions.add(opt);
+      }
+    });
+  }
+
+  double get _currentPrice {
+    double total = widget.product.price;
+    for (var opt in _selectedOptions) {
+      total += opt.priceDelta;
+    }
+    return total < 0 ? 0 : total;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final product = widget.product;
     final app = context.watch<AppState>();
     final pairs = product.pairsWith.map(productById).toList();
     final similar = similarTo(product);
@@ -110,6 +137,26 @@ class _ProductDetailSheet extends StatelessWidget {
               Text('Bu ürünü puanla', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 6),
               _RatingSection(product: product, myRating: myRating),
+              if (product.options.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text('Opsiyonlar', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                ...product.options.map((opt) {
+                  final selected = _selectedOptions.contains(opt);
+                  return CheckboxListTile(
+                    value: selected,
+                    onChanged: (v) => _toggleOption(opt),
+                    title: Text(opt.name),
+                    subtitle: opt.priceDelta != 0 
+                        ? Text('${opt.priceDelta > 0 ? '+' : ''}${opt.priceDelta.toStringAsFixed(0)}₺', 
+                            style: TextStyle(color: opt.priceDelta > 0 ? EmarColors.paprika : EmarColors.moss))
+                        : null,
+                    activeColor: EmarColors.espresso,
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                  );
+                }),
+              ],
               const SizedBox(height: 8),
               _PairRow(title: 'Yanında bunlar iyi gider', products: pairs),
               const SizedBox(height: 16),
@@ -122,7 +169,7 @@ class _ProductDetailSheet extends StatelessWidget {
                     onPressed: outOfStock
                         ? null
                         : () async {
-                            final warnings = await context.read<AppState>().addToCart(product.id);
+                            final warnings = await context.read<AppState>().addToCart(product.id, options: _selectedOptions);
                             if (context.mounted) {
                               Navigator.of(context).pop();
                               if (warnings.isNotEmpty) {
@@ -136,7 +183,7 @@ class _ProductDetailSheet extends StatelessWidget {
                               }
                             }
                           },
-                    child: Text(outOfStock ? 'Şu An Tükendi' : 'Sepete Ekle · ${product.price.toStringAsFixed(0)}₺'),
+                    child: Text(outOfStock ? 'Şu An Tükendi' : 'Sepete Ekle · ${_currentPrice.toStringAsFixed(0)}₺'),
                   ),
                 ),
               ),
@@ -155,6 +202,7 @@ class _RatingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     final app = context.watch<AppState>();
     final ordered = app.hasOrderedProduct(product.id);
 
@@ -204,6 +252,7 @@ class _PairRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     if (products.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

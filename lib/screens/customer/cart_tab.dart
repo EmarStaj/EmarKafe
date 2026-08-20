@@ -1,7 +1,7 @@
+import 'order_tracking_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/menu_data.dart';
 import '../../models/product.dart';
 import '../../services/api_service.dart';
 import '../../state/app_state.dart';
@@ -9,7 +9,7 @@ import '../../theme.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/pressable_scale.dart';
 import '../login_screen.dart';
-import 'qr_display_screen.dart';
+
 import 'wallet_screen.dart';
 
 class CartTab extends StatelessWidget {
@@ -18,15 +18,16 @@ class CartTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    final entries = app.cart.entries.toList()
-      ..sort((a, b) => productById(a.key).name.compareTo(productById(b.key).name));
+    final entries = app.cartItems.values.toList()
+      ..sort((a, b) => a.product.name.compareTo(b.product.name));
     final now = DateTime.now();
-    final prep = app.prepMinutesFor(app.cart, now);
+    final prepMap = {for (final e in entries) e.product.id: e.quantity};
+    final prep = app.prepMinutesFor(prepMap, now);
     final beforeSix = now.hour < 18;
-    final coffeeQty = entries.where((e) => productById(e.key).isCoffee).fold(0, (s, e) => s + e.value);
+    final coffeeQty = entries.where((e) => e.product.isCoffee).fold(0, (s, e) => s + e.quantity);
     final dessertQty = entries
-        .where((e) => productById(e.key).category == ProductCategory.dessert)
-        .fold(0, (s, e) => s + e.value);
+        .where((e) => e.product.category == ProductCategory.dessert)
+        .fold(0, (s, e) => s + e.quantity);
 
     return SafeArea(
       child: Column(
@@ -49,8 +50,10 @@ class CartTab extends StatelessWidget {
                 itemCount: entries.length,
                 separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, i) {
-                  final product = productById(entries[i].key);
-                  final qty = entries[i].value;
+                  final cartItem = entries[i];
+                  final product = cartItem.product;
+                  final qty = cartItem.quantity;
+                  final localId = app.cartItems.keys.firstWhere((k) => app.cartItems[k] == cartItem);
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Row(
@@ -58,21 +61,31 @@ class CartTab extends StatelessWidget {
                         Text(product.icon, style: const TextStyle(fontSize: 22)),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(product.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(product.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+                              if (cartItem.selectedOptions.isNotEmpty)
+                                Text(
+                                  cartItem.selectedOptions.map((o) => o.name).join(', '),
+                                  style: TextStyle(fontSize: 11, color: EmarColors.espresso.withValues(alpha: 0.6)),
+                                ),
+                            ],
+                          ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.remove_circle_outline, size: 20),
-                          onPressed: () => context.read<AppState>().changeQty(product.id, -1),
+                          onPressed: () => context.read<AppState>().changeQty(localId, -1),
                         ),
                         Text('$qty', style: const TextStyle(fontWeight: FontWeight.w700)),
                         IconButton(
                           icon: const Icon(Icons.add_circle_outline, size: 20),
-                          onPressed: () => context.read<AppState>().changeQty(product.id, 1),
+                          onPressed: () => context.read<AppState>().changeQty(localId, 1),
                         ),
                         SizedBox(
                           width: 56,
                           child: Text(
-                            '${(product.price * qty).toStringAsFixed(0)}₺',
+                            '${cartItem.totalPrice.toStringAsFixed(0)}₺',
                             textAlign: TextAlign.right,
                             style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
@@ -170,7 +183,10 @@ class CartTab extends StatelessWidget {
                           try {
                             final token = await context.read<AppState>().generateWalletToken();
                             if (token != null && token.isNotEmpty && context.mounted) {
-                              Navigator.of(context).push(softRoute(QRDisplayScreen(qrToken: token)));
+                              final order = await context.read<AppState>().placeOrder(useWallet: true);
+                              if (order != null && context.mounted) {
+                                Navigator.of(context).push(softRoute(OrderTrackingScreen(order: order, qrToken: token)));
+                              }
                             }
                           } catch (e) {
                             if (context.mounted) {
