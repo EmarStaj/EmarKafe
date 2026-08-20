@@ -18,7 +18,7 @@ class Branch {
     // Backend returns opening_hours
     final hoursData = row['opening_hours'] ?? row['working_hours'];
     if (hoursData != null && hoursData is Map) {
-      hours = (hoursData as Map).map(
+      hours = hoursData.map(
         (k, v) => MapEntry(k.toString(), v.toString()),
       );
     }

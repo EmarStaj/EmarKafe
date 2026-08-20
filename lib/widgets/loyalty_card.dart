@@ -82,7 +82,7 @@ class LoyaltyCard extends StatelessWidget {
             duration: const Duration(milliseconds: 260),
             transitionBuilder: (child, anim) => FadeTransition(
               opacity: anim,
-              child: SizeTransition(sizeFactor: anim, alignment: Alignment.topCenter, child: child),
+              child: SizeTransition(sizeFactor: anim, axisAlignment: -1.0, child: child),
             ),
             child: freeCoffeesEarned > 0
                 ? Container(
