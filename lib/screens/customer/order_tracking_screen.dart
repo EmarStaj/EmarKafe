@@ -163,23 +163,27 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           ),
                           onPressed: () async {
                             final app = context.read<AppState>();
+                            final tokenToScan = widget.qrToken ?? order.id;
                             try {
-                              if (widget.qrToken != null) {
-                                try {
-                                  await app.confirmOrderFromQR(widget.qrToken!);
-                                } catch (_) {}
-                              }
+                              try {
+                                await app.confirmOrderFromQR(tokenToScan);
+                              } catch (_) {}
                               await app.advanceOrderStatus(order);
                               await app.orders.fetchOrders();
                               if (context.mounted) {
+                                ScaffoldMessenger.of(context).clearSnackBars();
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Sipariş baristaya okutuldu ve durumu güncellendi!')),
+                                  const SnackBar(
+                                    content: Text('Sipariş baristaya okutuldu ve durumu güncellendi!'),
+                                    duration: Duration(seconds: 2),
+                                  ),
                                 );
                               }
                             } catch (e) {
                               if (context.mounted) {
+                                ScaffoldMessenger.of(context).clearSnackBars();
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Hata: $e')),
+                                  SnackBar(content: Text('Hata: $e'), duration: const Duration(seconds: 2)),
                                 );
                               }
                             }

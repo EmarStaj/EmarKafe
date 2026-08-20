@@ -179,6 +179,24 @@ class ApiService {
     _processResponse(res);
   }
 
+  Future<void> updateEmail(String newEmail) async {
+    final res = await _put(
+      Uri.parse('$baseUrl/api/profile/email'),
+      headers: _headers,
+      body: jsonEncode({'email': newEmail}),
+    );
+    _processResponse(res);
+  }
+
+  Future<void> deleteAccount() async {
+    final res = await _delete(
+      Uri.parse('$baseUrl/api/profile/me'),
+      headers: _headers,
+    );
+    _processResponse(res);
+    await clearToken();
+  }
+
   // --- Catalog & Menu ---
 
   Future<Map<String, dynamic>> getMenu({int page = 1, int limit = 20, String? categoryId, String? search}) async {

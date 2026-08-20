@@ -128,9 +128,7 @@ class ProfileTab extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bu özellik yakında eklenecek.')));
-              },
+              onPressed: () => _showUpdateEmailDialog(context, app),
               child: const Text('E-posta Güncelle'),
             ),
           ),
@@ -142,9 +140,7 @@ class ProfileTab extends StatelessWidget {
                 foregroundColor: EmarColors.paprikaDim,
                 side: BorderSide(color: EmarColors.paprikaDim.withValues(alpha: 0.5)),
               ),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hesap silme özelliği yakında eklenecek.')));
-              },
+              onPressed: () => _showDeleteAccountDialog(context, app),
               child: const Text('Hesabımı Sil'),
             ),
           ),
@@ -157,6 +153,148 @@ class ProfileTab extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showUpdateEmailDialog(BuildContext context, AppState app) {
+    final controller = TextEditingController(text: app.userEmail);
+    final formKey = GlobalKey<FormState>();
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: EmarColors.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('E-posta Güncelle', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Yeni e-posta adresinizi girin:', style: TextStyle(fontSize: 13)),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: controller,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      hintText: 'yeni.eposta@ornek.com',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                    validator: (val) {
+                      final email = val?.trim() ?? '';
+                      if (email.isEmpty) return 'E-posta adresi boş bırakılamaz';
+                      if (!email.contains('@') || !email.contains('.')) return 'Geçerli bir e-posta adresi girin';
+                      if (email == app.userEmail) return 'Mevcut e-posta ile aynı olamaz';
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
+                child: const Text('İptal'),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting ? null : () async {
+                  if (!formKey.currentState!.validate()) return;
+                  setDialogState(() => isSubmitting = true);
+                  try {
+                    await app.updateEmail(controller.text.trim());
+                    if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('E-posta adresiniz başarıyla güncellendi.'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    setDialogState(() => isSubmitting = false);
+                    if (dialogCtx.mounted) {
+                      ScaffoldMessenger.of(dialogCtx).showSnackBar(
+                        SnackBar(content: Text('Hata: $e')),
+                      );
+                    }
+                  }
+                },
+                child: isSubmitting
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Güncelle'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, AppState app) {
+    bool isDeleting = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: EmarColors.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: EmarColors.paprika, size: 28),
+                SizedBox(width: 8),
+                Text('Hesabımı Sil', style: TextStyle(fontWeight: FontWeight.bold, color: EmarColors.paprika)),
+              ],
+            ),
+            content: const Text(
+              'Hesabınızı silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz. Cüzdan bakiyeniz, sipariş geçmişiniz ve sadakat puanlarınız kalıcı olarak silinecektir.',
+              style: TextStyle(fontSize: 13.5, height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isDeleting ? null : () => Navigator.pop(dialogCtx),
+                child: const Text('Vazgeç'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: EmarColors.paprika),
+                onPressed: isDeleting ? null : () async {
+                  setDialogState(() => isDeleting = true);
+                  try {
+                    await app.deleteAccount();
+                    if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Hesabınız başarıyla silindi.'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    setDialogState(() => isDeleting = false);
+                    if (dialogCtx.mounted) {
+                      ScaffoldMessenger.of(dialogCtx).showSnackBar(
+                        SnackBar(content: Text('Silme başarısız: $e')),
+                      );
+                    }
+                  }
+                },
+                child: isDeleting
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Hesabı Kalıcı Olarak Sil', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

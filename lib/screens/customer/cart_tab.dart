@@ -181,12 +181,9 @@ class CartTab extends StatelessWidget {
                             return;
                           }
                           try {
-                            final token = await context.read<AppState>().generateWalletToken();
-                            if (token != null && token.isNotEmpty && context.mounted) {
-                              final order = await context.read<AppState>().placeOrder(useWallet: true);
-                              if (order != null && context.mounted) {
-                                Navigator.of(context).push(softRoute(OrderTrackingScreen(order: order, qrToken: token)));
-                              }
+                            final order = await context.read<AppState>().placeOrder(useWallet: true);
+                            if (order != null && context.mounted) {
+                              Navigator.of(context).push(softRoute(OrderTrackingScreen(order: order, qrToken: order.id)));
                             }
                           } catch (e) {
                             if (context.mounted) {

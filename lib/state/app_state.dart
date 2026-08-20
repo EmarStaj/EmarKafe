@@ -134,4 +134,7 @@ class AppState extends ChangeNotifier {
       debugPrint('Rating submit error: $e');
     }
   }
+
+  Future<void> updateEmail(String newEmail) => auth.updateEmail(newEmail);
+  Future<void> deleteAccount() => auth.deleteAccount();
 }

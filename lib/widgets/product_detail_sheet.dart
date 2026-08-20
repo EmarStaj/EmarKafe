@@ -173,12 +173,9 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                             if (context.mounted) {
                               Navigator.of(context).pop();
                               if (warnings.isNotEmpty) {
+                                ScaffoldMessenger.of(context).clearSnackBars();
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Dikkat: ${warnings.first}'), backgroundColor: EmarColors.paprika, duration: const Duration(seconds: 4)),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('${product.name} sepete eklendi')),
+                                  SnackBar(content: Text('Dikkat: ${warnings.first}'), backgroundColor: EmarColors.paprika, duration: const Duration(seconds: 2)),
                                 );
                               }
                             }
@@ -282,12 +279,9 @@ class _PairRow extends StatelessWidget {
                     ? null
                     : () async {
                         final warnings = await context.read<AppState>().addToCart(p.id);
-                        if (context.mounted) {
-                          if (warnings.isNotEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Dikkat: ${warnings.first}'), backgroundColor: EmarColors.paprika, duration: const Duration(seconds: 4)));
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${p.name} sepete eklendi')));
-                          }
+                        if (context.mounted && warnings.isNotEmpty) {
+                          ScaffoldMessenger.of(context).clearSnackBars();
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Dikkat: ${warnings.first}'), backgroundColor: EmarColors.paprika, duration: const Duration(seconds: 2)));
                         }
                       },
                 child: Opacity(

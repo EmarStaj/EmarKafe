@@ -78,7 +78,7 @@ class _OrderCard extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: live ? () => Navigator.of(context).push(softRoute(OrderTrackingScreen(order: order))) : null,
+      onTap: live ? () => Navigator.of(context).push(softRoute(OrderTrackingScreen(order: order, qrToken: order.id))) : null,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(color: EmarColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: EmarColors.espresso.withValues(alpha: 0.06))),

@@ -166,6 +166,21 @@ class AuthNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateEmail(String newEmail) async {
+    await api.updateEmail(newEmail.trim());
+    userEmail = newEmail.trim();
+    notifyListeners();
+  }
+
+  Future<void> deleteAccount() async {
+    await api.deleteAccount();
+    loggedIn = false;
+    userName = '';
+    userEmail = '';
+    role = UserRole.customer;
+    notifyListeners();
+  }
+
   void selectBranch(String branchId) {
     selectedBranchId = branchId;
     if (loggedIn) {

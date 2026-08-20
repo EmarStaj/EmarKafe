@@ -114,11 +114,12 @@ class _QuickAddStepper extends StatelessWidget {
   void _handleQty(BuildContext context, AppState app, int delta) async {
     final warnings = await app.changeQty(productId, delta);
     if (warnings.isNotEmpty && context.mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Dikkat: ${warnings.first}'),
           backgroundColor: EmarColors.paprika,
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         ),
       );
     }

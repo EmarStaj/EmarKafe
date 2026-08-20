@@ -123,6 +123,7 @@ class EmarTheme {
         contentTextStyle: const TextStyle(color: EmarColors.surface, fontWeight: FontWeight.w600, fontSize: 13),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       ),
     );
   }
