@@ -52,7 +52,8 @@ void main() {
       orders.stopPolling(); // Stop polling timer during widget test
       final stock = StockNotifier(api, auth);
       final menu = MenuNotifier(api);
-      final appState = AppState(auth, cart, orders, wallet, stock, menu);
+      final staff = StaffNotifier(api);
+      final appState = AppState(auth, cart, orders, wallet, stock, menu, staff);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<AppState>.value(

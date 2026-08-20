@@ -14,12 +14,14 @@ import 'package:emar_kafe/state/notifiers/cart_notifier.dart';
 import 'package:emar_kafe/state/notifiers/order_notifier.dart';
 import 'package:emar_kafe/state/notifiers/wallet_notifier.dart';
 import 'package:emar_kafe/state/notifiers/stock_notifier.dart';
+import 'package:emar_kafe/state/notifiers/staff_notifier.dart';
 
 export 'package:emar_kafe/state/notifiers/auth_notifier.dart';
 export 'package:emar_kafe/state/notifiers/cart_notifier.dart';
 export 'package:emar_kafe/state/notifiers/order_notifier.dart';
 export 'package:emar_kafe/state/notifiers/wallet_notifier.dart';
 export 'package:emar_kafe/state/notifiers/stock_notifier.dart';
+export 'package:emar_kafe/state/notifiers/staff_notifier.dart';
 
 class AppState extends ChangeNotifier {
   final AuthNotifier auth;
@@ -28,6 +30,7 @@ class AppState extends ChangeNotifier {
   final WalletNotifier wallet;
   final StockNotifier stock;
   final MenuNotifier menu;
+  final StaffNotifier staff;
 
   ApiService get api => auth.api;
 
@@ -60,12 +63,13 @@ class AppState extends ChangeNotifier {
   
   Function(OrderRecord)? onRateReminder;
 
-  AppState(this.auth, this.cart, this.orders, this.wallet, this.stock, this.menu) {
+  AppState(this.auth, this.cart, this.orders, this.wallet, this.stock, this.menu, this.staff) {
     auth.addListener(notifyListeners);
     cart.addListener(notifyListeners);
     orders.addListener(notifyListeners);
     wallet.addListener(notifyListeners);
     stock.addListener(notifyListeners);
+    staff.addListener(notifyListeners);
     campaignList = List.of(Catalog.instance.campaigns);
   }
 

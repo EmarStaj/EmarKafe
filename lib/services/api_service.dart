@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
+import '../config/app_config.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -15,7 +16,7 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  static const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'https://emarkafe.duckdns.org');
+  static String get baseUrl => AppConfig.baseUrl;
   static const String _tokenKey = 'auth_token';
   static const String _refreshTokenKey = 'refresh_token';
   
@@ -336,6 +337,61 @@ class ApiService {
       headers: _headers,
       body: jsonEncode({'reward_id': rewardId, 'branch_id': branchId}),
     );
+    _processResponse(res);
+  }
+
+  // --- Staff Management ---
+
+  /// Admin: tüm personeli listele. Manager: kendi şubesinin personelini listele.
+  Future<List<dynamic>> getStaff({String? branchId}) async {
+    final params = <String, String>{};
+    if (branchId != null) params['branch_id'] = branchId;
+    final uri = Uri.parse('$baseUrl/api/staff').replace(queryParameters: params.isEmpty ? null : params);
+    final res = await _get(uri, headers: _headers);
+    final data = _processResponse(res);
+    return data['data'] as List<dynamic>? ?? (data['staff'] as List<dynamic>? ?? []);
+  }
+
+  /// Admin: yeni personel oluştur (barista veya branch_manager).
+  Future<Map<String, dynamic>> createStaff({
+    required String email,
+    required String password,
+    required String fullName,
+    required String role,
+    String? branchId,
+  }) async {
+    final body = <String, dynamic>{
+      'email': email,
+      'password': password,
+      'full_name': fullName,
+      'role': role,
+    };
+    if (branchId != null) body['branch_id'] = branchId;
+    final res = await _post(
+      Uri.parse('$baseUrl/api/staff'),
+      headers: _headers,
+      body: jsonEncode(body),
+    );
+    return _processResponse(res);
+  }
+
+  /// Personeli güncelle (rol, şube vb.)
+  Future<void> updateStaff(String staffId, {String? role, String? branchId, String? fullName}) async {
+    final body = <String, dynamic>{};
+    if (role != null) body['role'] = role;
+    if (branchId != null) body['branch_id'] = branchId;
+    if (fullName != null) body['full_name'] = fullName;
+    final res = await _put(
+      Uri.parse('$baseUrl/api/staff/$staffId'),
+      headers: _headers,
+      body: jsonEncode(body),
+    );
+    _processResponse(res);
+  }
+
+  /// Personeli sil (Supabase auth kaydı dahil).
+  Future<void> deleteStaff(String staffId) async {
+    final res = await _delete(Uri.parse('$baseUrl/api/staff/$staffId'), headers: _headers);
     _processResponse(res);
   }
 

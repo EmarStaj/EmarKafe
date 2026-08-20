@@ -15,10 +15,12 @@ class Branch {
 
   factory Branch.fromDb(Map<String, dynamic> row) {
     Map<String, String>? hours;
-    if (row['working_hours'] != null) {
-      if (row['working_hours'] is Map) {
-        hours = (row['working_hours'] as Map).map((k, v) => MapEntry(k.toString(), v.toString()));
-      }
+    // Backend returns opening_hours
+    final hoursData = row['opening_hours'] ?? row['working_hours'];
+    if (hoursData != null && hoursData is Map) {
+      hours = (hoursData as Map).map(
+        (k, v) => MapEntry(k.toString(), v.toString()),
+      );
     }
     return Branch(
       id: row['id'] as String,

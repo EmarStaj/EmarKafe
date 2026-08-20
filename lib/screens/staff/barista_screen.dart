@@ -25,6 +25,19 @@ class _BaristaScreenState extends State<BaristaScreen> {
     app.advanceOrderStatus(o);
   }
 
+  Future<void> _cancelOrder(OrderRecord o, AppState app) async {
+    try {
+      await app.api.updateOrderStatus(o.id, 'cancelled');
+      await app.orders.fetchOrders();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('İptal edilemedi: $e')),
+        );
+      }
+    }
+  }
+
   String _formatItems(Map<String, int> items) {
     return items.entries.map((e) {
       final p = productById(e.key);
@@ -103,18 +116,35 @@ class _BaristaScreenState extends State<BaristaScreen> {
                     Text(_formatItems(o.items), style: const TextStyle(fontSize: 11, color: EmarColors.espresso)),
                     if (status != OrderStatus.ready) ...[
                       const SizedBox(height: 6),
-                      SizedBox(
-                        width: double.infinity,
-                        child: TextButton(
-                          style: TextButton.styleFrom(
-                            backgroundColor: EmarColors.moss,
-                            foregroundColor: EmarColors.surface,
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            minimumSize: Size.zero,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor: EmarColors.moss,
+                                foregroundColor: EmarColors.surface,
+                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                minimumSize: Size.zero,
+                              ),
+                              onPressed: () => _advance(o, app),
+                              child: Text(status == OrderStatus.received ? 'Onayla' : 'Hazır', style: const TextStyle(fontSize: 10.5)),
+                            ),
                           ),
-                          onPressed: () => _advance(o, app),
-                          child: Text(status == OrderStatus.received ? 'Onayla' : 'Hazır İşaretle', style: const TextStyle(fontSize: 10.5)),
-                        ),
+                          const SizedBox(width: 4),
+                          SizedBox(
+                            width: 32,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor: EmarColors.paprikaDim.withValues(alpha: 0.15),
+                                foregroundColor: EmarColors.paprikaDim,
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                              ),
+                              onPressed: () => _cancelOrder(o, app),
+                              child: const Icon(Icons.close, size: 14),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ],
