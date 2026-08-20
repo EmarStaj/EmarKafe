@@ -92,6 +92,7 @@ class AppState extends ChangeNotifier {
 
   Future<List<String>> changeQty(String productId, int delta) => cart.changeQty(productId, delta);
   Future<List<String>> addToCart(String productId, {List<ProductOption> options = const []}) => cart.addToCart(productId, options: options);
+  Future<void> fetchCart() => cart.fetchCart();
 
   int prepMinutesFor(Map<String, int> items, DateTime at) => orders.prepMinutesFor(items, at);
   Future<OrderRecord?> placeOrder({bool useWallet = false}) => orders.placeOrder(useWallet: useWallet);
