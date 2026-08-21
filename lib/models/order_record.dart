@@ -1,5 +1,6 @@
 import 'package:emar_kafe/models/product.dart';
 import 'package:emar_kafe/data/catalog.dart';
+
 enum OrderStatus { created, received, preparing, ready, completed, cancelled }
 
 class OrderRecord {
@@ -30,7 +31,9 @@ class OrderRecord {
     this.qrToken,
   });
 
-  bool get pickedUp => manualStatus == OrderStatus.completed || manualStatus == OrderStatus.cancelled;
+  bool get pickedUp =>
+      manualStatus == OrderStatus.completed ||
+      manualStatus == OrderStatus.cancelled;
   OrderStatus get computedStatus => manualStatus;
   bool get isPendingQR => status == 'pending_qr';
   int get remainingSeconds => 300;
@@ -52,7 +55,7 @@ class OrderRecord {
         }
       }
     }
-    
+
     final statusStr = db['status']?.toString().toLowerCase() ?? 'created';
     OrderStatus parsedStatus = OrderStatus.created;
     for (var s in OrderStatus.values) {
@@ -73,7 +76,9 @@ class OrderRecord {
       branchId: db['branch_id']?.toString(),
       items: itemsMap,
       totalPrice: (db['total_price'] as num?)?.toDouble() ?? 0.0,
-      createdAt: db['created_at'] != null ? DateTime.parse(db['created_at']).toLocal() : DateTime.now(),
+      createdAt: db['created_at'] != null
+          ? DateTime.parse(db['created_at']).toLocal()
+          : DateTime.now(),
       status: statusStr,
       manualStatus: parsedStatus,
       qrToken: db['qr_token']?.toString() ?? db['qrToken']?.toString(),
@@ -82,10 +87,10 @@ class OrderRecord {
 
   static int computePrep(Map<String, int> items, DateTime at) {
     if (items.isEmpty) return 0;
-    
+
     int coffeeQty = 0;
     int dessertQty = 0;
-    
+
     for (final entry in items.entries) {
       try {
         final prod = Catalog.instance.byId(entry.key);
@@ -93,10 +98,10 @@ class OrderRecord {
         if (prod.category == ProductCategory.dessert) dessertQty += entry.value;
       } catch (_) {}
     }
-    
+
     final beforeSix = at.hour < 18;
     int basePrep = 0;
-    
+
     if (coffeeQty > 0 && dessertQty == 0) {
       basePrep = beforeSix ? 2 : 3;
     } else if (coffeeQty == 0 && dessertQty > 0) {
@@ -104,12 +109,12 @@ class OrderRecord {
     } else if (coffeeQty > 0 && dessertQty > 0) {
       basePrep = beforeSix ? 4 : 6;
     }
-    
+
     final totalItems = coffeeQty + dessertQty;
     if (totalItems > 2) {
       basePrep += ((totalItems - 2) / 2).floor();
     }
-    
+
     return basePrep;
   }
 }

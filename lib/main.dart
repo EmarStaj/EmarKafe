@@ -21,7 +21,7 @@ final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   const onesignalAppId = String.fromEnvironment('ONESIGNAL_APP_ID');
   if (onesignalAppId.isNotEmpty) {
     try {
@@ -54,23 +54,38 @@ class EmarKafeApp extends StatelessWidget {
           update: (_, api, auth) => auth ?? AuthNotifier(api),
         ),
         ChangeNotifierProxyProvider2<ApiService, AuthNotifier, CartNotifier>(
-          create: (ctx) => CartNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>()),
+          create: (ctx) =>
+              CartNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>()),
           update: (_, api, auth, cart) => cart ?? CartNotifier(api, auth),
         ),
         ChangeNotifierProxyProvider2<ApiService, AuthNotifier, WalletNotifier>(
-          create: (ctx) => WalletNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>()),
+          create: (ctx) =>
+              WalletNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>()),
           update: (_, api, auth, wallet) => wallet ?? WalletNotifier(api, auth),
         ),
-        ChangeNotifierProxyProvider4<ApiService, AuthNotifier, CartNotifier, WalletNotifier, OrderNotifier>(
-          create: (ctx) => OrderNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>(), ctx.read<CartNotifier>(), ctx.read<WalletNotifier>()),
-          update: (_, api, auth, cart, wallet, orders) => orders ?? OrderNotifier(api, auth, cart, wallet),
+        ChangeNotifierProxyProvider4<
+          ApiService,
+          AuthNotifier,
+          CartNotifier,
+          WalletNotifier,
+          OrderNotifier
+        >(
+          create: (ctx) => OrderNotifier(
+            ctx.read<ApiService>(),
+            ctx.read<AuthNotifier>(),
+            ctx.read<CartNotifier>(),
+            ctx.read<WalletNotifier>(),
+          ),
+          update: (_, api, auth, cart, wallet, orders) =>
+              orders ?? OrderNotifier(api, auth, cart, wallet),
         ),
         ChangeNotifierProxyProvider<ApiService, MenuNotifier>(
           create: (ctx) => MenuNotifier(ctx.read<ApiService>()),
           update: (_, api, menu) => menu ?? MenuNotifier(api),
         ),
         ChangeNotifierProxyProvider2<ApiService, AuthNotifier, StockNotifier>(
-          create: (ctx) => StockNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>()),
+          create: (ctx) =>
+              StockNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>()),
           update: (_, api, auth, stock) => stock ?? StockNotifier(api, auth),
         ),
         ChangeNotifierProxyProvider<ApiService, StaffNotifier>(
@@ -132,10 +147,14 @@ class _AppWidgetState extends State<_AppWidget> {
     scaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
         duration: const Duration(seconds: 8),
-        content: Text('☕ ${order.id} nasıldı? Siparişini değerlendirmek ister misin?'),
+        content: Text(
+          '☕ ${order.id} nasıldı? Siparişini değerlendirmek ister misin?',
+        ),
         action: SnackBarAction(
           label: 'Değerlendir',
-          onPressed: () => navigatorKey.currentState?.push(softRoute(const OrderHistoryScreen())),
+          onPressed: () => navigatorKey.currentState?.push(
+            softRoute(const OrderHistoryScreen()),
+          ),
         ),
       ),
     );
@@ -144,14 +163,14 @@ class _AppWidgetState extends State<_AppWidget> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        title: 'EMAR Kafe',
-        debugShowCheckedModeBanner: false,
-        navigatorKey: navigatorKey,
-        scaffoldMessengerKey: scaffoldMessengerKey,
-        theme: EmarTheme.light(),
-        
-        themeMode: ThemeMode.system,
-        home: const _RootRouter(),
+      title: 'EMAR Kafe',
+      debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
+      scaffoldMessengerKey: scaffoldMessengerKey,
+      theme: EmarTheme.light(),
+
+      themeMode: ThemeMode.system,
+      home: const _RootRouter(),
     );
   }
 }

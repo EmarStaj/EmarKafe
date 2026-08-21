@@ -5,16 +5,16 @@ import 'package:emar_kafe/data/catalog.dart';
 
 class MenuNotifier extends ChangeNotifier {
   final ApiService api;
-  
+
   final List<Product> _products = [];
   List<Product> get products => List.unmodifiable(_products);
-  
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
-  
+
   bool _hasMore = true;
   bool get hasMore => _hasMore;
-  
+
   int _currentPage = 1;
 
   MenuNotifier(this.api);
@@ -36,15 +36,17 @@ class MenuNotifier extends ChangeNotifier {
     _isLoading = true;
     // We notify here if we want to show a loading indicator at the bottom
     notifyListeners();
-    
+
     try {
       final res = await api.getMenu(page: page, limit: 10);
       final list = res['data'] as List<dynamic>? ?? [];
-      
+
       if (list.isEmpty) {
         _hasMore = false;
       } else {
-        final newProducts = list.map((p) => Product.fromDb(p as Map<String, dynamic>)).toList();
+        final newProducts = list
+            .map((p) => Product.fromDb(p as Map<String, dynamic>))
+            .toList();
         _products.addAll(newProducts);
         Catalog.instance.registerProducts(newProducts);
         if (newProducts.length < 10) {

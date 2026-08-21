@@ -16,7 +16,9 @@ class StaffNotifier extends ChangeNotifier {
     notifyListeners();
     try {
       final data = await api.getStaff(branchId: branchId);
-      staffList = data.map((e) => StaffMember.fromJson(e as Map<String, dynamic>)).toList();
+      staffList = data
+          .map((e) => StaffMember.fromJson(e as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       error = e.toString();
       debugPrint('Staff fetch error: $e');

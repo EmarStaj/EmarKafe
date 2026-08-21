@@ -19,7 +19,20 @@ class _ManagerScreenState extends State<ManagerScreen> {
   _RevenueRange _range = _RevenueRange.daily;
 
   // Saat 09 - 24 arası göreli sipariş yoğunluğu (0-1)
-  final List<double> _hourly = [0.30, 0.45, 0.88, 0.95, 0.40, 0.35, 0.55, 0.80, 0.92, 0.50, 0.28, 0.18];
+  final List<double> _hourly = [
+    0.30,
+    0.45,
+    0.88,
+    0.95,
+    0.40,
+    0.35,
+    0.55,
+    0.80,
+    0.92,
+    0.50,
+    0.28,
+    0.18,
+  ];
 
   // Günlük ciro (son 7 gün) ve haftalık ciro (son 6 hafta) — mock ₺ verisi (API bağlanana kadar).
   final List<int> _dailyRevenue = [4200, 4800, 5100, 3900, 6200, 7400, 6800];
@@ -54,41 +67,93 @@ class _ManagerScreenState extends State<ManagerScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Ad Soyad', prefixIcon: Icon(Icons.person))),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Ad Soyad',
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                ),
                 const SizedBox(height: 10),
-                TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'E-posta', prefixIcon: Icon(Icons.email)), keyboardType: TextInputType.emailAddress),
+                TextField(
+                  controller: emailCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'E-posta',
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
                 const SizedBox(height: 10),
-                TextField(controller: passwordCtrl, decoration: const InputDecoration(labelText: 'Şifre (min 8 karakter)', prefixIcon: Icon(Icons.lock)), obscureText: true),
+                TextField(
+                  controller: passwordCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Şifre (min 8 karakter)',
+                    prefixIcon: Icon(Icons.lock),
+                  ),
+                  obscureText: true,
+                ),
                 if (errorMsg != null) ...[
                   const SizedBox(height: 8),
-                  Text(errorMsg!, style: const TextStyle(color: EmarColors.paprikaDim, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                  Text(
+                    errorMsg!,
+                    style: const TextStyle(
+                      color: EmarColors.paprikaDim,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Vazgeç')),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Vazgeç'),
+            ),
             ElevatedButton(
-              onPressed: isLoading ? null : () async {
-                final name = nameCtrl.text.trim();
-                final email = emailCtrl.text.trim();
-                final password = passwordCtrl.text;
-                if (name.isEmpty || email.isEmpty || password.length < 8) {
-                  setDialogState(() => errorMsg = 'Ad, e-posta ve en az 8 karakterli şifre zorunlu.');
-                  return;
-                }
-                setDialogState(() { isLoading = true; errorMsg = null; });
-                final ok = await app.staff.createStaff(
-                  email: email, password: password, fullName: name,
-                  role: 'barista', branchId: app.selectedBranchId,
-                );
-                if (ok) {
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                } else {
-                  setDialogState(() { isLoading = false; errorMsg = app.staff.error; });
-                }
-              },
-              child: isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Ekle'),
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      final name = nameCtrl.text.trim();
+                      final email = emailCtrl.text.trim();
+                      final password = passwordCtrl.text;
+                      if (name.isEmpty ||
+                          email.isEmpty ||
+                          password.length < 8) {
+                        setDialogState(
+                          () => errorMsg =
+                              'Ad, e-posta ve en az 8 karakterli şifre zorunlu.',
+                        );
+                        return;
+                      }
+                      setDialogState(() {
+                        isLoading = true;
+                        errorMsg = null;
+                      });
+                      final ok = await app.staff.createStaff(
+                        email: email,
+                        password: password,
+                        fullName: name,
+                        role: 'barista',
+                        branchId: app.selectedBranchId,
+                      );
+                      if (ok) {
+                        if (dialogContext.mounted) Navigator.pop(dialogContext);
+                      } else {
+                        setDialogState(() {
+                          isLoading = false;
+                          errorMsg = app.staff.error;
+                        });
+                      }
+                    },
+              child: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Ekle'),
             ),
           ],
         ),
@@ -103,9 +168,14 @@ class _ManagerScreenState extends State<ManagerScreen> {
         title: const Text('Personeli Çıkar'),
         content: Text('${s.fullName} adlı personel şubenizden çıkarılacak.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Vazgeç')),
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Vazgeç'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: EmarColors.paprika),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: EmarColors.paprika,
+            ),
             onPressed: () => Navigator.pop(c, true),
             child: const Text('Çıkar', style: TextStyle(color: Colors.white)),
           ),
@@ -113,10 +183,17 @@ class _ManagerScreenState extends State<ManagerScreen> {
       ),
     );
     if (confirm == true && mounted) {
-      final ok = await app.staff.deleteStaff(s.id, branchId: app.selectedBranchId);
+      final ok = await app.staff.deleteStaff(
+        s.id,
+        branchId: app.selectedBranchId,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ok ? '${s.fullName} kaldırıldı.' : 'Hata: ${app.staff.error}')),
+          SnackBar(
+            content: Text(
+              ok ? '${s.fullName} kaldırıldı.' : 'Hata: ${app.staff.error}',
+            ),
+          ),
         );
       }
     }
@@ -125,7 +202,9 @@ class _ManagerScreenState extends State<ManagerScreen> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    final revenueData = _range == _RevenueRange.daily ? _dailyRevenue : _weeklyRevenue;
+    final revenueData = _range == _RevenueRange.daily
+        ? _dailyRevenue
+        : _weeklyRevenue;
     final revenueLabels = _range == _RevenueRange.daily
         ? const ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz']
         : const ['-5h', '-4h', '-3h', '-2h', '-1h', 'Bu h.'];
@@ -142,7 +221,10 @@ class _ManagerScreenState extends State<ManagerScreen> {
             icon: const Icon(Icons.inventory_2_outlined),
             onPressed: () => showStockManager(context),
           ),
-          IconButton(icon: const Icon(Icons.logout), onPressed: () => context.read<AppState>().logout()),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => context.read<AppState>().logout(),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -159,64 +241,123 @@ class _ManagerScreenState extends State<ManagerScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Şube Personeli', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
+                Text(
+                  'Şube Personeli',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontSize: 17),
+                ),
                 if (app.staff.isLoading)
-                  const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 else
-                  IconButton(icon: const Icon(Icons.refresh, size: 18), onPressed: _loadStaff),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 18),
+                    onPressed: _loadStaff,
+                  ),
               ],
             ),
             const SizedBox(height: 10),
             if (staffList.isEmpty && !app.staff.isLoading)
               Text(
-                app.staff.error != null ? 'Yüklenirken hata: ${app.staff.error}' : 'Henüz personel yok.',
-                style: TextStyle(fontSize: 12, color: EmarColors.espresso.withValues(alpha: 0.5)),
+                app.staff.error != null
+                    ? 'Yüklenirken hata: ${app.staff.error}'
+                    : 'Henüz personel yok.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: EmarColors.espresso.withValues(alpha: 0.5),
+                ),
               )
             else
-              ...staffList.map((s) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 14,
-                              backgroundColor: EmarColors.moss,
-                              child: Text(s.fullName.isNotEmpty ? s.fullName[0].toUpperCase() : '?',
-                                  style: const TextStyle(color: EmarColors.surface, fontSize: 11, fontWeight: FontWeight.w800)),
+              ...staffList.map(
+                (s) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 14,
+                            backgroundColor: EmarColors.moss,
+                            child: Text(
+                              s.fullName.isNotEmpty
+                                  ? s.fullName[0].toUpperCase()
+                                  : '?',
+                              style: const TextStyle(
+                                color: EmarColors.surface,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
-                            const SizedBox(width: 10),
-                            Text(s.fullName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(color: EmarColors.oatDark, borderRadius: BorderRadius.circular(999)),
-                              child: Text(s.roleLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            s.fullName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13.5,
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.remove_circle_outline, size: 18),
-                              color: EmarColors.paprikaDim,
-                              onPressed: () => _deleteStaff(app, s),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )),
+                            decoration: BoxDecoration(
+                              color: EmarColors.oatDark,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              s.roleLabel,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.remove_circle_outline,
+                              size: 18,
+                            ),
+                            color: EmarColors.paprikaDim,
+                            onPressed: () => _deleteStaff(app, s),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Ciro', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
+                Text(
+                  'Ciro',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontSize: 17),
+                ),
                 SegmentedButton<_RevenueRange>(
                   segments: const [
-                    ButtonSegment(value: _RevenueRange.daily, label: Text('Günlük', style: TextStyle(fontSize: 11.5))),
-                    ButtonSegment(value: _RevenueRange.weekly, label: Text('Haftalık', style: TextStyle(fontSize: 11.5))),
+                    ButtonSegment(
+                      value: _RevenueRange.daily,
+                      label: Text('Günlük', style: TextStyle(fontSize: 11.5)),
+                    ),
+                    ButtonSegment(
+                      value: _RevenueRange.weekly,
+                      label: Text('Haftalık', style: TextStyle(fontSize: 11.5)),
+                    ),
                   ],
                   selected: {_range},
                   onSelectionChanged: (s) => setState(() => _range = s.first),
@@ -231,7 +372,10 @@ class _ManagerScreenState extends State<ManagerScreen> {
             const SizedBox(height: 4),
             Text(
               '${_range == _RevenueRange.daily ? "Son 7 gün" : "Son 6 hafta"} toplam: $totalRevenue₺ (demo)',
-              style: TextStyle(fontSize: 11.5, color: EmarColors.espresso.withValues(alpha: 0.55)),
+              style: TextStyle(
+                fontSize: 11.5,
+                color: EmarColors.espresso.withValues(alpha: 0.55),
+              ),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -249,8 +393,12 @@ class _ManagerScreenState extends State<ManagerScreen> {
                         alignment: Alignment.bottomCenter,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: peak ? EmarColors.paprika : EmarColors.oatDark,
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+                            color: peak
+                                ? EmarColors.paprika
+                                : EmarColors.oatDark,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(5),
+                            ),
                           ),
                         ),
                       ),
@@ -262,11 +410,26 @@ class _ManagerScreenState extends State<ManagerScreen> {
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: revenueLabels.map((t) => Text(t, style: TextStyle(fontSize: 10.5, color: EmarColors.espresso.withValues(alpha: 0.55)))).toList(),
+              children: revenueLabels
+                  .map(
+                    (t) => Text(
+                      t,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: EmarColors.espresso.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
 
             const SizedBox(height: 24),
-            Text('Bugünün Saatlik Sipariş Yoğunluğu (demo)', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
+            Text(
+              'Bugünün Saatlik Sipariş Yoğunluğu (demo)',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontSize: 17),
+            ),
             const SizedBox(height: 12),
             SizedBox(
               height: 140,
@@ -282,8 +445,12 @@ class _ManagerScreenState extends State<ManagerScreen> {
                         alignment: Alignment.bottomCenter,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: peak ? EmarColors.paprika : EmarColors.oatDark,
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+                            color: peak
+                                ? EmarColors.paprika
+                                : EmarColors.oatDark,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(5),
+                            ),
                           ),
                         ),
                       ),
@@ -296,7 +463,15 @@ class _ManagerScreenState extends State<ManagerScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: ['09', '12', '15', '18', '21', '24']
-                  .map((t) => Text(t, style: TextStyle(fontSize: 10.5, color: EmarColors.espresso.withValues(alpha: 0.55))))
+                  .map(
+                    (t) => Text(
+                      t,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: EmarColors.espresso.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
             const SizedBox(height: 80),
@@ -321,20 +496,32 @@ class AnimatedFractionallySizedBox extends ImplicitlyAnimatedWidget {
   });
 
   @override
-  ImplicitlyAnimatedWidgetState<AnimatedFractionallySizedBox> createState() => _AnimatedFractionallySizedBoxState();
+  ImplicitlyAnimatedWidgetState<AnimatedFractionallySizedBox> createState() =>
+      _AnimatedFractionallySizedBoxState();
 }
 
-class _AnimatedFractionallySizedBoxState extends ImplicitlyAnimatedWidgetState<AnimatedFractionallySizedBox> {
+class _AnimatedFractionallySizedBoxState
+    extends ImplicitlyAnimatedWidgetState<AnimatedFractionallySizedBox> {
   Tween<double>? _factor;
 
   @override
   void forEachTween(TweenVisitor<dynamic> visitor) {
-    _factor = visitor(_factor, widget.heightFactor, (v) => Tween<double>(begin: v as double)) as Tween<double>?;
+    _factor =
+        visitor(
+              _factor,
+              widget.heightFactor,
+              (v) => Tween<double>(begin: v as double),
+            )
+            as Tween<double>?;
   }
 
   @override
   Widget build(BuildContext context) {
     final value = _factor?.evaluate(animation) ?? widget.heightFactor;
-    return FractionallySizedBox(heightFactor: value, alignment: widget.alignment, child: widget.child);
+    return FractionallySizedBox(
+      heightFactor: value,
+      alignment: widget.alignment,
+      child: widget.child,
+    );
   }
 }

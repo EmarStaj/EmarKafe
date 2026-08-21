@@ -16,7 +16,9 @@ Future<void> showBranchPicker(BuildContext context) {
     builder: (sheetContext) {
       return SafeArea(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(sheetContext).size.height * 0.7),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetContext).size.height * 0.7,
+          ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
             child: Column(
@@ -27,7 +29,10 @@ Future<void> showBranchPicker(BuildContext context) {
                 const SizedBox(height: 4),
                 Text(
                   '${app.branches.length} şehirdeki EMAR Kafe şubelerinden birini seç',
-                  style: TextStyle(fontSize: 12.5, color: EmarColors.espresso.withValues(alpha: 0.55)),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: EmarColors.espresso.withValues(alpha: 0.55),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Flexible(
@@ -41,22 +46,39 @@ Future<void> showBranchPicker(BuildContext context) {
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: Icon(
-                          selected ? Icons.location_on : Icons.location_on_outlined,
-                          color: selected ? EmarColors.paprika : EmarColors.espresso.withValues(alpha: 0.4),
+                          selected
+                              ? Icons.location_on
+                              : Icons.location_on_outlined,
+                          color: selected
+                              ? EmarColors.paprika
+                              : EmarColors.espresso.withValues(alpha: 0.4),
                         ),
-                        
+
                         title: Text(
                           branch.name,
-                          style: TextStyle(fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
+                          style: TextStyle(
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
                         ),
-                        subtitle: branch.workingHours != null && branch.workingHours!.isNotEmpty
+                        subtitle:
+                            branch.workingHours != null &&
+                                branch.workingHours!.isNotEmpty
                             ? Text(
                                 'Açık: ',
-                                style: TextStyle(fontSize: 11, color: EmarColors.espresso.withValues(alpha: 0.5)),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: EmarColors.espresso.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
                               )
                             : null,
 
-                        trailing: selected ? const Icon(Icons.check, color: EmarColors.moss) : null,
+                        trailing: selected
+                            ? const Icon(Icons.check, color: EmarColors.moss)
+                            : null,
                         onTap: () {
                           app.selectBranch(branch.id);
                           Navigator.of(sheetContext).pop();

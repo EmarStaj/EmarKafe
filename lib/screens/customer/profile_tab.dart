@@ -33,7 +33,11 @@ class ProfileTab extends StatelessWidget {
                 backgroundColor: EmarColors.moss,
                 child: Text(
                   app.userName.isNotEmpty ? app.userName[0].toUpperCase() : '?',
-                  style: const TextStyle(fontFamily: 'Georgia', fontSize: 22, color: EmarColors.surface),
+                  style: const TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 22,
+                    color: EmarColors.surface,
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -41,8 +45,19 @@ class ProfileTab extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(app.userName, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
-                    Text(app.userEmail, style: TextStyle(fontSize: 12, color: EmarColors.espresso.withValues(alpha: 0.55))),
+                    Text(
+                      app.userName,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleLarge?.copyWith(fontSize: 17),
+                    ),
+                    Text(
+                      app.userEmail,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: EmarColors.espresso.withValues(alpha: 0.55),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -51,33 +66,72 @@ class ProfileTab extends StatelessWidget {
           const SizedBox(height: 20),
           _ProfileLine(
             label: '🎂 Doğum Tarihi',
-            value: app.birthday == null ? '—' : formatTurkishDate(app.birthday!),
+            value: app.birthday == null
+                ? '—'
+                : formatTurkishDate(app.birthday!),
           ),
           _ProfileLine(label: '📍 Şube', value: app.selectedBranchName),
           _ProfileLine(label: 'Rol', value: app.role.label),
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _StatBox(n: '${app.orderHistory.length}', l: 'Toplam Sipariş')),
+              Expanded(
+                child: _StatBox(
+                  n: '${app.orderHistory.length}',
+                  l: 'Toplam Sipariş',
+                ),
+              ),
               const SizedBox(width: 10),
-              Expanded(child: _StatBox(n: '${app.freeCoffeesEarned}', l: 'Hediye Kahve')),
+              Expanded(
+                child: _StatBox(
+                  n: '${app.freeCoffeesEarned}',
+                  l: 'Hediye Kahve',
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
           InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => Navigator.of(context).push(softRoute(const WalletScreen())),
+            onTap: () =>
+                Navigator.of(context).push(softRoute(const WalletScreen())),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(color: EmarColors.oatDark, borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: EmarColors.oatDark,
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Row(
                 children: [
-                  const Icon(Icons.account_balance_wallet_outlined, size: 18, color: EmarColors.espresso),
+                  const Icon(
+                    Icons.account_balance_wallet_outlined,
+                    size: 18,
+                    color: EmarColors.espresso,
+                  ),
                   const SizedBox(width: 10),
-                  const Expanded(child: Text('Cüzdanım', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13))),
-                  Text('${app.walletBalance.toStringAsFixed(2)}₺', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: EmarColors.paprika)),
+                  const Expanded(
+                    child: Text(
+                      'Cüzdanım',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${app.walletBalance.toStringAsFixed(2)}₺',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: EmarColors.paprika,
+                    ),
+                  ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.chevron_right, size: 18, color: EmarColors.espresso),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: EmarColors.espresso,
+                  ),
                 ],
               ),
             ),
@@ -85,18 +139,45 @@ class ProfileTab extends StatelessWidget {
           const SizedBox(height: 12),
           InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => Navigator.of(context).push(softRoute(const OrderHistoryScreen())),
+            onTap: () => Navigator.of(
+              context,
+            ).push(softRoute(const OrderHistoryScreen())),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(color: EmarColors.oatDark, borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: EmarColors.oatDark,
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Row(
                 children: [
-                  const Icon(Icons.receipt_long_outlined, size: 18, color: EmarColors.espresso),
+                  const Icon(
+                    Icons.receipt_long_outlined,
+                    size: 18,
+                    color: EmarColors.espresso,
+                  ),
                   const SizedBox(width: 10),
-                  const Expanded(child: Text('Geçmiş Siparişlerim', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13))),
-                  Text('${app.orderHistory.length}', style: TextStyle(fontSize: 12, color: EmarColors.espresso.withValues(alpha: 0.55))),
+                  const Expanded(
+                    child: Text(
+                      'Geçmiş Siparişlerim',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${app.orderHistory.length}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: EmarColors.espresso.withValues(alpha: 0.55),
+                    ),
+                  ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.chevron_right, size: 18, color: EmarColors.espresso),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: EmarColors.espresso,
+                  ),
                 ],
               ),
             ),
@@ -104,10 +185,19 @@ class ProfileTab extends StatelessWidget {
           const SizedBox(height: 16),
           LoyaltyCard(progress: 0, freeCoffeesEarned: 0),
           const SizedBox(height: 20),
-          Text('Puanladığın Ürünler', style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            'Puanladığın Ürünler',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           const SizedBox(height: 6),
           if (rated.isEmpty)
-            Text('Henüz puanlama yapmadın.', style: TextStyle(fontSize: 12.5, color: EmarColors.espresso.withValues(alpha: 0.55)))
+            Text(
+              'Henüz puanlama yapmadın.',
+              style: TextStyle(
+                fontSize: 12.5,
+                color: EmarColors.espresso.withValues(alpha: 0.55),
+              ),
+            )
           else
             ...rated.map((e) {
               final product = productById(e.key);
@@ -118,8 +208,19 @@ class ProfileTab extends StatelessWidget {
                   children: [
                     Text(product.icon, style: const TextStyle(fontSize: 16)),
                     const SizedBox(width: 10),
-                    Expanded(child: Text(product.name, style: const TextStyle(fontSize: 13))),
-                    Text('★' * stars, style: const TextStyle(color: EmarColors.gold, fontWeight: FontWeight.w700)),
+                    Expanded(
+                      child: Text(
+                        product.name,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    Text(
+                      '★' * stars,
+                      style: const TextStyle(
+                        color: EmarColors.gold,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -138,7 +239,9 @@ class ProfileTab extends StatelessWidget {
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 foregroundColor: EmarColors.paprikaDim,
-                side: BorderSide(color: EmarColors.paprikaDim.withValues(alpha: 0.5)),
+                side: BorderSide(
+                  color: EmarColors.paprikaDim.withValues(alpha: 0.5),
+                ),
               ),
               onPressed: () => _showDeleteAccountDialog(context, app),
               child: const Text('Hesabımı Sil'),
@@ -168,15 +271,23 @@ class ProfileTab extends StatelessWidget {
         builder: (context, setDialogState) {
           return AlertDialog(
             backgroundColor: EmarColors.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('E-posta Güncelle', style: TextStyle(fontWeight: FontWeight.bold)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              'E-posta Güncelle',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             content: Form(
               key: formKey,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Yeni e-posta adresinizi girin:', style: TextStyle(fontSize: 13)),
+                  const Text(
+                    'Yeni e-posta adresinizi girin:',
+                    style: TextStyle(fontSize: 13),
+                  ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: controller,
@@ -187,9 +298,12 @@ class ProfileTab extends StatelessWidget {
                     ),
                     validator: (val) {
                       final email = val?.trim() ?? '';
-                      if (email.isEmpty) return 'E-posta adresi boş bırakılamaz';
-                      if (!email.contains('@') || !email.contains('.')) return 'Geçerli bir e-posta adresi girin';
-                      if (email == app.userEmail) return 'Mevcut e-posta ile aynı olamaz';
+                      if (email.isEmpty)
+                        return 'E-posta adresi boş bırakılamaz';
+                      if (!email.contains('@') || !email.contains('.'))
+                        return 'Geçerli bir e-posta adresi girin';
+                      if (email == app.userEmail)
+                        return 'Mevcut e-posta ile aynı olamaz';
                       return null;
                     },
                   ),
@@ -202,32 +316,43 @@ class ProfileTab extends StatelessWidget {
                 child: const Text('İptal'),
               ),
               ElevatedButton(
-                onPressed: isSubmitting ? null : () async {
-                  if (!formKey.currentState!.validate()) return;
-                  setDialogState(() => isSubmitting = true);
-                  try {
-                    await app.updateEmail(controller.text.trim());
-                    if (dialogCtx.mounted) Navigator.pop(dialogCtx);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).clearSnackBars();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('E-posta adresiniz başarıyla güncellendi.'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    setDialogState(() => isSubmitting = false);
-                    if (dialogCtx.mounted) {
-                      ScaffoldMessenger.of(dialogCtx).showSnackBar(
-                        SnackBar(content: Text('Hata: $e')),
-                      );
-                    }
-                  }
-                },
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        if (!formKey.currentState!.validate()) return;
+                        setDialogState(() => isSubmitting = true);
+                        try {
+                          await app.updateEmail(controller.text.trim());
+                          if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).clearSnackBars();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'E-posta adresiniz başarıyla güncellendi.',
+                                ),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          setDialogState(() => isSubmitting = false);
+                          if (dialogCtx.mounted) {
+                            ScaffoldMessenger.of(
+                              dialogCtx,
+                            ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+                          }
+                        }
+                      },
                 child: isSubmitting
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Güncelle'),
               ),
             ],
@@ -246,12 +371,24 @@ class ProfileTab extends StatelessWidget {
         builder: (context, setDialogState) {
           return AlertDialog(
             backgroundColor: EmarColors.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             title: const Row(
               children: [
-                Icon(Icons.warning_amber_rounded, color: EmarColors.paprika, size: 28),
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: EmarColors.paprika,
+                  size: 28,
+                ),
                 SizedBox(width: 8),
-                Text('Hesabımı Sil', style: TextStyle(fontWeight: FontWeight.bold, color: EmarColors.paprika)),
+                Text(
+                  'Hesabımı Sil',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: EmarColors.paprika,
+                  ),
+                ),
               ],
             ),
             content: const Text(
@@ -264,33 +401,47 @@ class ProfileTab extends StatelessWidget {
                 child: const Text('Vazgeç'),
               ),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: EmarColors.paprika),
-                onPressed: isDeleting ? null : () async {
-                  setDialogState(() => isDeleting = true);
-                  try {
-                    await app.deleteAccount();
-                    if (dialogCtx.mounted) Navigator.pop(dialogCtx);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).clearSnackBars();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Hesabınız başarıyla silindi.'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    setDialogState(() => isDeleting = false);
-                    if (dialogCtx.mounted) {
-                      ScaffoldMessenger.of(dialogCtx).showSnackBar(
-                        SnackBar(content: Text('Silme başarısız: $e')),
-                      );
-                    }
-                  }
-                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: EmarColors.paprika,
+                ),
+                onPressed: isDeleting
+                    ? null
+                    : () async {
+                        setDialogState(() => isDeleting = true);
+                        try {
+                          await app.deleteAccount();
+                          if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).clearSnackBars();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Hesabınız başarıyla silindi.'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          setDialogState(() => isDeleting = false);
+                          if (dialogCtx.mounted) {
+                            ScaffoldMessenger.of(dialogCtx).showSnackBar(
+                              SnackBar(content: Text('Silme başarısız: $e')),
+                            );
+                          }
+                        }
+                      },
                 child: isDeleting
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Hesabı Kalıcı Olarak Sil', style: TextStyle(color: Colors.white)),
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Hesabı Kalıcı Olarak Sil',
+                        style: TextStyle(color: Colors.white),
+                      ),
               ),
             ],
           );
@@ -315,28 +466,47 @@ class _GuestProfile extends StatelessWidget {
               tween: Tween(begin: 0, end: 1),
               duration: const Duration(milliseconds: 420),
               curve: Curves.easeOutBack,
-              builder: (context, t, child) => Transform.scale(scale: t, child: child),
+              builder: (context, t, child) =>
+                  Transform.scale(scale: t, child: child),
               child: Container(
                 width: 84,
                 height: 84,
-                decoration: const BoxDecoration(color: EmarColors.oatDark, shape: BoxShape.circle),
-                child: const Icon(Icons.person_outline, size: 40, color: EmarColors.espresso),
+                decoration: const BoxDecoration(
+                  color: EmarColors.oatDark,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.person_outline,
+                  size: 40,
+                  color: EmarColors.espresso,
+                ),
               ),
             ),
             const SizedBox(height: 20),
-            Text('Henüz giriş yapmadın', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18)),
+            Text(
+              'Henüz giriş yapmadın',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontSize: 18),
+            ),
             const SizedBox(height: 8),
             Text(
               'Sipariş verebilmek, kahve puanlarını takip edebilmek ve ödül kazanmak için hesabına giriş yap.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: EmarColors.espresso.withValues(alpha: 0.6), height: 1.5),
+              style: TextStyle(
+                fontSize: 13,
+                color: EmarColors.espresso.withValues(alpha: 0.6),
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 24),
             PressableScale(
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).push(softRoute(const LoginScreen())),
+                  onPressed: () => Navigator.of(
+                    context,
+                  ).push(softRoute(const LoginScreen())),
                   child: const Text('Giriş Yap / Kayıt Ol'),
                 ),
               ),
@@ -360,8 +530,17 @@ class _ProfileLine extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 12.5, color: EmarColors.espresso.withValues(alpha: 0.6))),
-          Text(value, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.5,
+              color: EmarColors.espresso.withValues(alpha: 0.6),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+          ),
         ],
       ),
     );
@@ -377,11 +556,27 @@ class _StatBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(color: EmarColors.oatDark, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: EmarColors.oatDark,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         children: [
-          Text(n, style: const TextStyle(fontFamily: 'Georgia', fontSize: 20, fontWeight: FontWeight.w700)),
-          Text(l, style: TextStyle(fontSize: 10.5, color: EmarColors.espresso.withValues(alpha: 0.6))),
+          Text(
+            n,
+            style: const TextStyle(
+              fontFamily: 'Georgia',
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            l,
+            style: TextStyle(
+              fontSize: 10.5,
+              color: EmarColors.espresso.withValues(alpha: 0.6),
+            ),
+          ),
         ],
       ),
     );

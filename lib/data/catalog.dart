@@ -13,7 +13,9 @@ class Catalog {
   static final Catalog instance = Catalog._();
 
   List<Product> _products = List.of(seed.seedProducts);
-  List<Branch> _branches = seed.seedBranchNames.map((n) => Branch(id: n, name: n)).toList();
+  List<Branch> _branches = seed.seedBranchNames
+      .map((n) => Branch(id: n, name: n))
+      .toList();
   final List<Campaign> _campaigns = List.of(seed.seedCampaigns);
 
   bool isRemote = false;
@@ -46,30 +48,37 @@ class Catalog {
       );
 
   List<Product> similarTo(Product product, {int limit = 4}) {
-    final sameCategory = _products
-        .where((p) => p.category == product.category && p.id != product.id)
-        .toList()
-      ..sort((a, b) => b.rating.compareTo(a.rating));
+    final sameCategory =
+        _products
+            .where((p) => p.category == product.category && p.id != product.id)
+            .toList()
+          ..sort((a, b) => b.rating.compareTo(a.rating));
     return sameCategory.take(limit).toList();
   }
 
   Future<bool> load() async {
     try {
-      final res = await http.get(Uri.parse(AppConfig.menuUrl)).timeout(const Duration(seconds: 4));
+      final res = await http
+          .get(Uri.parse(AppConfig.menuUrl))
+          .timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
         final body = utf8.decode(res.bodyBytes);
         final json = jsonDecode(body);
         if (json is Map && json.containsKey('data')) {
           final list = json['data'] as List;
           if (list.isNotEmpty) {
-            _products = list.map((p) => Product.fromDb(p as Map<String, dynamic>)).toList();
+            _products = list
+                .map((p) => Product.fromDb(p as Map<String, dynamic>))
+                .toList();
             _byId = {for (final p in _products) p.id: p};
             isRemote = true;
           }
         }
       }
 
-      final branchRes = await http.get(Uri.parse(AppConfig.branchesUrl)).timeout(const Duration(seconds: 4));
+      final branchRes = await http
+          .get(Uri.parse(AppConfig.branchesUrl))
+          .timeout(const Duration(seconds: 4));
       if (branchRes.statusCode == 200) {
         final branchBody = utf8.decode(branchRes.bodyBytes);
         final json = jsonDecode(branchBody);
@@ -80,7 +89,9 @@ class Catalog {
           list = json['data'] as List?;
         }
         if (list != null && list.isNotEmpty) {
-          _branches = list.map((b) => Branch.fromDb(b as Map<String, dynamic>)).toList();
+          _branches = list
+              .map((b) => Branch.fromDb(b as Map<String, dynamic>))
+              .toList();
         }
       }
 

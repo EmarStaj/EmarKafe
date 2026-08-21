@@ -19,12 +19,12 @@ void main() {
   });
 
   group('UI Components Widget Tests', () {
-    testWidgets('LoyaltyCard renders progress and stamps correctly', (WidgetTester tester) async {
+    testWidgets('LoyaltyCard renders progress and stamps correctly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: LoyaltyCard(progress: 3, freeCoffeesEarned: 1),
-          ),
+          home: Scaffold(body: LoyaltyCard(progress: 3, freeCoffeesEarned: 1)),
         ),
       );
 
@@ -33,7 +33,9 @@ void main() {
       expect(find.text('1 Bedava İçecek Kullanılabilir'), findsOneWidget);
     });
 
-    testWidgets('ProductCard displays product info and price correctly', (WidgetTester tester) async {
+    testWidgets('ProductCard displays product info and price correctly', (
+      WidgetTester tester,
+    ) async {
       const product = Product(
         id: 'p-espresso',
         name: 'Espresso',

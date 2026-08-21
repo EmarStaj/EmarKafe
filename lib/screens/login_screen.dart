@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _registerObscure = true;
   bool _confirmRegisterObscure = true;
   bool _birthdayTouched = false;
-  
+
   bool _isLoginLoading = false;
   bool _isRegisterLoading = false;
   UserRole _role = UserRole.customer;
@@ -59,9 +59,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _pickBirthday() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)), // default 18 years old
+      initialDate: DateTime.now().subtract(
+        const Duration(days: 365 * 18),
+      ), // default 18 years old
       firstDate: DateTime(1900),
-      lastDate: DateTime.now().subtract(const Duration(days: 365 * 5)), // min 5 years old
+      lastDate: DateTime.now().subtract(
+        const Duration(days: 365 * 5),
+      ), // min 5 years old
       helpText: 'Doğum Tarihini Seç',
     );
     if (picked != null) setState(() => _birthday = picked);
@@ -73,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _loginError = null;
       _isLoginLoading = true;
     });
-    
+
     final formOk = _loginFormKey.currentState?.validate() ?? false;
     if (!formOk) {
       setState(() => _isLoginLoading = false);
@@ -84,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
       email: _loginEmailCtrl.text,
       password: _loginPassCtrl.text,
     );
-    
+
     if (!mounted) return;
     setState(() => _isLoginLoading = false);
 
@@ -102,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _registerError = null;
       _isRegisterLoading = true;
     });
-    
+
     final formOk = _registerFormKey.currentState?.validate() ?? false;
     if (!formOk || _birthday == null) {
       setState(() => _isRegisterLoading = false);
@@ -118,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
       selectedRole: _role,
       branch: _branch ?? defaultBranch,
     );
-    
+
     if (!mounted) return;
     setState(() => _isRegisterLoading = false);
 
@@ -278,7 +282,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () => setState(() => _loginObscure = !_loginObscure),
               ),
             ),
-            validator: (v) => (v == null || v.length < 6) ? 'Şifre en az 6 karakter olmalı' : null,
+            validator: (v) => (v == null || v.length < 6)
+                ? 'Şifre en az 6 karakter olmalı'
+                : null,
           ),
           Align(
             alignment: Alignment.centerRight,
@@ -287,7 +293,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 showDialog(
                   context: context,
                   builder: (c) {
-                    final resetEmailCtrl = TextEditingController(text: _loginEmailCtrl.text);
+                    final resetEmailCtrl = TextEditingController(
+                      text: _loginEmailCtrl.text,
+                    );
                     bool isResetting = false;
                     return StatefulBuilder(
                       builder: (context, setModalState) {
@@ -296,52 +304,83 @@ class _LoginScreenState extends State<LoginScreen> {
                           content: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text('Lütfen kayıtlı e-posta adresinizi girin. Şifre sıfırlama bağlantısı göndereceğiz.'),
+                              const Text(
+                                'Lütfen kayıtlı e-posta adresinizi girin. Şifre sıfırlama bağlantısı göndereceğiz.',
+                              ),
                               const SizedBox(height: 16),
                               TextField(
                                 controller: resetEmailCtrl,
                                 keyboardType: TextInputType.emailAddress,
-                                decoration: const InputDecoration(labelText: 'E-posta'),
+                                decoration: const InputDecoration(
+                                  labelText: 'E-posta',
+                                ),
                               ),
                             ],
                           ),
                           actions: [
                             TextButton(
-                              onPressed: isResetting ? null : () => Navigator.pop(c),
+                              onPressed: isResetting
+                                  ? null
+                                  : () => Navigator.pop(c),
                               child: const Text('İptal'),
                             ),
                             ElevatedButton(
-                              onPressed: isResetting ? null : () async {
-                                final email = resetEmailCtrl.text.trim();
-                                if (email.isEmpty) return;
-                                
-                                setModalState(() => isResetting = true);
-                                try {
-                                  await context.read<AppState>().api.forgotPassword(email);
-                                  if (context.mounted) {
-                                    Navigator.pop(c);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Şifre sıfırlama bağlantısı gönderildi.')),
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Hata: ${e.toString().replaceAll('Exception: ', '')}')),
-                                    );
-                                    setModalState(() => isResetting = false);
-                                  }
-                                }
-                              },
-                              child: isResetting 
-                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                              onPressed: isResetting
+                                  ? null
+                                  : () async {
+                                      final email = resetEmailCtrl.text.trim();
+                                      if (email.isEmpty) return;
+
+                                      setModalState(() => isResetting = true);
+                                      try {
+                                        await context
+                                            .read<AppState>()
+                                            .api
+                                            .forgotPassword(email);
+                                        if (context.mounted) {
+                                          Navigator.pop(c);
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Şifre sıfırlama bağlantısı gönderildi.',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Hata: ${e.toString().replaceAll('Exception: ', '')}',
+                                              ),
+                                            ),
+                                          );
+                                          setModalState(
+                                            () => isResetting = false,
+                                          );
+                                        }
+                                      }
+                                    },
+                              child: isResetting
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
                                   : const Text('Gönder'),
                             ),
                           ],
                         );
-                      }
+                      },
                     );
-                  }
+                  },
                 );
               },
               child: const Text(
@@ -369,8 +408,12 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 50,
               child: ElevatedButton(
                 onPressed: _isLoginLoading ? null : _submitLogin,
-                child: _isLoginLoading 
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                child: _isLoginLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text('Giriş Yap', style: TextStyle(fontSize: 16)),
               ),
             ),
@@ -412,8 +455,9 @@ class _LoginScreenState extends State<LoginScreen> {
             controller: _phoneCtrl,
             keyboardType: TextInputType.phone,
             decoration: const InputDecoration(labelText: 'Telefon Numarası'),
-            validator: (v) =>
-                (v == null || v.trim().length < 10) ? 'Geçerli bir telefon numarası gir' : null,
+            validator: (v) => (v == null || v.trim().length < 10)
+                ? 'Geçerli bir telefon numarası gir'
+                : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -450,11 +494,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   size: 20,
                   color: EmarColors.espresso.withValues(alpha: 0.5),
                 ),
-                onPressed: () =>
-                    setState(() => _confirmRegisterObscure = !_confirmRegisterObscure),
+                onPressed: () => setState(
+                  () => _confirmRegisterObscure = !_confirmRegisterObscure,
+                ),
               ),
             ),
-            validator: (v) => v != _passCtrl.text ? 'Şifreler eşleşmiyor' : null,
+            validator: (v) =>
+                v != _passCtrl.text ? 'Şifreler eşleşmiyor' : null,
           ),
           const SizedBox(height: 12),
           InkWell(
@@ -491,7 +537,10 @@ class _LoginScreenState extends State<LoginScreen> {
             onChanged: (v) => setState(() => _branch = v ?? _branch),
           ),
           const SizedBox(height: 22),
-          if (const bool.fromEnvironment('SHOW_ROLE_SELECTOR', defaultValue: false)) ...[
+          if (const bool.fromEnvironment(
+            'SHOW_ROLE_SELECTOR',
+            defaultValue: false,
+          )) ...[
             Text('Rol (demo)', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 4),
             Text(
@@ -537,10 +586,19 @@ class _LoginScreenState extends State<LoginScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: (branches.isEmpty || _isRegisterLoading) ? null : () => _submitRegister(branches.first.id),
-                child: _isRegisterLoading 
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Hesap Oluştur', style: TextStyle(fontSize: 16)),
+                onPressed: (branches.isEmpty || _isRegisterLoading)
+                    ? null
+                    : () => _submitRegister(branches.first.id),
+                child: _isRegisterLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text(
+                        'Hesap Oluştur',
+                        style: TextStyle(fontSize: 16),
+                      ),
               ),
             ),
           ),

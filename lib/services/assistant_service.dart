@@ -23,19 +23,22 @@ class AssistantService {
   static const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
   static const _functionName = 'cafe-assistant';
 
-  static bool get isConfigured => _supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty;
+  static bool get isConfigured =>
+      _supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty;
 
   /// Menüyü Edge Function'ın sistem promptunda kullanacağı kompakt biçime çevirir.
   /// Menü ileride Supabase veritabanına taşınınca bu gönderim kaldırılıp
   /// fonksiyon menüyü doğrudan tablodan okuyabilir.
   static List<Map<String, dynamic>> _menuPayload() {
     return menuProducts
-        .map((p) => {
-              'name': p.name,
-              'kind': p.category == ProductCategory.dessert ? 'tatlı' : 'kahve',
-              'price': p.price,
-              'rating': p.rating,
-            })
+        .map(
+          (p) => {
+            'name': p.name,
+            'kind': p.category == ProductCategory.dessert ? 'tatlı' : 'kahve',
+            'price': p.price,
+            'rating': p.rating,
+          },
+        )
         .toList();
   }
 
@@ -53,10 +56,9 @@ class AssistantService {
     }
 
     final turns = [
-      ...history.map((t) => {
-            'role': t.fromUser ? 'user' : 'model',
-            'text': t.text,
-          }),
+      ...history.map(
+        (t) => {'role': t.fromUser ? 'user' : 'model', 'text': t.text},
+      ),
       {'role': 'user', 'text': userMessage},
     ];
 
@@ -83,9 +85,12 @@ class AssistantService {
 
     Map<String, dynamic> body;
     try {
-      body = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      body =
+          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
     } catch (_) {
-      throw StateError('Asistandan beklenmeyen bir cevap geldi (${response.statusCode}).');
+      throw StateError(
+        'Asistandan beklenmeyen bir cevap geldi (${response.statusCode}).',
+      );
     }
 
     if (response.statusCode == 404) {
@@ -96,9 +101,13 @@ class AssistantService {
     }
 
     if (response.statusCode != 200) {
-      throw StateError(body['error'] as String? ?? 'Asistana ulaşılamadı (${response.statusCode}).');
+      throw StateError(
+        body['error'] as String? ??
+            'Asistana ulaşılamadı (${response.statusCode}).',
+      );
     }
 
-    return (body['reply'] as String?)?.trim() ?? 'Bir cevap alamadım, tekrar dener misin?';
+    return (body['reply'] as String?)?.trim() ??
+        'Bir cevap alamadım, tekrar dener misin?';
   }
 }

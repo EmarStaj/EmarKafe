@@ -5,7 +5,7 @@ import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
 class StockNotifier extends ChangeNotifier {
   final ApiService api;
   final AuthNotifier auth;
-  
+
   // branchId -> set of productIds out of stock
   final Map<String, Set<String>> _outOfStockByBranch = {};
 
@@ -16,7 +16,8 @@ class StockNotifier extends ChangeNotifier {
     return _outOfStockByBranch.putIfAbsent(branchId, () => {});
   }
 
-  Set<String> get currentBranchOutOfStock => _getBranchStock(auth.selectedBranchId);
+  Set<String> get currentBranchOutOfStock =>
+      _getBranchStock(auth.selectedBranchId);
 
   bool isOutOfStock(String productId, {String? branchId}) {
     final bId = branchId ?? auth.selectedBranchId;
@@ -26,7 +27,7 @@ class StockNotifier extends ChangeNotifier {
   Future<void> toggleStock(String productId, {String? branchId}) async {
     final bId = branchId ?? auth.selectedBranchId;
     if (bId == null) return;
-    
+
     final stockSet = _getBranchStock(bId);
     final willBeAvailable = stockSet.contains(productId);
     if (willBeAvailable) {
@@ -37,7 +38,11 @@ class StockNotifier extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await api.updateBranchProductAvailability(bId, productId, willBeAvailable);
+      await api.updateBranchProductAvailability(
+        bId,
+        productId,
+        willBeAvailable,
+      );
     } catch (e) {
       debugPrint('Branch stock update error: $e');
     }

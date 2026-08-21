@@ -5,21 +5,27 @@ import 'package:emar_kafe/data/catalog.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 enum UserRole { customer, barista, manager, branchManager, admin }
+
 extension UserRoleExt on UserRole {
   String get label {
     switch (this) {
-      case UserRole.customer: return 'Müşteri';
-      case UserRole.barista: return 'Barista';
-      case UserRole.manager: return 'Yönetici';
-      case UserRole.branchManager: return 'Şube Yöneticisi';
-      case UserRole.admin: return 'Sistem Yöneticisi';
+      case UserRole.customer:
+        return 'Müşteri';
+      case UserRole.barista:
+        return 'Barista';
+      case UserRole.manager:
+        return 'Yönetici';
+      case UserRole.branchManager:
+        return 'Şube Yöneticisi';
+      case UserRole.admin:
+        return 'Sistem Yöneticisi';
     }
   }
 }
 
 class AuthNotifier extends ChangeNotifier {
   final ApiService api;
-  
+
   bool loggedIn = false;
   String userName = '';
   String userEmail = '';
@@ -27,7 +33,7 @@ class AuthNotifier extends ChangeNotifier {
   UserRole role = UserRole.customer;
   String? selectedBranchId;
   List<Branch> get branches => Catalog.instance.branches;
-  
+
   String get selectedBranchName => getBranchName(selectedBranchId);
 
   String getBranchName(String? branchId) {
@@ -38,7 +44,7 @@ class AuthNotifier extends ChangeNotifier {
     );
     return branch.name;
   }
-  
+
   AuthNotifier(this.api) {
     selectedBranchId = branches.firstOrNull?.id;
     init();
@@ -58,15 +64,24 @@ class AuthNotifier extends ChangeNotifier {
       final metadata = userObj['user_metadata'] as Map<String, dynamic>?;
 
       userEmail = userObj['email'] ?? '';
-      
+
       String fallbackName = metadata?['full_name'] ?? '';
-      
+
       try {
         final profile = await api.getProfile();
         userName = profile['full_name'] ?? fallbackName;
-        role = UserRole.values.firstWhere((e) => e.name == (profile['role'] ?? userObj['role'] ?? metadata?['role'] ?? 'customer'), orElse: () => UserRole.customer);
-        
-        if (profile['birth_date'] != null) birthday = DateTime.tryParse(profile['birth_date']);
+        role = UserRole.values.firstWhere(
+          (e) =>
+              e.name ==
+              (profile['role'] ??
+                  userObj['role'] ??
+                  metadata?['role'] ??
+                  'customer'),
+          orElse: () => UserRole.customer,
+        );
+
+        if (profile['birth_date'] != null)
+          birthday = DateTime.tryParse(profile['birth_date']);
         final branchData = profile['branch_id'] ?? profile['branch'];
         if (branchData != null) {
           if (branchData is Map) {
@@ -112,9 +127,10 @@ class AuthNotifier extends ChangeNotifier {
         role: selectedRole.name,
         branchId: branch,
       );
-      
+
       final session = res['session'] as Map<String, dynamic>?;
-      final token = res['token'] ?? res['access_token'] ?? session?['access_token'];
+      final token =
+          res['token'] ?? res['access_token'] ?? session?['access_token'];
       final refreshToken = session?['refresh_token'];
 
       if (token != null) {
@@ -135,13 +151,17 @@ class AuthNotifier extends ChangeNotifier {
     }
   }
 
-  Future<String?> loginWithCredentials({required String email, required String password}) async {
+  Future<String?> loginWithCredentials({
+    required String email,
+    required String password,
+  }) async {
     try {
       final res = await api.login(email.trim(), password);
       final session = res['session'] as Map<String, dynamic>?;
-      final token = res['token'] ?? res['access_token'] ?? session?['access_token'];
+      final token =
+          res['token'] ?? res['access_token'] ?? session?['access_token'];
       final refreshToken = session?['refresh_token'];
-                    
+
       if (token != null) {
         await api.saveTokens(token, refreshToken: refreshToken);
         await fetchMe();

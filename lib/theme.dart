@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 /// EMAR Kafe renk paleti.
 class EmarColors {
-  static const espresso = Color(0xFF364D63); // koyu lacivert-gri — ink / dark yüzeyler
-  static const roast = Color(0xFF25384A); // espresso'nun koyu tonu — gradyan derinliği
+  static const espresso = Color(
+    0xFF364D63,
+  ); // koyu lacivert-gri — ink / dark yüzeyler
+  static const roast = Color(
+    0xFF25384A,
+  ); // espresso'nun koyu tonu — gradyan derinliği
   static const oat = Color(0xFFEDF2F3); // sayfa arka planı — açık gri-mavi
   static const oatDark = Color(0xFFD3DCDE); // ikincil yüzey / chip zemini
   static const surface = Color(0xFFFFFFFF); // kart / sheet zemini
   static const paprika = Color(0xFFE95949); // birincil vurgu — CTA / sipariş
-  static const paprikaDim = Color(0xFFC6473A); // koyu mercan — gradyan / basılı durum
+  static const paprikaDim = Color(
+    0xFFC6473A,
+  ); // koyu mercan — gradyan / basılı durum
   static const moss = Color(0xFF439BD6); // ikincil vurgu — onay / başarı
-  static const gold = Color(0xFF52A7E0); // üçüncül vurgu — puanlama / öne çıkanlar
+  static const gold = Color(
+    0xFF52A7E0,
+  ); // üçüncül vurgu — puanlama / öne çıkanlar
 }
 
 class EmarTheme {
@@ -68,7 +77,9 @@ class EmarTheme {
           foregroundColor: EmarColors.surface,
           disabledBackgroundColor: EmarColors.espresso.withValues(alpha: 0.18),
           padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
           animationDuration: const Duration(milliseconds: 180),
         ),
@@ -78,21 +89,33 @@ class EmarTheme {
           foregroundColor: EmarColors.espresso,
           side: BorderSide(color: EmarColors.espresso.withValues(alpha: 0.25)),
           padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 14.5,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: EmarColors.surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: EmarColors.espresso.withValues(alpha: 0.14)),
+          borderSide: BorderSide(
+            color: EmarColors.espresso.withValues(alpha: 0.14),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: EmarColors.espresso.withValues(alpha: 0.14)),
+          borderSide: BorderSide(
+            color: EmarColors.espresso.withValues(alpha: 0.14),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -100,16 +123,25 @@ class EmarTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: EmarColors.paprikaDim, width: 1.4),
+          borderSide: const BorderSide(
+            color: EmarColors.paprikaDim,
+            width: 1.4,
+          ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: EmarColors.paprikaDim, width: 1.8),
+          borderSide: const BorderSide(
+            color: EmarColors.paprikaDim,
+            width: 1.8,
+          ),
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: EmarColors.oatDark,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
+        labelStyle: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 12.5,
+        ),
         shape: const StadiumBorder(),
         side: BorderSide.none,
       ),
@@ -120,7 +152,11 @@ class EmarTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: EmarColors.espresso,
-        contentTextStyle: const TextStyle(color: EmarColors.surface, fontWeight: FontWeight.w600, fontSize: 13),
+        contentTextStyle: const TextStyle(
+          color: EmarColors.surface,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

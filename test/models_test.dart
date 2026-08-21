@@ -17,7 +17,7 @@ void main() {
         'description': 'Taze demlenmiş Colombia çekirdekleri.',
         'is_active': true,
         'is_loyalty_eligible': true,
-        'categories': {'name': 'Sıcak Kahve'}
+        'categories': {'name': 'Sıcak Kahve'},
       };
 
       final product = Product.fromDb(dbRow);
@@ -56,7 +56,7 @@ void main() {
         'customer_name': 'Ahmet Y.',
         'order_items': [
           {'product_id': 'p-latte', 'quantity': 2},
-          {'product_id': 'p-cookie', 'quantity': 1}
+          {'product_id': 'p-cookie', 'quantity': 1},
         ],
         'created_at': '2026-08-14T12:00:00Z',
       };

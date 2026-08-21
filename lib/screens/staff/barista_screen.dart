@@ -60,7 +60,7 @@ class _BaristaScreenState extends State<BaristaScreen> {
     }).toList();
 
     return Container(
-      width: 210,
+      width: 230,
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -72,13 +72,16 @@ class _BaristaScreenState extends State<BaristaScreen> {
         children: [
           Row(
             children: [
-              Text(
-                '${title.toUpperCase()}  ·  ${items.length}',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: .3,
-                  color: EmarColors.espresso,
+              Expanded(
+                child: Text(
+                  '${title.toUpperCase()}  ·  ${items.length}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: .3,
+                    color: EmarColors.espresso,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (status == OrderStatus.received && items.isNotEmpty) ...[

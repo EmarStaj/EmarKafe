@@ -17,7 +17,6 @@ Future<void> showProductDetail(BuildContext context, Product product) {
   );
 }
 
-
 class _ProductDetailSheet extends StatefulWidget {
   final Product product;
   const _ProductDetailSheet({required this.product});
@@ -97,7 +96,10 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                           colors: [EmarColors.gold, EmarColors.roast],
                         ),
                       ),
-                      child: Text(product.icon, style: const TextStyle(fontSize: 30)),
+                      child: Text(
+                        product.icon,
+                        style: const TextStyle(fontSize: 30),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -105,25 +107,50 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(product.name, style: Theme.of(context).textTheme.titleLarge),
+                        Text(
+                          product.name,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           '${product.category.label} · ${product.ratingCount} puanlama',
-                          style: TextStyle(fontSize: 11.5, color: EmarColors.espresso.withValues(alpha: 0.55)),
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: EmarColors.espresso.withValues(alpha: 0.55),
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
                             Text(
                               '${product.price.toStringAsFixed(0)}₺',
-                              style: const TextStyle(fontWeight: FontWeight.w800, color: EmarColors.paprika, fontSize: 16),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: EmarColors.paprika,
+                                fontSize: 16,
+                              ),
                             ),
                             if (outOfStock) ...[
                               const SizedBox(width: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(color: EmarColors.paprikaDim.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
-                                child: const Text('Şu an tükendi', style: TextStyle(color: EmarColors.paprikaDim, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: EmarColors.paprikaDim.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: const Text(
+                                  'Şu an tükendi',
+                                  style: TextStyle(
+                                    color: EmarColors.paprikaDim,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
                             ],
                           ],
@@ -134,12 +161,18 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text('Bu ürünü puanla', style: Theme.of(context).textTheme.titleSmall),
+              Text(
+                'Bu ürünü puanla',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
               const SizedBox(height: 6),
               _RatingSection(product: product, myRating: myRating),
               if (product.options.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                Text('Opsiyonlar', style: Theme.of(context).textTheme.titleSmall),
+                Text(
+                  'Opsiyonlar',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
                 const SizedBox(height: 8),
                 ...product.options.map((opt) {
                   final selected = _selectedOptions.contains(opt);
@@ -147,9 +180,15 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                     value: selected,
                     onChanged: (v) => _toggleOption(opt),
                     title: Text(opt.name),
-                    subtitle: opt.priceDelta != 0 
-                        ? Text('${opt.priceDelta > 0 ? '+' : ''}${opt.priceDelta.toStringAsFixed(0)}₺', 
-                            style: TextStyle(color: opt.priceDelta > 0 ? EmarColors.paprika : EmarColors.moss))
+                    subtitle: opt.priceDelta != 0
+                        ? Text(
+                            '${opt.priceDelta > 0 ? '+' : ''}${opt.priceDelta.toStringAsFixed(0)}₺',
+                            style: TextStyle(
+                              color: opt.priceDelta > 0
+                                  ? EmarColors.paprika
+                                  : EmarColors.moss,
+                            ),
+                          )
                         : null,
                     activeColor: EmarColors.espresso,
                     contentPadding: EdgeInsets.zero,
@@ -169,18 +208,31 @@ class _ProductDetailSheetState extends State<_ProductDetailSheet> {
                     onPressed: outOfStock
                         ? null
                         : () async {
-                            final warnings = await context.read<AppState>().addToCart(product.id, options: _selectedOptions);
+                            final warnings = await context
+                                .read<AppState>()
+                                .addToCart(
+                                  product.id,
+                                  options: _selectedOptions,
+                                );
                             if (context.mounted) {
                               Navigator.of(context).pop();
                               if (warnings.isNotEmpty) {
                                 ScaffoldMessenger.of(context).clearSnackBars();
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Dikkat: ${warnings.first}'), backgroundColor: EmarColors.paprika, duration: const Duration(seconds: 2)),
+                                  SnackBar(
+                                    content: Text('Dikkat: ${warnings.first}'),
+                                    backgroundColor: EmarColors.paprika,
+                                    duration: const Duration(seconds: 2),
+                                  ),
                                 );
                               }
                             }
                           },
-                    child: Text(outOfStock ? 'Şu An Tükendi' : 'Sepete Ekle · ${_currentPrice.toStringAsFixed(0)}₺'),
+                    child: Text(
+                      outOfStock
+                          ? 'Şu An Tükendi'
+                          : 'Sepete Ekle · ${_currentPrice.toStringAsFixed(0)}₺',
+                    ),
                   ),
                 ),
               ),
@@ -199,14 +251,16 @@ class _RatingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
     final app = context.watch<AppState>();
     final ordered = app.hasOrderedProduct(product.id);
 
     if (!ordered) {
       return Text(
         'Bu ürünü değerlendirmek için önce sipariş etmelisin.',
-        style: TextStyle(fontSize: 12, color: EmarColors.espresso.withValues(alpha: 0.5)),
+        style: TextStyle(
+          fontSize: 12,
+          color: EmarColors.espresso.withValues(alpha: 0.5),
+        ),
       );
     }
 
@@ -220,10 +274,15 @@ class _RatingSection extends StatelessWidget {
             return IconButton(
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32),
-              onPressed: unlocked ? () => context.read<AppState>().rateProduct(product.id, i + 1) : null,
+              onPressed: unlocked
+                  ? () =>
+                        context.read<AppState>().rateProduct(product.id, i + 1)
+                  : null,
               icon: Icon(
                 filled ? Icons.star_rounded : Icons.star_border_rounded,
-                color: unlocked ? EmarColors.gold : EmarColors.espresso.withValues(alpha: 0.25),
+                color: unlocked
+                    ? EmarColors.gold
+                    : EmarColors.espresso.withValues(alpha: 0.25),
                 size: 26,
               ),
             );
@@ -234,7 +293,10 @@ class _RatingSection extends StatelessWidget {
             padding: const EdgeInsets.only(top: 2),
             child: Text(
               'Değerlendirme, siparişin hazır olmasından 5 dk sonra ya da bir sonraki girişinde açılacak.',
-              style: TextStyle(fontSize: 11, color: EmarColors.espresso.withValues(alpha: 0.5)),
+              style: TextStyle(
+                fontSize: 11,
+                color: EmarColors.espresso.withValues(alpha: 0.5),
+              ),
             ),
           ),
       ],
@@ -249,7 +311,6 @@ class _PairRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
     if (products.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,10 +339,18 @@ class _PairRow extends StatelessWidget {
                 onTap: out
                     ? null
                     : () async {
-                        final warnings = await context.read<AppState>().addToCart(p.id);
+                        final warnings = await context
+                            .read<AppState>()
+                            .addToCart(p.id);
                         if (context.mounted && warnings.isNotEmpty) {
                           ScaffoldMessenger.of(context).clearSnackBars();
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Dikkat: ${warnings.first}'), backgroundColor: EmarColors.paprika, duration: const Duration(seconds: 2)));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Dikkat: ${warnings.first}'),
+                              backgroundColor: EmarColors.paprika,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
                         }
                       },
                 child: Opacity(
@@ -298,10 +367,19 @@ class _PairRow extends StatelessWidget {
                         CircleAvatar(
                           radius: 14,
                           backgroundColor: EmarColors.moss,
-                          child: Text(p.icon, style: const TextStyle(fontSize: 13)),
+                          child: Text(
+                            p.icon,
+                            style: const TextStyle(fontSize: 13),
+                          ),
                         ),
                         const SizedBox(width: 7),
-                        Text(p.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                        Text(
+                          p.name,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ),
                   ),

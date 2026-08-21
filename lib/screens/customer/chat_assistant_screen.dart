@@ -17,7 +17,8 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
   final List<ChatTurn> _turns = [
     const ChatTurn(
       fromUser: false,
-      text: 'Merhaba! Ben EMAR Kafe asistanıyım ☕ Canın ne çekiyor, yoksa sana bir şey mi önereyim?',
+      text:
+          'Merhaba! Ben EMAR Kafe asistanıyım ☕ Canın ne çekiyor, yoksa sana bir şey mi önereyim?',
     ),
   ];
   bool _sending = false;
@@ -53,10 +54,20 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
     _scrollToBottom();
 
     try {
-      final reply = await AssistantService.sendMessage(history: history, userMessage: text);
+      final reply = await AssistantService.sendMessage(
+        history: history,
+        userMessage: text,
+      );
       setState(() => _turns.add(ChatTurn(fromUser: false, text: reply)));
     } catch (e) {
-      setState(() => _turns.add(ChatTurn(fromUser: false, text: '⚠️ ${e.toString().replaceFirst('StateError: ', '')}')));
+      setState(
+        () => _turns.add(
+          ChatTurn(
+            fromUser: false,
+            text: '⚠️ ${e.toString().replaceFirst('StateError: ', '')}',
+          ),
+        ),
+      );
     } finally {
       setState(() => _sending = false);
       _scrollToBottom();
@@ -72,7 +83,12 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
           Container(
             width: double.infinity,
             color: EmarColors.espresso,
-            padding: EdgeInsets.fromLTRB(8, MediaQuery.of(context).padding.top + 4, 20, 16),
+            padding: EdgeInsets.fromLTRB(
+              8,
+              MediaQuery.of(context).padding.top + 4,
+              20,
+              16,
+            ),
             child: Row(
               children: [
                 IconButton(
@@ -80,16 +96,32 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
                   icon: const Icon(Icons.arrow_back, color: EmarColors.surface),
                 ),
                 const SizedBox(width: 4),
-                const CircleAvatar(radius: 16, backgroundColor: EmarColors.moss, child: Text('☕', style: TextStyle(fontSize: 14))),
+                const CircleAvatar(
+                  radius: 16,
+                  backgroundColor: EmarColors.moss,
+                  child: Text('☕', style: TextStyle(fontSize: 14)),
+                ),
                 const SizedBox(width: 10),
                 const Expanded(
-                  child: Text('Kafe Asistanı', style: TextStyle(color: EmarColors.surface, fontFamily: 'Georgia', fontSize: 17, fontWeight: FontWeight.w700)),
+                  child: Text(
+                    'Kafe Asistanı',
+                    style: TextStyle(
+                      color: EmarColors.surface,
+                      fontFamily: 'Georgia',
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
           if (!AssistantService.isConfigured)
-            Expanded(child: _MissingKeyNotice(onBack: () => Navigator.of(context).pop()))
+            Expanded(
+              child: _MissingKeyNotice(
+                onBack: () => Navigator.of(context).pop(),
+              ),
+            )
           else ...[
             Expanded(
               child: ListView.builder(
@@ -114,7 +146,9 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
                         enabled: !_sending,
                         textInputAction: TextInputAction.send,
                         onSubmitted: (_) => _send(),
-                        decoration: const InputDecoration(hintText: 'Bir şey sor ya da öneri iste...'),
+                        decoration: const InputDecoration(
+                          hintText: 'Bir şey sor ya da öneri iste...',
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -127,10 +161,16 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
                           height: 46,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: _sending ? EmarColors.espresso.withValues(alpha: 0.3) : EmarColors.paprika,
+                            color: _sending
+                                ? EmarColors.espresso.withValues(alpha: 0.3)
+                                : EmarColors.paprika,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.arrow_upward, color: EmarColors.surface, size: 20),
+                          child: const Icon(
+                            Icons.arrow_upward,
+                            color: EmarColors.surface,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
@@ -157,7 +197,9 @@ class _ChatBubble extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.76),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.76,
+        ),
         decoration: BoxDecoration(
           color: mine ? EmarColors.paprika : EmarColors.surface,
           borderRadius: BorderRadius.only(
@@ -166,11 +208,17 @@ class _ChatBubble extends StatelessWidget {
             bottomLeft: Radius.circular(mine ? 16 : 4),
             bottomRight: Radius.circular(mine ? 4 : 16),
           ),
-          border: mine ? null : Border.all(color: EmarColors.espresso.withValues(alpha: 0.08)),
+          border: mine
+              ? null
+              : Border.all(color: EmarColors.espresso.withValues(alpha: 0.08)),
         ),
         child: Text(
           turn.text,
-          style: TextStyle(color: mine ? EmarColors.surface : EmarColors.espresso, fontSize: 13.5, height: 1.4),
+          style: TextStyle(
+            color: mine ? EmarColors.surface : EmarColors.espresso,
+            fontSize: 13.5,
+            height: 1.4,
+          ),
         ),
       ),
     );
@@ -184,8 +232,12 @@ class _TypingBubble extends StatefulWidget {
   State<_TypingBubble> createState() => _TypingBubbleState();
 }
 
-class _TypingBubbleState extends State<_TypingBubble> with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000))..repeat();
+class _TypingBubbleState extends State<_TypingBubble>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1000),
+  )..repeat();
 
   @override
   void dispose() {
@@ -202,8 +254,14 @@ class _TypingBubbleState extends State<_TypingBubble> with SingleTickerProviderS
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: EmarColors.surface,
-          borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16), bottomRight: Radius.circular(16)),
-          border: Border.all(color: EmarColors.espresso.withValues(alpha: 0.08)),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+            bottomRight: Radius.circular(16),
+          ),
+          border: Border.all(
+            color: EmarColors.espresso.withValues(alpha: 0.08),
+          ),
         ),
         child: AnimatedBuilder(
           animation: _ctrl,
@@ -217,7 +275,14 @@ class _TypingBubbleState extends State<_TypingBubble> with SingleTickerProviderS
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: Transform.scale(
                     scale: scale.clamp(0.6, 1.0),
-                    child: Container(width: 6, height: 6, decoration: const BoxDecoration(color: EmarColors.espresso, shape: BoxShape.circle)),
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: EmarColors.espresso,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ),
                 );
               }),
@@ -241,25 +306,45 @@ class _MissingKeyNotice extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.cloud_off_outlined, size: 40, color: EmarColors.espresso),
+          const Icon(
+            Icons.cloud_off_outlined,
+            size: 40,
+            color: EmarColors.espresso,
+          ),
           const SizedBox(height: 16),
-          Text('Supabase bağlantısı tanımlı değil', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17)),
+          Text(
+            'Supabase bağlantısı tanımlı değil',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontSize: 17),
+          ),
           const SizedBox(height: 10),
           Text(
             'Asistan, Supabase Edge Function üzerinden çalışıyor. Model API anahtarı sunucuda '
             'durur; uygulamaya sadece proje adresi ve anon key verilir.',
-            style: TextStyle(fontSize: 13, color: EmarColors.espresso.withValues(alpha: 0.7), height: 1.5),
+            style: TextStyle(
+              fontSize: 13,
+              color: EmarColors.espresso.withValues(alpha: 0.7),
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 16),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: EmarColors.oatDark, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: EmarColors.oatDark,
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: const SelectableText(
               'flutter run -d web-server --web-port=8765 \\\n'
               '  --dart-define=SUPABASE_URL=https://xxxx.supabase.co \\\n'
               '  --dart-define=SUPABASE_ANON_KEY=eyJ...',
-              style: TextStyle(fontFamily: 'monospace', fontSize: 12, color: EmarColors.espresso),
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
+                color: EmarColors.espresso,
+              ),
             ),
           ),
         ],

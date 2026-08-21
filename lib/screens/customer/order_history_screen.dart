@@ -23,7 +23,9 @@ class OrderHistoryScreen extends StatelessWidget {
             ? Center(
                 child: Text(
                   'Henüz bir siparişin yok ☕',
-                  style: TextStyle(color: EmarColors.espresso.withValues(alpha: 0.55)),
+                  style: TextStyle(
+                    color: EmarColors.espresso.withValues(alpha: 0.55),
+                  ),
                 ),
               )
             : ListView.separated(
@@ -78,26 +80,63 @@ class _OrderCard extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: live ? () => Navigator.of(context).push(softRoute(OrderTrackingScreen(order: order))) : null,
+      onTap: live
+          ? () => Navigator.of(
+              context,
+            ).push(softRoute(OrderTrackingScreen(order: order)))
+          : null,
       child: Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: EmarColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: EmarColors.espresso.withValues(alpha: 0.06))),
+        decoration: BoxDecoration(
+          color: EmarColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: EmarColors.espresso.withValues(alpha: 0.06),
+          ),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: Text(order.shortId, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5))),
+                Expanded(
+                  child: Text(
+                    order.shortId,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: _statusColor(order).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
-                  child: Text(_statusLabel(order), style: TextStyle(color: _statusColor(order), fontSize: 10.5, fontWeight: FontWeight.w700)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _statusColor(order).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    _statusLabel(order),
+                    style: TextStyle(
+                      color: _statusColor(order),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            Text('${_formatDate(order.createdAt)} · ${order.branch}', style: TextStyle(fontSize: 11, color: EmarColors.espresso.withValues(alpha: 0.55))),
+            Text(
+              '${_formatDate(order.createdAt)} · ${order.branch}',
+              style: TextStyle(
+                fontSize: 11,
+                color: EmarColors.espresso.withValues(alpha: 0.55),
+              ),
+            ),
             const SizedBox(height: 10),
             ...order.items.entries.map((e) {
               final product = productById(e.key);
@@ -109,16 +148,42 @@ class _OrderCard extends StatelessWidget {
                   children: [
                     Text(product.icon, style: const TextStyle(fontSize: 15)),
                     const SizedBox(width: 8),
-                    Expanded(child: Text('${e.value}× ${product.name}', style: const TextStyle(fontSize: 12.5))),
+                    Expanded(
+                      child: Text(
+                        '${e.value}× ${product.name}',
+                        style: const TextStyle(fontSize: 12.5),
+                      ),
+                    ),
                     if (myRating != null)
-                      Text('★' * myRating.round(), style: const TextStyle(color: EmarColors.gold, fontSize: 11, fontWeight: FontWeight.w700))
+                      Text(
+                        '★' * myRating.round(),
+                        style: const TextStyle(
+                          color: EmarColors.gold,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      )
                     else if (canRate)
                       GestureDetector(
-                        onTap: () => _quickRate(context, product.id, product.name),
-                        child: const Text('Değerlendir', style: TextStyle(color: EmarColors.moss, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                        onTap: () =>
+                            _quickRate(context, product.id, product.name),
+                        child: const Text(
+                          'Değerlendir',
+                          style: TextStyle(
+                            color: EmarColors.moss,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       )
                     else
-                      Text('Yakında', style: TextStyle(color: EmarColors.espresso.withValues(alpha: 0.35), fontSize: 11)),
+                      Text(
+                        'Yakında',
+                        style: TextStyle(
+                          color: EmarColors.espresso.withValues(alpha: 0.35),
+                          fontSize: 11,
+                        ),
+                      ),
                   ],
                 ),
               );
@@ -127,8 +192,21 @@ class _OrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Toplam', style: TextStyle(fontSize: 11.5, color: EmarColors.espresso.withValues(alpha: 0.55))),
-                Text('${order.total.toStringAsFixed(0)}₺', style: const TextStyle(fontWeight: FontWeight.w800, color: EmarColors.paprika, fontSize: 13.5)),
+                Text(
+                  'Toplam',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: EmarColors.espresso.withValues(alpha: 0.55),
+                  ),
+                ),
+                Text(
+                  '${order.total.toStringAsFixed(0)}₺',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: EmarColors.paprika,
+                    fontSize: 13.5,
+                  ),
+                ),
               ],
             ),
           ],
@@ -151,12 +229,19 @@ class _OrderCard extends StatelessWidget {
                 final filled = i < stars;
                 return IconButton(
                   onPressed: () => setState(() => stars = (i + 1).toDouble()),
-                  icon: Icon(filled ? Icons.star_rounded : Icons.star_border_rounded, color: EmarColors.gold, size: 28),
+                  icon: Icon(
+                    filled ? Icons.star_rounded : Icons.star_border_rounded,
+                    color: EmarColors.gold,
+                    size: 28,
+                  ),
                 );
               }),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Vazgeç')),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Vazgeç'),
+              ),
               ElevatedButton(
                 onPressed: () {
                   context.read<AppState>().rateProduct(productId, stars);

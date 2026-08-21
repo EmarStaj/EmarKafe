@@ -9,7 +9,7 @@ import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
 class CartNotifier extends ChangeNotifier {
   final ApiService api;
   final AuthNotifier auth;
-  
+
   // localId -> CartItem (localId can be productId + options hash)
   Map<String, CartItem> cart = {};
   double cartTotal = 0.0;
@@ -30,7 +30,7 @@ class CartNotifier extends ChangeNotifier {
       cartTotal += item.totalPrice;
     });
   }
-  
+
   String _generateLocalId(String productId, List<ProductOption> options) {
     if (options.isEmpty) return productId;
     final optIds = options.map((e) => e.id).toList()..sort();
@@ -49,19 +49,24 @@ class CartNotifier extends ChangeNotifier {
       } else if (res['data'] is List) {
         items = res['data'] as List<dynamic>;
       }
-      
+
       final Map<String, CartItem> newCart = {};
       for (var item in items) {
-        final productId = item['product_id']?.toString() ?? item['productId']?.toString() ?? '';
+        final productId =
+            item['product_id']?.toString() ??
+            item['productId']?.toString() ??
+            '';
         if (productId.isEmpty) continue;
         final qty = (item['quantity'] as num?)?.toInt() ?? 1;
         final cartItemId = item['id']?.toString() ?? '';
-        
+
         List<ProductOption> options = [];
         if (item['options'] != null && item['options'] is List) {
-           options = (item['options'] as List).map((o) => ProductOption.fromJson(o)).toList();
+          options = (item['options'] as List)
+              .map((o) => ProductOption.fromJson(o))
+              .toList();
         }
-        
+
         try {
           final product = productById(productId);
           final localId = _generateLocalId(productId, options);
@@ -89,69 +94,89 @@ class CartNotifier extends ChangeNotifier {
       }
       return [];
     }
-    
+
     final nextQty = originalItem.quantity + delta;
-    
+
     if (nextQty <= 0) {
       cart.remove(localId);
     } else {
       cart[localId] = originalItem.copyWith(quantity: nextQty);
     }
-    
+
     _recalcTotal();
     notifyListeners();
 
     if (!auth.loggedIn) return [];
-    
+
     _cartDebounceTimers[localId]?.cancel();
     isUpdatingCart = true;
     notifyListeners();
 
-    _cartDebounceTimers[localId] = Timer(const Duration(milliseconds: 400), () async {
-      _cartDebounceTimers.remove(localId);
-      
-      try {
-        final finalItem = cart[localId];
-        final finalQty = finalItem?.quantity ?? 0;
-        
-        if (originalItem.cartItemId.isNotEmpty && originalItem.cartItemId != 'local') {
-          await api.updateCartItem(originalItem.cartItemId, finalQty);
-        } else if (finalQty > 0 && finalItem != null) {
-          await api.addToCart(finalItem.product.id, finalQty, options: finalItem.selectedOptions.map((e) => e.id).toList());
+    _cartDebounceTimers[localId] = Timer(
+      const Duration(milliseconds: 400),
+      () async {
+        _cartDebounceTimers.remove(localId);
+
+        try {
+          final finalItem = cart[localId];
+          final finalQty = finalItem?.quantity ?? 0;
+
+          if (originalItem.cartItemId.isNotEmpty &&
+              originalItem.cartItemId != 'local') {
+            await api.updateCartItem(originalItem.cartItemId, finalQty);
+          } else if (finalQty > 0 && finalItem != null) {
+            await api.addToCart(
+              finalItem.product.id,
+              finalQty,
+              options: finalItem.selectedOptions.map((e) => e.id).toList(),
+            );
+          }
+          await fetchCart();
+        } catch (e) {
+          debugPrint('Cart sync error: $e');
+        } finally {
+          if (_cartDebounceTimers.isEmpty) {
+            isUpdatingCart = false;
+          }
+          notifyListeners();
         }
-        await fetchCart();
-      } catch (e) {
-        debugPrint('Cart sync error: $e');
-      } finally {
-        if (_cartDebounceTimers.isEmpty) {
-          isUpdatingCart = false;
-        }
-        notifyListeners();
-      }
-    });
+      },
+    );
 
     return [];
   }
 
-  Future<List<String>> addToCart(String productId, {List<ProductOption> options = const []}) async {
+  Future<List<String>> addToCart(
+    String productId, {
+    List<ProductOption> options = const [],
+  }) async {
     final localId = _generateLocalId(productId, options);
     final existing = cart[localId];
-    
+
     if (existing != null) {
       return changeQty(localId, 1);
     }
-    
+
     try {
       final product = productById(productId);
-      cart[localId] = CartItem(cartItemId: 'local', product: product, quantity: 1, selectedOptions: options);
+      cart[localId] = CartItem(
+        cartItemId: 'local',
+        product: product,
+        quantity: 1,
+        selectedOptions: options,
+      );
       _recalcTotal();
       notifyListeners();
-      
+
       if (auth.loggedIn) {
         isUpdatingCart = true;
         notifyListeners();
         try {
-          final warnings = await api.addToCart(productId, 1, options: options.map((e) => e.id).toList());
+          final warnings = await api.addToCart(
+            productId,
+            1,
+            options: options.map((e) => e.id).toList(),
+          );
           await fetchCart();
           return warnings;
         } catch (e) {

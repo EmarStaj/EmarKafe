@@ -5,7 +5,7 @@ import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
 class WalletNotifier extends ChangeNotifier {
   final ApiService api;
   final AuthNotifier auth;
-  
+
   double walletBalance = 0.0;
   bool isUpdatingWallet = false;
 
@@ -22,7 +22,9 @@ class WalletNotifier extends ChangeNotifier {
         } else if (wallet['data'] is num) {
           b = wallet['data'] as num;
         } else if (wallet['data'] is Map) {
-          b = (wallet['data']['balance'] as num?) ?? (wallet['data']['wallet_balance'] as num?);
+          b =
+              (wallet['data']['balance'] as num?) ??
+              (wallet['data']['wallet_balance'] as num?);
         }
       }
       if (b != null) {

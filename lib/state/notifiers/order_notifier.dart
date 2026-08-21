@@ -12,7 +12,7 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
   final AuthNotifier auth;
   final CartNotifier cart;
   final WalletNotifier wallet;
-  
+
   List<OrderRecord> orderHistory = [];
   List<OrderRecord> get activeBaristaOrders => orderHistory;
   int loyaltyProgress = 0;
@@ -48,7 +48,7 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
       if (auth.loggedIn) fetchOrders();
     });
   }
-  
+
   void stopPolling() {
     _pollingTimer?.cancel();
   }
@@ -70,7 +70,9 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
         }
 
         if (rewardsList != null) {
-          freeCoffeesEarned = rewardsList.where((r) => r['status'] == 'earned').length;
+          freeCoffeesEarned = rewardsList
+              .where((r) => r['status'] == 'earned')
+              .length;
         } else {
           freeCoffeesEarned = 0;
         }
@@ -106,18 +108,19 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<OrderRecord?> placeOrder({bool useWallet = false}) async {
     if (!auth.loggedIn) return null;
-    
+
     if (useWallet) {
-      if (wallet.walletBalance < cart.cartTotal) throw Exception('Yetersiz bakiye');
+      if (wallet.walletBalance < cart.cartTotal)
+        throw Exception('Yetersiz bakiye');
     }
-    
+
     if (auth.selectedBranchId == null) throw Exception('Şube seçilmedi');
 
-    await api.placeOrder(auth.selectedBranchId!); 
-    await cart.fetchCart(); 
-    await fetchOrders(); 
+    await api.placeOrder(auth.selectedBranchId!);
+    await cart.fetchCart();
+    await fetchOrders();
     if (useWallet) await wallet.fetchWalletBalance();
-    
+
     return activeOrder;
   }
 
@@ -138,10 +141,10 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
         newStatus = OrderStatus.ready;
         break;
     }
-    
+
     try {
       await api.updateOrderStatus(order.id, newStatus.name);
-      await fetchOrders(); 
+      await fetchOrders();
     } catch (e) {
       debugPrint('Order update error: $e');
     }

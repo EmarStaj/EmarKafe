@@ -1,8 +1,8 @@
-
 import 'package:emar_kafe/models/product.dart';
 
 class CartItem {
-  final String cartItemId; // Backend's cart_items ID, nullable for local-only items
+  final String
+  cartItemId; // Backend's cart_items ID, nullable for local-only items
   final Product product;
   final int quantity;
   final List<ProductOption> selectedOptions;
@@ -13,15 +13,17 @@ class CartItem {
     required this.quantity,
     this.selectedOptions = const [],
   });
-  
+
   double get unitPrice {
     double total = product.price;
     for (final opt in selectedOptions) {
       total += opt.priceDelta;
     }
-    return total < 0 ? 0 : total; // Negatif price_delta ihtimalinin UI tarafinda kontrolu
+    return total < 0
+        ? 0
+        : total; // Negatif price_delta ihtimalinin UI tarafinda kontrolu
   }
-  
+
   double get totalPrice => unitPrice * quantity;
 
   CartItem copyWith({

@@ -39,14 +39,20 @@ class _CustomerShellState extends State<CustomerShell> {
           const ProfileTab(),
         ],
       ),
-      bottomNavigationBar: _DarkNavBar(index: _index, cartCount: cartCount, onChanged: _goTo),
+      bottomNavigationBar: _DarkNavBar(
+        index: _index,
+        cartCount: cartCount,
+        onChanged: _goTo,
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 78),
         child: PressableScale(
           child: FloatingActionButton(
             backgroundColor: EmarColors.paprika,
-            onPressed: () => Navigator.of(context).push(softRoute(const ChatAssistantScreen())),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(softRoute(const ChatAssistantScreen())),
             child: const Text('☕', style: TextStyle(fontSize: 22)),
           ),
         ),
@@ -59,12 +65,24 @@ class _DarkNavBar extends StatelessWidget {
   final int index;
   final int cartCount;
   final ValueChanged<int> onChanged;
-  const _DarkNavBar({required this.index, required this.cartCount, required this.onChanged});
+  const _DarkNavBar({
+    required this.index,
+    required this.cartCount,
+    required this.onChanged,
+  });
 
   static const _items = [
     (icon: Icons.home_outlined, active: Icons.home_rounded, label: 'Anasayfa'),
-    (icon: Icons.shopping_bag_outlined, active: Icons.shopping_bag, label: 'Sepetim'),
-    (icon: Icons.card_giftcard_outlined, active: Icons.card_giftcard, label: 'Kampanyalar'),
+    (
+      icon: Icons.shopping_bag_outlined,
+      active: Icons.shopping_bag,
+      label: 'Sepetim',
+    ),
+    (
+      icon: Icons.card_giftcard_outlined,
+      active: Icons.card_giftcard,
+      label: 'Kampanyalar',
+    ),
     (icon: Icons.person_outline, active: Icons.person, label: 'Hesabım'),
   ];
 
@@ -80,7 +98,9 @@ class _DarkNavBar extends StatelessWidget {
             children: List.generate(_items.length, (i) {
               final item = _items[i];
               final selected = i == index;
-              final color = selected ? EmarColors.moss : EmarColors.surface.withValues(alpha: 0.55);
+              final color = selected
+                  ? EmarColors.moss
+                  : EmarColors.surface.withValues(alpha: 0.55);
               return Expanded(
                 child: InkWell(
                   onTap: () => onChanged(i),
@@ -92,7 +112,8 @@ class _DarkNavBar extends StatelessWidget {
                         children: [
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 200),
-                            transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                            transitionBuilder: (child, anim) =>
+                                ScaleTransition(scale: anim, child: child),
                             child: Icon(
                               selected ? item.active : item.icon,
                               key: ValueKey(selected),
@@ -105,11 +126,21 @@ class _DarkNavBar extends StatelessWidget {
                               right: -8,
                               top: -4,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                decoration: BoxDecoration(color: EmarColors.moss, borderRadius: BorderRadius.circular(999)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: EmarColors.moss,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
                                 child: Text(
                                   '$cartCount',
-                                  style: const TextStyle(color: EmarColors.surface, fontSize: 9, fontWeight: FontWeight.w700),
+                                  style: const TextStyle(
+                                    color: EmarColors.surface,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                             ),
@@ -118,7 +149,11 @@ class _DarkNavBar extends StatelessWidget {
                       const SizedBox(height: 4),
                       AnimatedDefaultTextStyle(
                         duration: const Duration(milliseconds: 200),
-                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: color),
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: color,
+                        ),
                         child: Text(item.label),
                       ),
                     ],

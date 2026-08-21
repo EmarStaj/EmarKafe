@@ -12,7 +12,9 @@ void main() {
     FlutterSecureStorage.setMockInitialValues({});
   });
 
-  testWidgets('App renders EMAR Kafe home and branding', (WidgetTester tester) async {
+  testWidgets('App renders EMAR Kafe home and branding', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const EmarKafeApp());
     await tester.pump();
 

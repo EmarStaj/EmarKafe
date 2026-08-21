@@ -1,19 +1,18 @@
-
 enum ProductCategory { hotCoffee, icedCoffee, dessert }
 
 extension ProductCategoryLabel on ProductCategory {
   String get label => switch (this) {
-        ProductCategory.hotCoffee => 'Sıcak Kahve',
-        ProductCategory.icedCoffee => 'Soğuk Kahve',
-        ProductCategory.dessert => 'Tatlı',
-      };
+    ProductCategory.hotCoffee => 'Sıcak Kahve',
+    ProductCategory.icedCoffee => 'Soğuk Kahve',
+    ProductCategory.dessert => 'Tatlı',
+  };
 }
 
 ProductCategory productCategoryFromName(String name) => switch (name.trim()) {
-      'Soğuk Kahve' => ProductCategory.icedCoffee,
-      'Tatlı' => ProductCategory.dessert,
-      _ => ProductCategory.hotCoffee,
-    };
+  'Soğuk Kahve' => ProductCategory.icedCoffee,
+  'Tatlı' => ProductCategory.dessert,
+  _ => ProductCategory.hotCoffee,
+};
 
 class ProductOption {
   final String id;
@@ -33,7 +32,7 @@ class ProductOption {
       priceDelta: (json['price_delta'] as num?)?.toDouble() ?? 0.0,
     );
   }
-  
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
@@ -72,14 +71,20 @@ class Product {
     this.options = const [], // ADDED
   });
 
-  factory Product.fromDb(Map<String, dynamic> row, {List<String> pairsWith = const []}) {
-    final categoryName = (row['categories'] as Map<String, dynamic>?)?['name'] as String? ?? '';
-    
+  factory Product.fromDb(
+    Map<String, dynamic> row, {
+    List<String> pairsWith = const [],
+  }) {
+    final categoryName =
+        (row['categories'] as Map<String, dynamic>?)?['name'] as String? ?? '';
+
     List<ProductOption> parsedOptions = [];
     if (row['options'] != null && row['options'] is List) {
-      parsedOptions = (row['options'] as List).map((o) => ProductOption.fromJson(o)).toList();
+      parsedOptions = (row['options'] as List)
+          .map((o) => ProductOption.fromJson(o))
+          .toList();
     }
-    
+
     return Product(
       id: row['id'] as String,
       name: row['name'] as String,
@@ -87,7 +92,10 @@ class Product {
       categoryId: row['category_id'] as String,
       price: (row['base_price'] as num).toDouble(),
       icon: row['icon'] as String? ?? '☕',
-      rating: (row['avg_rating'] as num?)?.toDouble() ?? (row['rating'] as num?)?.toDouble() ?? 0.0,
+      rating:
+          (row['avg_rating'] as num?)?.toDouble() ??
+          (row['rating'] as num?)?.toDouble() ??
+          0.0,
       ratingCount: (row['rating_count'] as num?)?.toInt() ?? 0,
       description: row['description'] as String?,
       isActive: row['is_active'] as bool? ?? true,

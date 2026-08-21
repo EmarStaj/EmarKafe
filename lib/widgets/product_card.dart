@@ -14,7 +14,9 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    final qty = app.cartItems.values.where((i) => i.product.id == product.id).fold(0, (s, i) => s + i.quantity);
+    final qty = app.cartItems.values
+        .where((i) => i.product.id == product.id)
+        .fold(0, (s, i) => s + i.quantity);
     final outOfStock = app.isOutOfStock(product.id);
 
     return InkWell(
@@ -26,7 +28,9 @@ class ProductCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: EmarColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: EmarColors.espresso.withValues(alpha: 0.06)),
+          border: Border.all(
+            color: EmarColors.espresso.withValues(alpha: 0.06),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,7 +55,10 @@ class ProductCard extends StatelessWidget {
                       ),
                       child: Semantics(
                         label: product.name,
-                        child: Text(product.icon, style: const TextStyle(fontSize: 26)),
+                        child: Text(
+                          product.icon,
+                          style: const TextStyle(fontSize: 26),
+                        ),
                       ),
                     ),
                   ),
@@ -60,9 +67,22 @@ class ProductCard extends StatelessWidget {
                   Positioned.fill(
                     child: Center(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: EmarColors.espresso, borderRadius: BorderRadius.circular(999)),
-                        child: const Text('Tükendi', style: TextStyle(color: EmarColors.surface, fontSize: 10, fontWeight: FontWeight.w700)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: EmarColors.espresso,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text(
+                          'Tükendi',
+                          style: TextStyle(
+                            color: EmarColors.surface,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
                   )
@@ -79,7 +99,10 @@ class ProductCard extends StatelessWidget {
               product.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 12.5,
+              ),
             ),
             const SizedBox(height: 3),
             Row(
@@ -87,7 +110,11 @@ class ProductCard extends StatelessWidget {
               children: [
                 Text(
                   '★ ${product.rating.toStringAsFixed(1)}',
-                  style: const TextStyle(fontSize: 11, color: EmarColors.gold, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: EmarColors.gold,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Text(
                   '${product.price.toStringAsFixed(0)}₺',
@@ -130,7 +157,8 @@ class _QuickAddStepper extends StatelessWidget {
     final app = context.read<AppState>();
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
-      transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+      transitionBuilder: (child, anim) =>
+          ScaleTransition(scale: anim, child: child),
       child: qty > 0
           ? Container(
               key: const ValueKey('stepper'),
@@ -138,17 +166,36 @@ class _QuickAddStepper extends StatelessWidget {
               decoration: BoxDecoration(
                 color: EmarColors.espresso,
                 borderRadius: BorderRadius.circular(999),
-                boxShadow: [BoxShadow(color: EmarColors.espresso.withValues(alpha: 0.3), blurRadius: 6, offset: const Offset(0, 2))],
+                boxShadow: [
+                  BoxShadow(
+                    color: EmarColors.espresso.withValues(alpha: 0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _StepBtn(icon: Icons.remove, onTap: () => _handleQty(context, app, -1)),
+                  _StepBtn(
+                    icon: Icons.remove,
+                    onTap: () => _handleQty(context, app, -1),
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text('$qty', style: const TextStyle(color: EmarColors.surface, fontWeight: FontWeight.w700, fontSize: 12)),
+                    child: Text(
+                      '$qty',
+                      style: const TextStyle(
+                        color: EmarColors.surface,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
-                  _StepBtn(icon: Icons.add, onTap: () => _handleQty(context, app, 1)),
+                  _StepBtn(
+                    icon: Icons.add,
+                    onTap: () => _handleQty(context, app, 1),
+                  ),
                 ],
               ),
             )
@@ -166,7 +213,12 @@ class _StepBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final bool filled;
-  const _StepBtn({super.key, required this.icon, required this.onTap, this.filled = false});
+  const _StepBtn({
+    super.key,
+    required this.icon,
+    required this.onTap,
+    this.filled = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -180,7 +232,15 @@ class _StepBtn extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: filled ? EmarColors.espresso : Colors.transparent,
-          boxShadow: filled ? [BoxShadow(color: EmarColors.espresso.withValues(alpha: 0.35), blurRadius: 6, offset: const Offset(0, 2))] : null,
+          boxShadow: filled
+              ? [
+                  BoxShadow(
+                    color: EmarColors.espresso.withValues(alpha: 0.35),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Icon(icon, size: 15, color: EmarColors.surface),
       ),
