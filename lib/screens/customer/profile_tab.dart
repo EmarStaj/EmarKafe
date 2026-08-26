@@ -484,57 +484,6 @@ class _ProfileTabState extends State<ProfileTab> {
             ],
           );
         },
-      ),
-    );
-  }
-              TextButton(
-                onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
-                child: const Text('İptal'),
-              ),
-              ElevatedButton(
-                onPressed: isSubmitting
-                    ? null
-                    : () async {
-                        if (!formKey.currentState!.validate()) return;
-                        setDialogState(() => isSubmitting = true);
-                        try {
-                          await app.updateEmail(controller.text.trim());
-                          if (dialogCtx.mounted) Navigator.pop(dialogCtx);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).clearSnackBars();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'E-posta adresiniz başarıyla güncellendi.',
-                                ),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          setDialogState(() => isSubmitting = false);
-                          if (dialogCtx.mounted) {
-                            ScaffoldMessenger.of(
-                              dialogCtx,
-                            ).showSnackBar(SnackBar(content: Text('Hata: $e')));
-                          }
-                        }
-                      },
-                child: isSubmitting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Güncelle'),
-              ),
-            ],
-          );
-        },
-      ),
     );
   }
 
