@@ -302,6 +302,101 @@ class _ProfileTabState extends State<ProfileTab> {
   );
 }
 
+  void _showEditProfileDialog(BuildContext context, AppState app) {
+    final nameController = TextEditingController(text: app.userName);
+    final formKey = GlobalKey<FormState>();
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: EmarColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              'Profili Düzenle',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Adınız Soyadınız:',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      hintText: 'Ad Soyad',
+                      prefixIcon: Icon(Icons.person_outline),
+                    ),
+                    validator: (val) {
+                      final text = val?.trim() ?? '';
+                      if (text.isEmpty) return 'İsim alanı boş bırakılamaz';
+                      if (text.length < 2) return 'En az 2 karakter giriniz';
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
+                child: const Text('İptal'),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        if (!formKey.currentState!.validate()) return;
+                        setDialogState(() => isSubmitting = true);
+                        try {
+                          await app.updateProfile(name: nameController.text.trim());
+                          if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).clearSnackBars();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Profil bilgileriniz güncellendi.'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          setDialogState(() => isSubmitting = false);
+                          if (dialogCtx.mounted) {
+                            ScaffoldMessenger.of(dialogCtx).showSnackBar(
+                              SnackBar(content: Text('Hata: $e')),
+                            );
+                          }
+                        }
+                      },
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Kaydet'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   void _showUpdateEmailDialog(BuildContext context, AppState app) {
     final controller = TextEditingController(text: app.userEmail);
     final formKey = GlobalKey<FormState>();

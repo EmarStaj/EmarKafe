@@ -218,7 +218,11 @@ class AppState extends ChangeNotifier {
 
   Future<void> updateEmail(String newEmail) => auth.updateEmail(newEmail);
   Future<void> updateProfile({String? name, String? phone, DateTime? birthDate}) async {
-    await api.updateProfile(name: name, phone: phone, birthDate: birthDate);
+    await api.updateProfile(
+      fullName: name,
+      phone: phone,
+      birthDate: birthDate?.toIso8601String().split('T').first,
+    );
     await auth.fetchMe(); // refresh user data
   }
   Future<void> deleteAccount() => auth.deleteAccount();
