@@ -7,6 +7,12 @@ import 'package:emar_kafe/models/cart_item.dart';
 import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
 
 class CartNotifier extends ChangeNotifier {
+  void clear() {
+    cart = {};
+    cartTotal = 0.0;
+    isUpdatingCart = false;
+    notifyListeners();
+  }
   final ApiService api;
   final AuthNotifier auth;
 
@@ -61,8 +67,9 @@ class CartNotifier extends ChangeNotifier {
         final cartItemId = item['id']?.toString() ?? '';
 
         List<ProductOption> options = [];
-        if (item['options'] != null && item['options'] is List) {
-          options = (item['options'] as List)
+        final rawOps = item['selected_options'] ?? item['options'];
+        if (rawOps != null && rawOps is List) {
+          options = (rawOps as List)
               .map((o) => ProductOption.fromJson(o))
               .toList();
         }
@@ -71,6 +78,7 @@ class CartNotifier extends ChangeNotifier {
           final product = productById(productId);
           final localId = _generateLocalId(productId, options);
           newCart[localId] = CartItem(
+            serverUnitPrice: (item['unit_price'] as num?)?.toDouble(),
             cartItemId: cartItemId,
             product: product,
             quantity: qty,
@@ -81,8 +89,8 @@ class CartNotifier extends ChangeNotifier {
       cart = newCart;
       _recalcTotal();
       notifyListeners();
-    } catch (e) {
-      debugPrint('fetchCart error: $e');
+    } catch (e, s) {
+      debugPrint('fetchCart error: $e, \n$s');
     }
   }
 
@@ -113,7 +121,7 @@ class CartNotifier extends ChangeNotifier {
     notifyListeners();
 
     _cartDebounceTimers[localId] = Timer(
-      const Duration(milliseconds: 400),
+      const Duration(milliseconds: 1000),
       () async {
         _cartDebounceTimers.remove(localId);
 
@@ -128,7 +136,7 @@ class CartNotifier extends ChangeNotifier {
             await api.addToCart(
               finalItem.product.id,
               finalQty,
-              options: finalItem.selectedOptions.map((e) => e.id).toList(),
+              options: finalItem.selectedOptions.map((e) => e.toJson()).toList(),
             );
           }
           await fetchCart();
@@ -175,7 +183,7 @@ class CartNotifier extends ChangeNotifier {
           final warnings = await api.addToCart(
             productId,
             1,
-            options: options.map((e) => e.id).toList(),
+            options: options.map((e) => e.toJson()).toList(),
           );
           await fetchCart();
           return warnings;

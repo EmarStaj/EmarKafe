@@ -3,6 +3,10 @@ import 'package:emar_kafe/models/staff_member.dart';
 import 'package:emar_kafe/services/api_service.dart';
 
 class StaffNotifier extends ChangeNotifier {
+  void clear() {
+    staffList = [];
+    notifyListeners();
+  }
   final ApiService api;
   List<StaffMember> staffList = [];
   bool isLoading = false;

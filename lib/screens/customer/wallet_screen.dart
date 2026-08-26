@@ -24,6 +24,16 @@ class _WalletScreenState extends State<WalletScreen> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<AppState>().wallet.fetchWalletBalance();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _cardHolderCtrl.dispose();
     _cardNumberCtrl.dispose();

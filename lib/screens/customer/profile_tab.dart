@@ -12,8 +12,38 @@ import '../login_screen.dart';
 import 'order_history_screen.dart';
 import 'wallet_screen.dart';
 
-class ProfileTab extends StatelessWidget {
+class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
+
+  @override
+  State<ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<ProfileTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final app = context.read<AppState>();
+        if (app.loggedIn) {
+          app.wallet.fetchWalletBalance();
+          app.orders.fetchOrders();
+        }
+      }
+    });
+  }
+
+  Future<void> _refresh() async {
+    final app = context.read<AppState>();
+    if (app.loggedIn) {
+      await Future.wait([
+        app.wallet.fetchWalletBalance(),
+        app.orders.fetchOrders(),
+        app.auth.fetchMe(),
+      ]);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,8 +53,11 @@ class ProfileTab extends StatelessWidget {
     final rated = app.ratings.entries.toList();
 
     return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
+      child: RefreshIndicator(
+        onRefresh: _refresh,
+        color: EmarColors.paprika,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
         children: [
           Row(
             children: [
@@ -229,6 +262,14 @@ class ProfileTab extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
+              onPressed: () => _showEditProfileDialog(context, app),
+              child: const Text('Profili Düzenle'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
               onPressed: () => _showUpdateEmailDialog(context, app),
               child: const Text('E-posta Güncelle'),
             ),
@@ -257,8 +298,9 @@ class ProfileTab extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showUpdateEmailDialog(BuildContext context, AppState app) {
     final controller = TextEditingController(text: app.userEmail);

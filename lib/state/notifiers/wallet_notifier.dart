@@ -3,6 +3,10 @@ import 'package:emar_kafe/services/api_service.dart';
 import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
 
 class WalletNotifier extends ChangeNotifier {
+  void clear() {
+    walletBalance = 0.0;
+    notifyListeners();
+  }
   final ApiService api;
   final AuthNotifier auth;
 
@@ -62,6 +66,7 @@ class WalletNotifier extends ChangeNotifier {
     try {
       return await api.getWalletQrToken();
     } catch (e) {
+      debugPrint('generateWalletToken error: $e');
       return null;
     } finally {
       isUpdatingWallet = false;

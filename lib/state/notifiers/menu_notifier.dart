@@ -19,26 +19,29 @@ class MenuNotifier extends ChangeNotifier {
 
   MenuNotifier(this.api);
 
-  Future<void> fetchFirstPage() async {
+  Future<void> fetchFirstPage({String? branchId}) async {
+    _currentBranchId = branchId;
     _currentPage = 1;
     _hasMore = true;
     _products.clear();
-    await _fetchPage(_currentPage);
+    await _fetchPage(_currentPage, _currentBranchId);
   }
+
+  String? _currentBranchId;
 
   Future<void> fetchNextPage() async {
     if (_isLoading || !_hasMore) return;
     _currentPage++;
-    await _fetchPage(_currentPage);
+    await _fetchPage(_currentPage, _currentBranchId);
   }
 
-  Future<void> _fetchPage(int page) async {
+  Future<void> _fetchPage(int page, String? branchId) async {
     _isLoading = true;
     // We notify here if we want to show a loading indicator at the bottom
     notifyListeners();
 
     try {
-      final res = await api.getMenu(page: page, limit: 10);
+      final res = await api.getMenu(page: page, limit: 10, branchId: branchId);
       final list = res['data'] as List<dynamic>? ?? [];
 
       if (list.isEmpty) {

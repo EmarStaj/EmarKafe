@@ -72,13 +72,23 @@ class AppState extends ChangeNotifier {
     this.menu,
     this.staff,
   ) {
-    auth.addListener(notifyListeners);
+    auth.addListener(() {
+      if (auth.loggedIn) {
+        wallet.fetchWalletBalance();
+        orders.fetchOrders();
+      }
+      notifyListeners();
+    });
     cart.addListener(notifyListeners);
     orders.addListener(notifyListeners);
     wallet.addListener(notifyListeners);
     stock.addListener(notifyListeners);
     staff.addListener(notifyListeners);
     campaignList = List.of(Catalog.instance.campaigns);
+    if (auth.loggedIn) {
+      wallet.fetchWalletBalance();
+      orders.fetchOrders();
+    }
   }
 
   void addCampaign(Campaign c) {
@@ -97,7 +107,15 @@ class AppState extends ChangeNotifier {
   Future<void> loginWithCredentials({
     required String email,
     required String password,
-  }) => auth.loginWithCredentials(email: email, password: password);
+  }) async {
+    await auth.loginWithCredentials(email: email, password: password);
+    await wallet.fetchWalletBalance();
+    await orders.fetchOrders();
+    if (auth.selectedBranchId != null) {
+      stock.fetchBranchStock(auth.selectedBranchId!);
+      menu.fetchFirstPage(branchId: auth.selectedBranchId);
+    }
+  }
   Future<String?> register({
     required String name,
     required String email,
@@ -106,7 +124,8 @@ class AppState extends ChangeNotifier {
     required DateTime birthDate,
     required UserRole selectedRole,
     required String branch,
-  }) => auth.register(
+  }) async {
+    final res = await auth.register(
     name: name,
     email: email,
     phone: phone,
@@ -114,9 +133,27 @@ class AppState extends ChangeNotifier {
     birthDate: birthDate,
     selectedRole: selectedRole,
     branch: branch,
-  );
-  Future<void> logout() => auth.logout();
-  void selectBranch(String branchId) => auth.selectBranch(branchId);
+    );
+    await wallet.fetchWalletBalance();
+    await orders.fetchOrders();
+    if (auth.selectedBranchId != null) {
+      stock.fetchBranchStock(auth.selectedBranchId!);
+      menu.fetchFirstPage(branchId: auth.selectedBranchId);
+    }
+    return res;
+  }
+  Future<void> logout() async {
+    await auth.logout();
+    cart.clear();
+    orders.clear();
+    wallet.clear();
+    staff.clear();
+  }
+  void selectBranch(String branchId) {
+    auth.selectBranch(branchId);
+    stock.fetchBranchStock(branchId);
+    menu.fetchFirstPage(branchId: branchId);
+  }
 
   Future<List<String>> changeQty(String productId, int delta) =>
       cart.changeQty(productId, delta);
@@ -180,5 +217,9 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> updateEmail(String newEmail) => auth.updateEmail(newEmail);
+  Future<void> updateProfile({String? name, String? phone, DateTime? birthDate}) async {
+    await api.updateProfile(name: name, phone: phone, birthDate: birthDate);
+    await auth.fetchMe(); // refresh user data
+  }
   Future<void> deleteAccount() => auth.deleteAccount();
 }

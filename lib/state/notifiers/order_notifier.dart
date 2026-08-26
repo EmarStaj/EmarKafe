@@ -7,6 +7,14 @@ import 'package:emar_kafe/state/notifiers/cart_notifier.dart';
 import 'package:emar_kafe/state/notifiers/wallet_notifier.dart';
 
 class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
+  void clear() {
+    orderHistory = [];
+    loyaltyProgress = 0;
+    freeCoffeesEarned = 0;
+    rateReminderNotifier.value = null;
+    stopPolling();
+    notifyListeners();
+  }
   final ValueNotifier<OrderRecord?> rateReminderNotifier = ValueNotifier(null);
   final ApiService api;
   final AuthNotifier auth;

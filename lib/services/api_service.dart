@@ -243,11 +243,13 @@ class ApiService {
     int limit = 20,
     String? categoryId,
     String? search,
+    String? branchId,
   }) async {
     final params = <String, String>{
       'page': page.toString(),
       'limit': limit.toString(),
     };
+    if (branchId != null) params['branch_id'] = branchId;
     if (categoryId != null) params['category_id'] = categoryId;
     if (search != null) params['search'] = search;
 
@@ -272,6 +274,12 @@ class ApiService {
     );
     final data = _processResponse(res);
     return data['data'] as List<dynamic>? ?? [];
+  }
+
+  Future<List<dynamic>> getBranchProducts(String branchId) async {
+    final res = await _get(Uri.parse('$baseUrl/api/branches/$branchId/products'), headers: _headers);
+    final data = _processResponse(res);
+    return data['data'] as List<dynamic>;
   }
 
   Future<void> updateBranchProductAvailability(

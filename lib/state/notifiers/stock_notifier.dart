@@ -11,6 +11,22 @@ class StockNotifier extends ChangeNotifier {
 
   StockNotifier(this.api, this.auth);
 
+  Future<void> fetchBranchStock(String branchId) async {
+    try {
+      final list = await api.getBranchProducts(branchId);
+      final stockSet = _getBranchStock(branchId);
+      stockSet.clear();
+      for (var item in list) {
+        if (item['is_available'] == false) {
+          stockSet.add(item['product_id']);
+        }
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Fetch branch stock error: $e');
+    }
+  }
+
   Set<String> _getBranchStock(String? branchId) {
     if (branchId == null) return {};
     return _outOfStockByBranch.putIfAbsent(branchId, () => {});

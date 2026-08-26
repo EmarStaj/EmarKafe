@@ -12,8 +12,29 @@ import '../login_screen.dart';
 
 import 'wallet_screen.dart';
 
-class CartTab extends StatelessWidget {
+class CartTab extends StatefulWidget {
   const CartTab({super.key});
+
+  @override
+  State<CartTab> createState() => _CartTabState();
+}
+
+class _CartTabState extends State<CartTab> {
+  bool _isOrdering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final app = context.read<AppState>();
+        if (app.loggedIn) {
+          app.wallet.fetchWalletBalance();
+          app.fetchCart();
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -261,122 +282,14 @@ class CartTab extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: EmarColors.espresso,
                         ),
-                        onPressed: app.isUpdatingCart
+                        onPressed: (app.isUpdatingCart || _isOrdering)
                             ? null
-                            : () async {
-                                if (!app.loggedIn) {
-                                  Navigator.of(
-                                    context,
-                                  ).push(softRoute(const LoginScreen()));
-                                  return;
-                                }
-                                if (app.walletBalance < app.cartTotal) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text(
-                                        'Bakiyeniz yetersiz. Lütfen cüzdanınıza bakiye yükleyin.',
-                                      ),
-                                      action: SnackBarAction(
-                                        label: 'Yükle',
-                                        onPressed: () => Navigator.of(
-                                          context,
-                                        ).push(softRoute(const WalletScreen())),
-                                      ),
-                                    ),
-                                  );
-                                  return;
-                                }
-                                try {
-                                  final app = context.read<AppState>();
-
-                                  // Barista'ya okutmak için SADECE QR üret
-                                  final token = await app.generateWalletToken();
-
-                                  if (token != null && context.mounted) {
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (c) => AlertDialog(
-                                        title: const Text(
-                                          'Kasada Ödeme QR Kodunuz',
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        content: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Text(
-                                              'Lütfen bu kodu baristaya okutunuz.',
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            const SizedBox(height: 16),
-                                            QrImageView(
-                                              data: token,
-                                              version: QrVersions.auto,
-                                              size: 200.0,
-                                            ),
-                                            const SizedBox(height: 16),
-                                            SelectableText(
-                                              token,
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(c);
-                                              app.fetchCart(); // Kapatınca sepeti yenile
-                                            },
-                                            child: const Text('Kapat'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    if (e is ApiException &&
-                                        e.errors != null &&
-                                        e.errors!.isNotEmpty) {
-                                      String msg =
-                                          'Aşağıdaki ürünler seçtiğiniz şubede temin edilemiyor. Lütfen sepetinizden çıkartın veya şubenizi değiştirin:\n';
-                                      for (var err in e.errors!) {
-                                        msg += '\n- ${err['message']}';
-                                      }
-                                      showDialog(
-                                        context: context,
-                                        builder: (c) => AlertDialog(
-                                          title: const Text('Stok Uyarısı'),
-                                          content: Text(msg),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(c),
-                                              child: const Text('Tamam'),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Hata: ${e.toString().replaceAll('Exception: ', '')}',
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                }
-                              },
+                            : () => _handleQrCheckout(context, app),
                         child: Text(
-                          app.isUpdatingCart
-                              ? 'Güncelleniyor...'
+                          _isOrdering
+                              ? 'QR Kod Üretiliyor...'
                               : (app.loggedIn
-                                    ? 'Kasada QR ile Öde'
+                                    ? 'Kasada QR Kod ile Öde'
                                     : 'Sipariş İçin Giriş Yap'),
                         ),
                       ),
@@ -389,5 +302,120 @@ class CartTab extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _handleQrCheckout(BuildContext context, AppState app) async {
+    if (!app.loggedIn) {
+      Navigator.of(context).push(softRoute(const LoginScreen()));
+      return;
+    }
+    if (app.walletBalance < app.cartTotal) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Bakiyeniz yetersiz. Lütfen cüzdanınıza bakiye yükleyin.',
+          ),
+          action: SnackBarAction(
+            label: 'Yükle',
+            onPressed: () => Navigator.of(
+              context,
+            ).push(softRoute(const WalletScreen())),
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isOrdering = true);
+    try {
+      final token = await app.generateWalletToken();
+      if (!mounted) return;
+      if (token != null && token.isNotEmpty) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (c) => AlertDialog(
+            title: const Text(
+              'Kasada Ödeme QR Kodunuz',
+              textAlign: TextAlign.center,
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Lütfen bu kodu baristaya okutunuz.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                QrImageView(
+                  data: token,
+                  version: QrVersions.auto,
+                  size: 200.0,
+                ),
+                const SizedBox(height: 16),
+                SelectableText(
+                  token,
+                  style: const TextStyle(
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(c);
+                  app.fetchCart();
+                },
+                child: const Text('Kapat'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'QR kod oluşturulamadı. Lütfen sepetinizi ve bakiyenizi kontrol edin.',
+            ),
+            backgroundColor: EmarColors.paprika,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        if (e is ApiException && e.errors != null && e.errors!.isNotEmpty) {
+          String msg =
+              'Aşağıdaki ürünler seçtiğiniz şubede temin edilemiyor. Lütfen sepetinizden çıkartın veya şubenizi değiştirin:\n';
+          for (var err in e.errors!) {
+            msg += '\n- ${err['message']}';
+          }
+          showDialog(
+            context: context,
+            builder: (c) => AlertDialog(
+              title: const Text('Stok Uyarısı'),
+              content: Text(msg),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(c),
+                  child: const Text('Tamam'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Hata: ${e.toString().replaceAll('Exception: ', '')}',
+              ),
+              backgroundColor: EmarColors.paprika,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isOrdering = false);
+    }
   }
 }

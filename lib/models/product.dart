@@ -79,10 +79,18 @@ class Product {
         (row['categories'] as Map<String, dynamic>?)?['name'] as String? ?? '';
 
     List<ProductOption> parsedOptions = [];
-    if (row['options'] != null && row['options'] is List) {
-      parsedOptions = (row['options'] as List)
-          .map((o) => ProductOption.fromJson(o))
-          .toList();
+    if (row['product_options'] != null && row['product_options'] is List) {
+      for (var group in (row['product_options'] as List)) {
+        if (group['product_option_values'] != null && group['product_option_values'] is List) {
+          for (var val in (group['product_option_values'] as List)) {
+            parsedOptions.add(ProductOption(
+              id: val['id'].toString(),
+              name: "${group['name']}: ${val['label']}",
+              priceDelta: (val['price_delta'] as num?)?.toDouble() ?? 0.0,
+            ));
+          }
+        }
+      }
     }
 
     return Product(

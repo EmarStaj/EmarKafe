@@ -34,7 +34,7 @@ class _HomeTabState extends State<HomeTab> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppState>().menu.fetchFirstPage();
+      context.read<AppState>().menu.fetchFirstPage(branchId: context.read<AppState>().selectedBranchId);
     });
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
