@@ -94,6 +94,22 @@ class _ProfileTabState extends State<ProfileTab> {
                   ],
                 ),
               ),
+              IconButton(
+                tooltip: 'Profili Düzenle',
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: EmarColors.oatDark,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: EmarColors.espresso,
+                  ),
+                ),
+                onPressed: () => _showEditProfileDialog(context, app),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -104,7 +120,6 @@ class _ProfileTabState extends State<ProfileTab> {
                 : formatTurkishDate(app.birthday!),
           ),
           _ProfileLine(label: '📍 Şube', value: app.selectedBranchName),
-          _ProfileLine(label: 'Rol', value: app.role.label),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -262,22 +277,6 @@ class _ProfileTabState extends State<ProfileTab> {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () => _showEditProfileDialog(context, app),
-              child: const Text('Profili Düzenle'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => _showUpdateEmailDialog(context, app),
-              child: const Text('E-posta Güncelle'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 foregroundColor: EmarColors.paprikaDim,
                 side: BorderSide(
@@ -304,6 +303,8 @@ class _ProfileTabState extends State<ProfileTab> {
 
   void _showEditProfileDialog(BuildContext context, AppState app) {
     final nameController = TextEditingController(text: app.userName);
+    final emailController = TextEditingController(text: app.userEmail);
+    DateTime? selectedBirthDate = app.birthday;
     final formKey = GlobalKey<FormState>();
     bool isSubmitting = false;
 
@@ -316,35 +317,121 @@ class _ProfileTabState extends State<ProfileTab> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
-            title: const Text(
-              'Profili Düzenle',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            title: const Row(
+              children: [
+                Icon(Icons.edit_outlined, color: EmarColors.espresso, size: 22),
+                SizedBox(width: 8),
+                Text(
+                  'Profili Düzenle',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+              ],
             ),
-            content: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Adınız Soyadınız:',
-                    style: TextStyle(fontSize: 13),
+            content: SizedBox(
+              width: 320,
+              child: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Ad Soyad',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          hintText: 'Adınız Soyadınız',
+                          prefixIcon: Icon(Icons.person_outline, size: 20),
+                          isDense: true,
+                        ),
+                        validator: (val) {
+                          final text = val?.trim() ?? '';
+                          if (text.isEmpty) return 'İsim alanı boş bırakılamaz';
+                          if (text.length < 2) return 'En az 2 karakter giriniz';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'E-posta',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(
+                          hintText: 'ornek@email.com',
+                          prefixIcon: Icon(Icons.email_outlined, size: 20),
+                          isDense: true,
+                        ),
+                        validator: (val) {
+                          final text = val?.trim() ?? '';
+                          if (text.isEmpty) return 'E-posta alanı boş bırakılamaz';
+                          if (!text.contains('@') || !text.contains('.')) {
+                            return 'Geçerli bir e-posta giriniz';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Doğum Tarihi',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 6),
+                      InkWell(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: selectedBirthDate ?? DateTime(2000, 1, 1),
+                            firstDate: DateTime(1920),
+                            lastDate: DateTime.now(),
+                          );
+                          if (picked != null) {
+                            setDialogState(() {
+                              selectedBirthDate = picked;
+                            });
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade400),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.cake_outlined, size: 20, color: EmarColors.espresso),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  selectedBirthDate == null
+                                      ? 'Doğum Tarihi Seçiniz'
+                                      : formatTurkishDate(selectedBirthDate!),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: selectedBirthDate == null ? Colors.grey.shade600 : EmarColors.espresso,
+                                  ),
+                                ),
+                              ),
+                              if (selectedBirthDate != null)
+                                GestureDetector(
+                                  onTap: () => setDialogState(() => selectedBirthDate = null),
+                                  child: const Icon(Icons.close, size: 16, color: Colors.grey),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: nameController,
-                    decoration: const InputDecoration(
-                      hintText: 'Ad Soyad',
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
-                    validator: (val) {
-                      final text = val?.trim() ?? '';
-                      if (text.isEmpty) return 'İsim alanı boş bırakılamaz';
-                      if (text.length < 2) return 'En az 2 karakter giriniz';
-                      return null;
-                    },
-                  ),
-                ],
+                ),
               ),
             ),
             actions: [
@@ -359,13 +446,17 @@ class _ProfileTabState extends State<ProfileTab> {
                         if (!formKey.currentState!.validate()) return;
                         setDialogState(() => isSubmitting = true);
                         try {
-                          await app.updateProfile(name: nameController.text.trim());
+                          await app.updateProfile(
+                            name: nameController.text.trim(),
+                            email: emailController.text.trim(),
+                            birthDate: selectedBirthDate,
+                          );
                           if (dialogCtx.mounted) Navigator.pop(dialogCtx);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).clearSnackBars();
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Profil bilgileriniz güncellendi.'),
+                                content: Text('Profil bilgileriniz başarıyla güncellendi.'),
                                 duration: Duration(seconds: 2),
                               ),
                             );
@@ -396,58 +487,6 @@ class _ProfileTabState extends State<ProfileTab> {
       ),
     );
   }
-
-  void _showUpdateEmailDialog(BuildContext context, AppState app) {
-    final controller = TextEditingController(text: app.userEmail);
-    final formKey = GlobalKey<FormState>();
-    bool isSubmitting = false;
-
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            backgroundColor: EmarColors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: const Text(
-              'E-posta Güncelle',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            content: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Yeni e-posta adresinizi girin:',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: controller,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      hintText: 'yeni.eposta@ornek.com',
-                      prefixIcon: Icon(Icons.email_outlined),
-                    ),
-                    validator: (val) {
-                      final email = val?.trim() ?? '';
-                      if (email.isEmpty)
-                        return 'E-posta adresi boş bırakılamaz';
-                      if (!email.contains('@') || !email.contains('.'))
-                        return 'Geçerli bir e-posta adresi girin';
-                      if (email == app.userEmail)
-                        return 'Mevcut e-posta ile aynı olamaz';
-                      return null;
-                    },
-                  ),
-                ],
-              ),
-            ),
-            actions: [
               TextButton(
                 onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
                 child: const Text('İptal'),

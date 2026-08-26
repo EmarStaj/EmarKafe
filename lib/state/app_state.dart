@@ -218,9 +218,15 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> updateEmail(String newEmail) => auth.updateEmail(newEmail);
-  Future<void> updateProfile({String? name, String? phone, DateTime? birthDate}) async {
+  Future<void> updateProfile({
+    String? name,
+    String? email,
+    String? phone,
+    DateTime? birthDate,
+  }) async {
     await api.updateProfile(
       fullName: name,
+      email: email,
       phone: phone,
       birthDate: birthDate?.toIso8601String().split('T').first,
     );

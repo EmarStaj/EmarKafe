@@ -191,12 +191,14 @@ class ApiService {
 
   Future<void> updateProfile({
     String? fullName,
+    String? email,
     String? phone,
     String? avatarUrl,
     String? birthDate,
   }) async {
     final body = <String, dynamic>{};
     if (fullName != null) body['full_name'] = fullName;
+    if (email != null) body['email'] = email;
     if (phone != null) body['phone'] = phone;
     if (avatarUrl != null) body['avatar_url'] = avatarUrl;
     if (birthDate != null) body['birth_date'] = birthDate;
