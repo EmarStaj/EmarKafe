@@ -60,14 +60,16 @@ class WalletNotifier extends ChangeNotifier {
   }
 
   Future<String?> generateWalletToken() async {
-    if (!auth.loggedIn) return null;
+    if (!auth.loggedIn) throw Exception('Lütfen önce giriş yapınız.');
     isUpdatingWallet = true;
     notifyListeners();
     try {
-      return await api.getWalletQrToken();
+      final token = await api.getWalletQrToken();
+      debugPrint('generateWalletToken success: $token');
+      return token;
     } catch (e) {
       debugPrint('generateWalletToken error: $e');
-      return null;
+      rethrow;
     } finally {
       isUpdatingWallet = false;
       notifyListeners();

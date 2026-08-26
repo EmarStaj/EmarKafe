@@ -305,55 +305,63 @@ class _CartTabState extends State<CartTab> {
   }
 
   Future<void> _handleQrCheckout(BuildContext context, AppState app) async {
+    debugPrint('>>> [_handleQrCheckout] Button tapped. loggedIn=${app.loggedIn}');
     if (!app.loggedIn) {
       Navigator.of(context).push(softRoute(const LoginScreen()));
       return;
     }
 
-    // Refresh wallet balance before proceeding
-    await app.fetchWalletBalance();
-    if (!mounted) return;
+    setState(() => _isOrdering = true);
 
-    if (app.walletBalance < app.cartTotal) {
-      showDialog(
-        context: context,
-        builder: (c) => AlertDialog(
-          backgroundColor: EmarColors.surface,
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: EmarColors.paprika),
-              SizedBox(width: 8),
-              Text('Yetersiz Bakiye'),
+    try {
+      // Refresh wallet balance before proceeding
+      debugPrint('>>> [_handleQrCheckout] Fetching wallet balance...');
+      await app.fetchWalletBalance();
+      if (!mounted) return;
+      debugPrint('>>> [_handleQrCheckout] Wallet balance: ${app.walletBalance}, Cart total: ${app.cartTotal}');
+
+      if (app.walletBalance < app.cartTotal) {
+        debugPrint('>>> [_handleQrCheckout] Insufficient balance: ${app.walletBalance} < ${app.cartTotal}');
+        showDialog(
+          context: context,
+          builder: (c) => AlertDialog(
+            backgroundColor: EmarColors.surface,
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: EmarColors.paprika),
+                SizedBox(width: 8),
+                Text('Yetersiz Bakiye'),
+              ],
+            ),
+            content: Text(
+              'Sepet tutarınız: ${app.cartTotal.toStringAsFixed(2)} ₺\n'
+              'Cüzdan bakiyeniz: ${app.walletBalance.toStringAsFixed(2)} ₺\n\n'
+              'Kasada ödeme yapabilmek için lütfen cüzdanınıza bakiye yükleyin.',
+              style: const TextStyle(fontSize: 14, height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c),
+                child: const Text('İptal'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(c);
+                  Navigator.of(context).push(softRoute(const WalletScreen()));
+                },
+                child: const Text('Bakiye Yükle'),
+              ),
             ],
           ),
-          content: Text(
-            'Sepet tutarınız: ${app.cartTotal.toStringAsFixed(2)} ₺\n'
-            'Cüzdan bakiyeniz: ${app.walletBalance.toStringAsFixed(2)} ₺\n\n'
-            'Kasada ödeme yapabilmek için lütfen cüzdanınıza bakiye yükleyin.',
-            style: const TextStyle(fontSize: 14, height: 1.4),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(c),
-              child: const Text('İptal'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(c);
-                Navigator.of(context).push(softRoute(const WalletScreen()));
-              },
-              child: const Text('Bakiye Yükle'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
+        );
+        return;
+      }
 
-    setState(() => _isOrdering = true);
-    try {
+      debugPrint('>>> [_handleQrCheckout] Requesting QR token from backend...');
       final token = await app.generateWalletToken();
+      debugPrint('>>> [_handleQrCheckout] QR token received: $token');
       if (!mounted) return;
+
       if (token != null && token.isNotEmpty) {
         showDialog(
           context: context,
@@ -396,25 +404,9 @@ class _CartTabState extends State<CartTab> {
             ],
           ),
         );
-      } else {
-        showDialog(
-          context: context,
-          builder: (c) => AlertDialog(
-            title: const Text('QR Kod Oluşturulamadı'),
-            content: const Text(
-              'Sunucudan QR ödeme kodu alınamadı.\n'
-              'Lütfen sepetinizdeki ürünlerin ve cüzdan bakiyenizin güncel olduğundan emin olun.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(c),
-                child: const Text('Tamam'),
-              ),
-            ],
-          ),
-        );
       }
     } catch (e) {
+      debugPrint('>>> [_handleQrCheckout] Error caught: $e');
       if (mounted) {
         if (e is ApiException && e.errors != null && e.errors!.isNotEmpty) {
           String msg =
@@ -436,12 +428,19 @@ class _CartTabState extends State<CartTab> {
             ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+          showDialog(
+            context: context,
+            builder: (c) => AlertDialog(
+              title: const Text('Ödeme / QR Hatası'),
               content: Text(
-                'Hata: ${e.toString().replaceAll('Exception: ', '')}',
+                e.toString().replaceAll('Exception: ', '').replaceAll('ApiException: ', ''),
               ),
-              backgroundColor: EmarColors.paprika,
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(c),
+                  child: const Text('Tamam'),
+                ),
+              ],
             ),
           );
         }
