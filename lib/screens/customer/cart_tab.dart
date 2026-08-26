@@ -363,98 +363,130 @@ class _CartTabState extends State<CartTab> {
       if (!mounted) return;
 
       if (token != null && token.isNotEmpty) {
-        showDialog(
+        final initialOrderCount = app.orders.orderHistory.length;
+        Timer? pollTimer;
+
+        await showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (c) => Dialog(
-            backgroundColor: EmarColors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: SizedBox(
-                width: 320,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Kasada Ödeme QR Kodunuz',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
+          builder: (c) {
+            pollTimer ??= Timer.periodic(const Duration(seconds: 2), (_) async {
+              if (!mounted) return;
+              await app.orders.fetchOrders();
+              await app.fetchWalletBalance();
+              await app.fetchCart();
+              if (!mounted) return;
+              if (app.orders.orderHistory.length > initialOrderCount || app.cart.cart.isEmpty) {
+                pollTimer?.cancel();
+                if (Navigator.canPop(c)) {
+                  Navigator.pop(c);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Siparişiniz kasada başarıyla onaylandı! ✅'),
+                      backgroundColor: EmarColors.moss,
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Lütfen bu kodu baristaya okutunuz.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13),
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: EmarColors.espresso.withValues(alpha: 0.08),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                  );
+                }
+              }
+            });
+
+            return Dialog(
+              backgroundColor: EmarColors.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: SizedBox(
+                  width: 320,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Kasada Ödeme QR Kodunuz',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      child: SizedBox(
-                        width: 200,
-                        height: 200,
-                        child: QrImageView(
-                          data: token,
-                          version: QrVersions.auto,
-                          size: 200.0,
-                          gapless: true,
-                          dataModuleStyle: const QrDataModuleStyle(
-                            dataModuleShape: QrDataModuleShape.square,
-                            color: EmarColors.espresso,
-                          ),
-                          eyeStyle: const QrEyeStyle(
-                            eyeShape: QrEyeShape.square,
-                            color: EmarColors.espresso,
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Lütfen bu kodu baristaya okutunuz.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      const SizedBox(height: 20),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: EmarColors.espresso.withValues(alpha: 0.08),
+                              blurRadius: 16,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: SizedBox(
+                          width: 200,
+                          height: 200,
+                          child: QrImageView(
+                            data: token,
+                            version: QrVersions.auto,
+                            size: 200.0,
+                            gapless: true,
+                            dataModuleStyle: const QrDataModuleStyle(
+                              dataModuleShape: QrDataModuleShape.square,
+                              color: EmarColors.espresso,
+                            ),
+                            eyeStyle: const QrEyeStyle(
+                              eyeShape: QrEyeShape.square,
+                              color: EmarColors.espresso,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    SelectableText(
-                      token,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontFamily: 'monospace',
-                        color: Colors.grey,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: EmarColors.espresso,
+                      const SizedBox(height: 16),
+                      SelectableText(
+                        token,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontFamily: 'monospace',
+                          color: Colors.grey,
                         ),
-                        onPressed: () {
-                          Navigator.pop(c);
-                          app.fetchCart();
-                        },
-                        child: const Text('Kapat'),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: EmarColors.espresso,
+                          ),
+                          onPressed: () {
+                            pollTimer?.cancel();
+                            Navigator.pop(c);
+                            app.fetchCart();
+                            app.fetchWalletBalance();
+                            app.orders.fetchOrders();
+                          },
+                          child: const Text('Kapat'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
+        pollTimer?.cancel();
+        await app.fetchCart();
+        await app.fetchWalletBalance();
+        await app.orders.fetchOrders();
       }
     } catch (e) {
       debugPrint('>>> [_handleQrCheckout] Error caught: $e');

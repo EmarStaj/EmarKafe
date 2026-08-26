@@ -98,6 +98,7 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
         final res = await api.getMyOrders();
         orderHistory = res.map((json) => OrderRecord.fromJson(json)).toList();
         await fetchLoyalty();
+        await wallet.fetchWalletBalance();
         notifyListeners();
       } else {
         final res = await api.getBranchOrders();
