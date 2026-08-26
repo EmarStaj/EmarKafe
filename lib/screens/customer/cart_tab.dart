@@ -366,42 +366,93 @@ class _CartTabState extends State<CartTab> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (c) => AlertDialog(
-            title: const Text(
-              'Kasada Ödeme QR Kodunuz',
-              textAlign: TextAlign.center,
+          builder: (c) => Dialog(
+            backgroundColor: EmarColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Lütfen bu kodu baristaya okutunuz.',
-                  textAlign: TextAlign.center,
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: SizedBox(
+                width: 320,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Kasada Ödeme QR Kodunuz',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Lütfen bu kodu baristaya okutunuz.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13),
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: EmarColors.espresso.withValues(alpha: 0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: SizedBox(
+                        width: 200,
+                        height: 200,
+                        child: QrImageView(
+                          data: token,
+                          version: QrVersions.auto,
+                          size: 200.0,
+                          gapless: true,
+                          dataModuleStyle: const QrDataModuleStyle(
+                            dataModuleShape: QrDataModuleShape.square,
+                            color: EmarColors.espresso,
+                          ),
+                          eyeStyle: const QrEyeStyle(
+                            eyeShape: QrEyeShape.square,
+                            color: EmarColors.espresso,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SelectableText(
+                      token,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontFamily: 'monospace',
+                        color: Colors.grey,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: EmarColors.espresso,
+                        ),
+                        onPressed: () {
+                          Navigator.pop(c);
+                          app.fetchCart();
+                        },
+                        child: const Text('Kapat'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                QrImageView(
-                  data: token,
-                  version: QrVersions.auto,
-                  size: 200.0,
-                ),
-                const SizedBox(height: 16),
-                SelectableText(
-                  token,
-                  style: const TextStyle(
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(c);
-                  app.fetchCart();
-                },
-                child: const Text('Kapat'),
               ),
-            ],
+            ),
           ),
         );
       }
