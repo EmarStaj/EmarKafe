@@ -16,6 +16,16 @@ class BaristaScreen extends StatefulWidget {
 }
 
 class _BaristaScreenState extends State<BaristaScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<AppState>().orders.fetchOrders();
+      }
+    });
+  }
+
   void _advance(OrderRecord o, AppState app) {
     app.advanceOrderStatus(o);
   }
@@ -34,6 +44,7 @@ class _BaristaScreenState extends State<BaristaScreen> {
   }
 
   String _formatItems(Map<String, int> items) {
+    if (items.isEmpty) return 'Sipariş içeriği yükleniyor...';
     return items.entries
         .map((e) {
           final p = productById(e.key);
@@ -56,6 +67,9 @@ class _BaristaScreenState extends State<BaristaScreen> {
   ) {
     final items = orders.where((o) {
       final s = o.manualStatus;
+      if (status == OrderStatus.received || status == OrderStatus.created) {
+        return s == OrderStatus.created || s == OrderStatus.received;
+      }
       return s == status;
     }).toList();
 
@@ -84,7 +98,7 @@ class _BaristaScreenState extends State<BaristaScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (status == OrderStatus.received && items.isNotEmpty) ...[
+              if ((status == OrderStatus.received || status == OrderStatus.created) && items.isNotEmpty) ...[
                 const SizedBox(width: 6),
                 _PulseDot(color: _colColor(status)),
               ],
@@ -171,7 +185,7 @@ class _BaristaScreenState extends State<BaristaScreen> {
                             ),
                             onPressed: () => _advance(o, app),
                             child: Text(
-                              status == OrderStatus.received
+                              (status == OrderStatus.received || status == OrderStatus.created)
                                   ? 'Onayla'
                                   : 'Hazır',
                               style: const TextStyle(fontSize: 10.5),
@@ -233,6 +247,11 @@ class _BaristaScreenState extends State<BaristaScreen> {
       appBar: AppBar(
         title: Text('Barista – ${app.auth.selectedBranchId ?? ''}'),
         actions: [
+          IconButton(
+            tooltip: 'Yenile',
+            icon: const Icon(Icons.refresh),
+            onPressed: () => app.orders.fetchOrders(),
+          ),
           IconButton(
             tooltip: 'QR Okut',
             icon: const Icon(Icons.qr_code_scanner),

@@ -69,6 +69,11 @@ class OrderRecord {
     String short = id;
     if (id.length >= 8) short = id.substring(0, 8).toUpperCase();
 
+    String? name = db['customer_name']?.toString();
+    if (name == null && db['profiles'] != null && db['profiles'] is Map) {
+      name = db['profiles']['full_name']?.toString();
+    }
+
     return OrderRecord(
       id: id,
       shortId: short,
@@ -82,7 +87,7 @@ class OrderRecord {
       status: statusStr,
       manualStatus: parsedStatus,
       qrToken: db['qr_token']?.toString() ?? db['qrToken']?.toString(),
-    )..customerName = db['customer_name']?.toString();
+    )..customerName = name;
   }
 
   static int computePrep(Map<String, int> items, DateTime at) {
