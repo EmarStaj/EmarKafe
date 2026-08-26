@@ -309,18 +309,42 @@ class _CartTabState extends State<CartTab> {
       Navigator.of(context).push(softRoute(const LoginScreen()));
       return;
     }
+
+    // Refresh wallet balance before proceeding
+    await app.fetchWalletBalance();
+    if (!mounted) return;
+
     if (app.walletBalance < app.cartTotal) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Bakiyeniz yetersiz. Lütfen cüzdanınıza bakiye yükleyin.',
+      showDialog(
+        context: context,
+        builder: (c) => AlertDialog(
+          backgroundColor: EmarColors.surface,
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: EmarColors.paprika),
+              SizedBox(width: 8),
+              Text('Yetersiz Bakiye'),
+            ],
           ),
-          action: SnackBarAction(
-            label: 'Yükle',
-            onPressed: () => Navigator.of(
-              context,
-            ).push(softRoute(const WalletScreen())),
+          content: Text(
+            'Sepet tutarınız: ${app.cartTotal.toStringAsFixed(2)} ₺\n'
+            'Cüzdan bakiyeniz: ${app.walletBalance.toStringAsFixed(2)} ₺\n\n'
+            'Kasada ödeme yapabilmek için lütfen cüzdanınıza bakiye yükleyin.',
+            style: const TextStyle(fontSize: 14, height: 1.4),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(c);
+                Navigator.of(context).push(softRoute(const WalletScreen()));
+              },
+              child: const Text('Bakiye Yükle'),
+            ),
+          ],
         ),
       );
       return;
@@ -373,12 +397,20 @@ class _CartTabState extends State<CartTab> {
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'QR kod oluşturulamadı. Lütfen sepetinizi ve bakiyenizi kontrol edin.',
+        showDialog(
+          context: context,
+          builder: (c) => AlertDialog(
+            title: const Text('QR Kod Oluşturulamadı'),
+            content: const Text(
+              'Sunucudan QR ödeme kodu alınamadı.\n'
+              'Lütfen sepetinizdeki ürünlerin ve cüzdan bakiyenizin güncel olduğundan emin olun.',
             ),
-            backgroundColor: EmarColors.paprika,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c),
+                child: const Text('Tamam'),
+              ),
+            ],
           ),
         );
       }
