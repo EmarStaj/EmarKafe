@@ -173,6 +173,7 @@ class AppState extends ChangeNotifier {
       orders.confirmOrderFromQR(qrToken);
   Future<void> markPickedUp(OrderRecord order) => orders.markPickedUp(order);
 
+  Future<void> fetchWalletBalance() => wallet.fetchWalletBalance();
   Future<void> addWalletBalance(double amount) =>
       wallet.addWalletBalance(amount);
   Future<String?> generateWalletToken() => wallet.generateWalletToken();
