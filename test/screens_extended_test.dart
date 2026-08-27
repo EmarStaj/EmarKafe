@@ -96,6 +96,8 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       await tester.pumpWidget(buildTestableWidget(const AdminScreen()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(find.text('Admin · Genel Bakış'), findsOneWidget);
       expect(find.text('Aktif Şube'), findsOneWidget);
       expect(find.text('Personel Ekle'), findsOneWidget);
@@ -108,6 +110,8 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       await tester.pumpWidget(buildTestableWidget(const ManagerScreen()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(find.textContaining('Yönetici'), findsOneWidget);
       expect(find.text('Şube Personeli'), findsOneWidget);
       expect(find.text('Ciro'), findsOneWidget);

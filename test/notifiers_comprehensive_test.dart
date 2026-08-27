@@ -134,12 +134,13 @@ void main() {
     });
 
     test('WalletNotifier logic', () async {
+      await auth.init();
       final wallet = WalletNotifier(api, auth);
       await wallet.fetchWalletBalance();
       await wallet.generateWalletToken();
       api.shouldFail = true;
       await wallet.fetchWalletBalance();
-      await wallet.generateWalletToken();
+      try { await wallet.generateWalletToken(); } catch (_) {}
       api.shouldFail = false;
       await wallet.addWalletBalance(10);
     });

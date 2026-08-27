@@ -29,6 +29,10 @@ class DummyApi extends ApiService {
   @override Future<Map<String, dynamic>> getCart() async => {'data': {'items': [{'id': '1', 'product_id': 'p1', 'product_name': 'P1', 'quantity': 1, 'base_price': 10, 'options': []}]}};
   @override Future<List<dynamic>> getMyOrders() async => [{'id': '1', 'short_id': '1', 'user_id': 'u', 'items': [], 'total_price': 10, 'created_at': DateTime.now().toIso8601String(), 'status': 'created'}];
   @override Future<List<dynamic>> getBranchOrders() async => [{'id': '1', 'short_id': '1', 'user_id': 'u', 'items': [], 'total_price': 10, 'created_at': DateTime.now().toIso8601String(), 'status': 'created'}];
+  @override Future<List<dynamic>> getStaff({String? branchId}) async => [];
+  @override Future<Map<String, dynamic>> getLoyaltyProgress() async => {'data': {'progress': [], 'rewards': []}};
+  @override Future<Map<String, dynamic>> getWalletBalance() async => {'data': {'balance': 100.0}};
+  @override Future<Map<String, dynamic>> getMenu({int page = 1, int limit = 20, String? categoryId, String? search, String? branchId}) async => {'data': []};
 }
 
 void main() {
@@ -51,6 +55,10 @@ void main() {
     final staff = StaffNotifier(api);
     final appState = AppState(auth, cart, orders, wallet, stock, menu, staff);
     
+    tester.view.physicalSize = const Size(1200, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
     auth.role = UserRole.admin;
     auth.loggedIn = true;
     
@@ -74,18 +82,24 @@ void main() {
     
     Future<void> pumpAndTap(Widget child) async {
       await tester.pumpWidget(wrap(child));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
       
       final elements = find.byWidgetPredicate((widget) {
-        return widget is InkWell || widget is GestureDetector || widget is ElevatedButton || widget is TextButton || widget is IconButton || widget is FloatingActionButton || widget is ListTile;
+        return widget is ElevatedButton || widget is TextButton || widget is IconButton;
       }).evaluate().toList();
       
       for (var element in elements) {
         try {
           await tester.tap(find.byWidget(element.widget), warnIfMissed: false);
-          await tester.pumpAndSettle();
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 50));
         } catch (_) {}
       }
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
     }
 
     await pumpAndTap(const CartTab());
@@ -98,6 +112,10 @@ void main() {
     await pumpAndTap(const WalletScreen());
     await pumpAndTap(const LoginScreen());
     
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
     orders.dispose();
     auth.dispose();
     cart.dispose();

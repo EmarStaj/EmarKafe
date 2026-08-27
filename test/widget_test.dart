@@ -17,6 +17,7 @@ void main() {
   ) async {
     await tester.pumpWidget(const EmarKafeApp());
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('EMAR Kafe'), findsWidgets);
     expect(find.text('Sepetim'), findsOneWidget);
@@ -24,5 +25,6 @@ void main() {
     // Unmount to dispose providers and cancel polling timers cleanly
     await tester.pumpWidget(const SizedBox());
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
   });
 }

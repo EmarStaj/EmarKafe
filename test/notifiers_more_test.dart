@@ -15,7 +15,7 @@ import 'package:flutter/widgets.dart'; // for AppLifecycleState
 import 'dart:async';
 
 class MockApiService2 extends ApiService {
-  @override Future<Map<String, dynamic>> getMenu({int page = 1, int limit = 20, String? categoryId, String? search}) async {
+  @override Future<Map<String, dynamic>> getMenu({int page = 1, int limit = 20, String? categoryId, String? search, String? branchId}) async {
     if (page == 1) return {'data': [{'id': 'p1', 'name': 'P1', 'base_price': 10, 'category_id': 'c'}]};
     return {'data': []}; // empty for page 2
   }

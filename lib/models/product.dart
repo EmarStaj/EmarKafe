@@ -91,6 +91,12 @@ class Product {
           }
         }
       }
+    } else if (row['options'] != null && row['options'] is List) {
+      for (var opt in (row['options'] as List)) {
+        if (opt is Map<String, dynamic>) {
+          parsedOptions.add(ProductOption.fromJson(opt));
+        }
+      }
     }
 
     return Product(

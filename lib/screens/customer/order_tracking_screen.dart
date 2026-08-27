@@ -108,8 +108,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 branchName,
@@ -253,7 +254,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     ),
                   ),
                 ),
-              const Spacer(),
+              const SizedBox(height: 20),
               if (ready) ...[
                 PressableScale(
                   child: SizedBox(
@@ -283,6 +284,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );
