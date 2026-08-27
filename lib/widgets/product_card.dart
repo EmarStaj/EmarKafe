@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../models/product.dart';
 import '../state/app_state.dart';
+import '../state/notifiers/cart_notifier.dart';
+import '../state/notifiers/stock_notifier.dart';
+import '../state/notifiers/auth_notifier.dart';
 import '../theme.dart';
 
 class ProductCard extends StatelessWidget {
@@ -13,11 +16,15 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final app = context.watch<AppState>();
-    final qty = app.cartItems.values
-        .where((i) => i.product.id == product.id)
-        .fold(0, (s, i) => s + i.quantity);
-    final outOfStock = app.isOutOfStock(product.id);
+    final qty = context.select<CartNotifier, int>(
+      (c) => c.cart.values
+          .where((i) => i.product.id == product.id)
+          .fold(0, (s, i) => s + i.quantity),
+    );
+    final selectedBranch = context.select<AuthNotifier, String?>((a) => a.selectedBranchId);
+    final outOfStock = context.select<StockNotifier, bool>(
+      (s) => s.isOutOfStock(product.id, branchId: selectedBranch),
+    );
 
     return InkWell(
       onTap: onTap,

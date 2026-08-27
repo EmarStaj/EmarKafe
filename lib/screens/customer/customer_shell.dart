@@ -11,6 +11,8 @@ import 'chat_assistant_screen.dart';
 import 'home_tab.dart';
 import 'profile_tab.dart';
 
+import '../../state/notifiers/cart_notifier.dart';
+
 class CustomerShell extends StatefulWidget {
   const CustomerShell({super.key});
 
@@ -25,8 +27,6 @@ class _CustomerShellState extends State<CustomerShell> {
 
   @override
   Widget build(BuildContext context) {
-    final cartCount = context.watch<AppState>().cartCount;
-
     return Scaffold(
       extendBody: true,
       backgroundColor: EmarColors.oat,
@@ -41,7 +41,6 @@ class _CustomerShellState extends State<CustomerShell> {
       ),
       bottomNavigationBar: _DarkNavBar(
         index: _index,
-        cartCount: cartCount,
         onChanged: _goTo,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -63,11 +62,9 @@ class _CustomerShellState extends State<CustomerShell> {
 
 class _DarkNavBar extends StatelessWidget {
   final int index;
-  final int cartCount;
   final ValueChanged<int> onChanged;
   const _DarkNavBar({
     required this.index,
-    required this.cartCount,
     required this.onChanged,
   });
 
@@ -121,28 +118,34 @@ class _DarkNavBar extends StatelessWidget {
                               size: 22,
                             ),
                           ),
-                          if (i == 1 && cartCount > 0)
-                            Positioned(
-                              right: -8,
-                              top: -4,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 5,
-                                  vertical: 1,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: EmarColors.moss,
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  '$cartCount',
-                                  style: const TextStyle(
-                                    color: EmarColors.surface,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
+                          if (i == 1)
+                            Selector<CartNotifier, int>(
+                              selector: (_, cart) => cart.cartCount,
+                              builder: (context, cartCount, _) {
+                                if (cartCount <= 0) return const SizedBox.shrink();
+                                return Positioned(
+                                  right: -8,
+                                  top: -4,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 1,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: EmarColors.moss,
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      '$cartCount',
+                                      style: const TextStyle(
+                                        color: EmarColors.surface,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
+                                );
+                              },
                             ),
                         ],
                       ),

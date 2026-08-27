@@ -5,6 +5,7 @@ import '../../data/campaigns_data.dart' show Campaign;
 import '../../data/catalog.dart';
 
 import '../../models/product.dart';
+import '../../models/order_record.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../utils/page_transitions.dart';
@@ -15,6 +16,10 @@ import '../../widgets/loyalty_card.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/product_detail_sheet.dart';
 import '../login_screen.dart';
+
+import '../../state/notifiers/auth_notifier.dart';
+import '../../state/notifiers/order_notifier.dart';
+import '../../state/notifiers/menu_notifier.dart';
 
 class HomeTab extends StatefulWidget {
   final VoidCallback onProfileTap;
@@ -53,18 +58,24 @@ class _HomeTabState extends State<HomeTab> {
 
   @override
   Widget build(BuildContext context) {
-    final app = context.watch<AppState>();
+    final app = context.read<AppState>();
 
     return Column(
       children: [
-        _DarkHeader(
-          loggedIn: app.loggedIn,
-          userName: app.userName,
-          onProfileTap: widget.onProfileTap,
+        Selector<AuthNotifier, ({bool loggedIn, String userName})>(
+          selector: (_, a) => (loggedIn: a.loggedIn, userName: a.userName),
+          builder: (context, auth, _) => _DarkHeader(
+            loggedIn: auth.loggedIn,
+            userName: auth.userName,
+            onProfileTap: widget.onProfileTap,
+          ),
         ),
-        _BranchBar(
-          branch: app.selectedBranchName,
-          onTap: () => showBranchPicker(context),
+        Selector<AuthNotifier, String>(
+          selector: (_, a) => a.selectedBranchName,
+          builder: (context, branch, _) => _BranchBar(
+            branch: branch,
+            onTap: () => showBranchPicker(context),
+          ),
         ),
         Expanded(
           child: ListView(
@@ -100,23 +111,55 @@ class _HomeTabState extends State<HomeTab> {
                   );
                 }),
               ),
-              if (app.activeOrder != null && !app.activeOrder!.pickedUp) ...[
-                const SizedBox(height: 18),
-                _Entrance(child: ActiveOrderBanner(order: app.activeOrder!)),
-              ],
-              const SizedBox(height: 18),
-              _Entrance(
-                delay: const Duration(milliseconds: 40),
-                child: app.loggedIn
-                    ? LoyaltyCard(
-                        progress: app.loyaltyProgress,
-                        freeCoffeesEarned: app.freeCoffeesEarned,
-                      )
-                    : _GuestLoyaltyBanner(
-                        onTap: () => Navigator.of(
-                          context,
-                        ).push(softRoute(const LoginScreen())),
-                      ),
+              Selector<OrderNotifier, OrderRecord?>(
+                selector: (_, o) => o.orderHistory.where((ord) => !ord.pickedUp).firstOrNull,
+                builder: (context, activeOrder, _) {
+                  if (activeOrder == null) return const SizedBox.shrink();
+                  return Column(
+                    children: [
+                      const SizedBox(height: 18),
+                      _Entrance(child: ActiveOrderBanner(order: activeOrder)),
+                    ],
+                  );
+                },
+              ),
+              Selector<AuthNotifier, bool>(
+                selector: (_, a) => a.loggedIn,
+                builder: (context, loggedIn, _) {
+                  if (!loggedIn) {
+                    return Column(
+                      children: [
+                        const SizedBox(height: 18),
+                        _Entrance(
+                          delay: const Duration(milliseconds: 40),
+                          child: _GuestLoyaltyBanner(
+                            onTap: () => Navigator.of(
+                              context,
+                            ).push(softRoute(const LoginScreen())),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return Selector<OrderNotifier, ({int progress, int freeCoffees})>(
+                    selector: (_, o) => (
+                      progress: o.loyaltyProgress,
+                      freeCoffees: o.freeCoffeesEarned,
+                    ),
+                    builder: (context, loyalty, _) => Column(
+                      children: [
+                        const SizedBox(height: 18),
+                        _Entrance(
+                          delay: const Duration(milliseconds: 40),
+                          child: LoyaltyCard(
+                            progress: loyalty.progress,
+                            freeCoffeesEarned: loyalty.freeCoffees,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 20),
               _Entrance(

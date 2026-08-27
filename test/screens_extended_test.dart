@@ -45,8 +45,17 @@ void main() {
   });
 
   Widget buildTestableWidget(Widget child) {
-    return ChangeNotifierProvider<AppState>.value(
-      value: appState,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AppState>.value(value: appState),
+        ChangeNotifierProvider<AuthNotifier>.value(value: auth),
+        ChangeNotifierProvider<CartNotifier>.value(value: cart),
+        ChangeNotifierProvider<WalletNotifier>.value(value: wallet),
+        ChangeNotifierProvider<OrderNotifier>.value(value: orders),
+        ChangeNotifierProvider<StockNotifier>.value(value: stock),
+        ChangeNotifierProvider<MenuNotifier>.value(value: menu),
+        ChangeNotifierProvider<StaffNotifier>.value(value: staff),
+      ],
       child: MaterialApp(home: child),
     );
   }

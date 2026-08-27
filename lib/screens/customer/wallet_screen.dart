@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../state/app_state.dart';
+import '../../state/notifiers/wallet_notifier.dart';
 import '../../theme.dart';
 import '../../widgets/pressable_scale.dart';
 
@@ -107,7 +108,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final balance = context.watch<AppState>().walletBalance;
+    final balance = context.select<WalletNotifier, double>((w) => w.walletBalance);
 
     return Scaffold(
       appBar: AppBar(
