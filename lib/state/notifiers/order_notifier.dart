@@ -140,9 +140,12 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
   Future<OrderRecord?> placeOrder({bool useWallet = false}) async {
     if (!auth.loggedIn) return null;
 
+    await cart.flushDebounces();
+
     if (useWallet) {
-      if (wallet.walletBalance < cart.cartTotal)
+      if (wallet.walletBalance < cart.cartTotal) {
         throw Exception('Yetersiz bakiye');
+      }
     }
 
     if (auth.selectedBranchId == null) throw Exception('Şube seçilmedi');
