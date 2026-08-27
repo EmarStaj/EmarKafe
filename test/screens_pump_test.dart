@@ -32,7 +32,7 @@ import 'package:flutter/services.dart';
 class DummyApi extends ApiService {
   @override Future<Map<String, dynamic>> getMe() async => {'user': {'email': 'a@a', 'role': 'admin'}};
   @override Future<Map<String, dynamic>> getProfile() async => {'full_name': 'A', 'role': 'admin'};
-  @override Future<Map<String, dynamic>> getMenu({int page = 1, int limit = 20, String? categoryId, String? search}) async => {'data': []};
+  @override Future<Map<String, dynamic>> getMenu({String? branchId, int page = 1, int limit = 20, String? categoryId, String? search}) async => {'data': []};
   @override Future<List<dynamic>> getCategories() async => [];
   @override Future<List<dynamic>> getBranches() async => [];
   @override Future<Map<String, dynamic>> getWalletBalance() async => {'data': {'balance': 0}};

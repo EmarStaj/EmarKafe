@@ -24,7 +24,7 @@ class DummyApi extends ApiService {
   @override Future<Map<String, dynamic>> getMe() async => {'user': {'email': 'a@a', 'role': 'customer'}};
   @override Future<Map<String, dynamic>> getProfile() async => {'full_name': 'A'};
   @override Future<List<dynamic>> getBranches() async => [{'id': 'b1', 'name': 'B1'}];
-  @override Future<Map<String, dynamic>> getMenu({int page = 1, int limit = 20, String? categoryId, String? search}) async => {'data': []};
+  @override Future<Map<String, dynamic>> getMenu({String? branchId, int page = 1, int limit = 20, String? categoryId, String? search}) async => {'data': []};
   @override Future<List<dynamic>> getCategories() async => [];
   @override Future<Map<String, dynamic>> getWalletBalance() async => {'data': {'balance': 100}};
   @override Future<Map<String, dynamic>> getCart() async => {'data': {'items': []}};

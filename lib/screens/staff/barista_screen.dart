@@ -261,8 +261,8 @@ class _BaristaScreenState extends State<BaristaScreen> {
                   ),
                 ],
               ),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );
