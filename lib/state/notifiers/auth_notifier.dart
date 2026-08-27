@@ -21,6 +21,32 @@ extension UserRoleExt on UserRole {
         return 'Sistem Yöneticisi';
     }
   }
+
+  String get backendValue {
+    switch (this) {
+      case UserRole.customer:
+        return 'customer';
+      case UserRole.barista:
+        return 'barista';
+      case UserRole.manager:
+      case UserRole.branchManager:
+        return 'branch_manager';
+      case UserRole.admin:
+        return 'admin';
+    }
+  }
+
+  static UserRole fromString(String? roleStr) {
+    if (roleStr == null) return UserRole.customer;
+    final normalized =
+        roleStr.toLowerCase().replaceAll('_', '').replaceAll('-', '');
+    if (normalized == 'branchmanager' || normalized == 'manager') {
+      return UserRole.branchManager;
+    }
+    if (normalized == 'barista') return UserRole.barista;
+    if (normalized == 'admin') return UserRole.admin;
+    return UserRole.customer;
+  }
 }
 
 class AuthNotifier extends ChangeNotifier {
@@ -72,14 +98,11 @@ class AuthNotifier extends ChangeNotifier {
       try {
         final profile = await api.getProfile();
         userName = profile['full_name'] ?? fallbackName;
-        role = UserRole.values.firstWhere(
-          (e) =>
-              e.name ==
-              (profile['role'] ??
-                  userObj['role'] ??
-                  metadata?['role'] ??
-                  'customer'),
-          orElse: () => UserRole.customer,
+        role = UserRoleExt.fromString(
+          profile['role'] ??
+              userObj['role'] ??
+              metadata?['role'] ??
+              'customer',
         );
 
         if (profile['birth_date'] != null)
@@ -126,7 +149,7 @@ class AuthNotifier extends ChangeNotifier {
         password,
         name,
         birthDate.toIso8601String().split('T').first,
-        role: selectedRole.name,
+        role: selectedRole.backendValue,
         branchId: branch,
       );
 
