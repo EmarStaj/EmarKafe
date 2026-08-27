@@ -47,6 +47,11 @@ class AppState extends ChangeNotifier {
 
   Map<String, CartItem> get cartItems => cart.cart;
   double get cartTotal => cart.cartTotal;
+  double get effectiveCartTotal => cart.effectiveCartTotal;
+  double get freeCoffeeDiscount => cart.freeCoffeeDiscount;
+  bool get useFreeCoffeeReward => cart.useFreeCoffeeReward;
+  CartItem? get mostExpensiveCoffeeItem => cart.mostExpensiveCoffeeItem;
+  void setUseFreeCoffeeReward(bool value) => cart.setUseFreeCoffeeReward(value);
   int get cartCount => cart.cartCount;
   bool get isUpdatingCart => cart.isUpdatingCart;
 

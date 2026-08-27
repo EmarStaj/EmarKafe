@@ -445,10 +445,14 @@ class ApiService {
     return _processResponse(res);
   }
 
-  Future<void> redeemLoyaltyReward(String rewardId, String branchId) async {
+  Future<void> redeemLoyaltyReward(String rewardId, {String? branchId}) async {
+    final payload = <String, dynamic>{'reward_id': rewardId};
+    if (branchId != null && branchId.isNotEmpty) {
+      payload['branch_id'] = branchId;
+    }
     final res = await _post(
       '$baseUrl/api/v1/loyalty/redeem',
-      data: {'reward_id': rewardId, 'branch_id': branchId},
+      data: payload,
     );
     _processResponse(res);
   }

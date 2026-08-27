@@ -29,6 +29,12 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
   List<OrderRecord> get activeBaristaOrders => orderHistory;
   int loyaltyProgress = 0;
   int freeCoffeesEarned = 0;
+  List<Map<String, dynamic>> earnedRewards = [];
+
+  String? get availableRewardId => earnedRewards
+      .where((r) => r['status'] == 'earned')
+      .map((r) => r['id']?.toString())
+      .firstOrNull;
 
   Timer? _pollingTimer;
 
@@ -43,9 +49,6 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       initRealtime();
       startPolling();
-      if (auth.loggedIn) fetchOrders();
-    } else if (state == AppLifecycleState.paused) {
-      stopPolling();
     }
   }
 
@@ -63,8 +66,8 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
       realtime?.subscribeToUserOrders(auth.userId, (record) {
         fetchOrders();
       });
-    } else if ((auth.role == UserRole.barista || auth.role == UserRole.manager || auth.role == UserRole.admin) &&
-        (auth.selectedBranchId?.isNotEmpty ?? false)) {
+    } else if ((auth.role == UserRole.barista || auth.role == UserRole.branchManager) &&
+        auth.selectedBranchId != null) {
       realtime?.subscribeToBranchOrders(auth.selectedBranchId!, (record) {
         fetchOrders();
       });
@@ -100,16 +103,30 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
         }
 
         if (rewardsList != null) {
-          freeCoffeesEarned = rewardsList
+          earnedRewards = rewardsList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          freeCoffeesEarned = earnedRewards
               .where((r) => r['status'] == 'earned')
               .length;
         } else {
+          earnedRewards = [];
           freeCoffeesEarned = 0;
         }
         notifyListeners();
       }
     } catch (e) {
       debugPrint('Loyalty fetch error: $e');
+    }
+  }
+
+  Future<void> redeemAvailableReward({String? branchId}) async {
+    final rewardId = availableRewardId;
+    if (rewardId != null && rewardId.isNotEmpty) {
+      try {
+        await api.redeemLoyaltyReward(rewardId, branchId: branchId);
+        await fetchLoyalty();
+      } catch (e) {
+        debugPrint('Redeem reward error: $e');
+      }
     }
   }
 

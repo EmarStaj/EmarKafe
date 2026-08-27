@@ -217,6 +217,53 @@ class _CartTabState extends State<CartTab> {
                       ),
                     ),
                   ),
+                  if (app.freeCoffeesEarned > 0 && app.mostExpensiveCoffeeItem != null) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: EmarColors.moss.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: EmarColors.moss.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Text('🎁', style: TextStyle(fontSize: 22)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '1 Adet Bedava Kahve Hakkın Var!',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                    color: EmarColors.espresso,
+                                  ),
+                                ),
+                                Text(
+                                  'En pahalı kahven (${app.mostExpensiveCoffeeItem!.product.name}, ${app.mostExpensiveCoffeeItem!.unitPrice.toStringAsFixed(0)}₺) hediye edilsin.',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: EmarColors.espresso.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch.adaptive(
+                            value: app.useFreeCoffeeReward,
+                            activeColor: EmarColors.moss,
+                            onChanged: (val) => app.setUseFreeCoffeeReward(val),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -254,6 +301,30 @@ class _CartTabState extends State<CartTab> {
                       ),
                     ],
                   ),
+                  if (app.useFreeCoffeeReward && app.freeCoffeeDiscount > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '🎁 Hediye Kahve (${app.mostExpensiveCoffeeItem?.product.name})',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: EmarColors.moss,
+                          ),
+                        ),
+                        Text(
+                          '-${app.freeCoffeeDiscount.toStringAsFixed(2)}₺',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            color: EmarColors.moss,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -266,7 +337,7 @@ class _CartTabState extends State<CartTab> {
                         ),
                       ),
                       Text(
-                        '${app.cartTotal.toStringAsFixed(2)}₺',
+                        '${app.effectiveCartTotal.toStringAsFixed(2)}₺',
                         style: const TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 17,
@@ -335,10 +406,10 @@ class _CartTabState extends State<CartTab> {
       debugPrint('>>> [_handleQrCheckout] Fetching wallet balance...');
       await app.fetchWalletBalance();
       if (!mounted) return;
-      debugPrint('>>> [_handleQrCheckout] Wallet balance: ${app.walletBalance}, Cart total: ${app.cartTotal}');
+      debugPrint('>>> [_handleQrCheckout] Wallet balance: ${app.walletBalance}, Effective Cart total: ${app.effectiveCartTotal}');
 
-      if (app.walletBalance < app.cartTotal) {
-        debugPrint('>>> [_handleQrCheckout] Insufficient balance: ${app.walletBalance} < ${app.cartTotal}');
+      if (app.walletBalance < app.effectiveCartTotal) {
+        debugPrint('>>> [_handleQrCheckout] Insufficient balance: ${app.walletBalance} < ${app.effectiveCartTotal}');
         showDialog(
           context: context,
           builder: (c) => AlertDialog(
@@ -351,7 +422,7 @@ class _CartTabState extends State<CartTab> {
               ],
             ),
             content: Text(
-              'Sepet tutarınız: ${app.cartTotal.toStringAsFixed(2)} ₺\n'
+              'Sepet tutarınız: ${app.effectiveCartTotal.toStringAsFixed(2)} ₺\n'
               'Cüzdan bakiyeniz: ${app.walletBalance.toStringAsFixed(2)} ₺\n\n'
               'Kasada ödeme yapabilmek için lütfen cüzdanınıza bakiye yükleyin.',
               style: const TextStyle(fontSize: 14, height: 1.4),
@@ -395,6 +466,10 @@ class _CartTabState extends State<CartTab> {
               if (!mounted) return;
               if (app.orders.orderHistory.length > initialOrderCount || app.cart.cart.isEmpty) {
                 pollTimer?.cancel();
+                if (app.useFreeCoffeeReward) {
+                  await app.orders.redeemAvailableReward(branchId: app.selectedBranchId);
+                  app.setUseFreeCoffeeReward(false);
+                }
                 if (Navigator.canPop(c)) {
                   Navigator.pop(c);
                 }

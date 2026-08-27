@@ -20,12 +20,43 @@ class CartNotifier extends ChangeNotifier {
   Map<String, CartItem> cart = {};
   double cartTotal = 0.0;
   bool isUpdatingCart = false;
+  bool useFreeCoffeeReward = false;
   final Map<String, Timer> _cartDebounceTimers = {};
   final Set<String> _pendingDeletions = {};
 
   CartNotifier(this.api, this.auth);
 
   int get cartCount => cart.values.fold(0, (sum, item) => sum + item.quantity);
+
+  void setUseFreeCoffeeReward(bool value) {
+    useFreeCoffeeReward = value;
+    notifyListeners();
+  }
+
+  CartItem? get mostExpensiveCoffeeItem {
+    CartItem? mostExpensive;
+    for (var item in cart.values) {
+      final cat = item.product.category;
+      if (cat == ProductCategory.hotCoffee || cat == ProductCategory.icedCoffee) {
+        if (mostExpensive == null || item.unitPrice > mostExpensive.unitPrice) {
+          mostExpensive = item;
+        }
+      }
+    }
+    return mostExpensive;
+  }
+
+  double get freeCoffeeDiscount {
+    if (!useFreeCoffeeReward) return 0.0;
+    final coffee = mostExpensiveCoffeeItem;
+    if (coffee == null) return 0.0;
+    return coffee.unitPrice;
+  }
+
+  double get effectiveCartTotal {
+    final total = cartTotal - freeCoffeeDiscount;
+    return total < 0 ? 0.0 : total;
+  }
 
   Product productById(String id) {
     return Catalog.instance.byId(id);
