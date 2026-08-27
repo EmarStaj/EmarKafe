@@ -1,7 +1,10 @@
 import 'package:emar_kafe/state/notifiers/menu_notifier.dart';
 import 'package:emar_kafe/models/order_record.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'l10n/app_localizations.dart';
 
 import 'screens/customer/customer_shell.dart';
 import 'screens/customer/order_history_screen.dart';
@@ -182,6 +185,8 @@ class _AppWidgetState extends State<_AppWidget> {
       theme: EmarTheme.light(),
       themeMode: ThemeMode.system,
       routerConfig: _router,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
     );
   }
 }
