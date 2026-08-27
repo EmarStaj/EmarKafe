@@ -315,7 +315,23 @@ class _CartTabState extends State<CartTab> {
     setState(() => _isOrdering = true);
 
     try {
-      // Refresh wallet balance before proceeding
+      // 1. Flush any pending cart debounce and sync with backend
+      debugPrint('>>> [_handleQrCheckout] Syncing cart to backend...');
+      await app.cart.flushDebounces();
+      if (!mounted) return;
+
+      if (app.cartItems.isEmpty) {
+        debugPrint('>>> [_handleQrCheckout] Cart is empty');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sepetiniz boş. Lütfen önce menüden ürün ekleyin.'),
+            backgroundColor: EmarColors.paprika,
+          ),
+        );
+        return;
+      }
+
+      // 2. Refresh wallet balance before proceeding
       debugPrint('>>> [_handleQrCheckout] Fetching wallet balance...');
       await app.fetchWalletBalance();
       if (!mounted) return;

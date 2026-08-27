@@ -154,6 +154,36 @@ class CartNotifier extends ChangeNotifier {
     return [];
   }
 
+  Future<void> flushDebounces() async {
+    if (_cartDebounceTimers.isNotEmpty) {
+      for (var timer in _cartDebounceTimers.values) {
+        timer.cancel();
+      }
+      _cartDebounceTimers.clear();
+    }
+
+    if (!auth.loggedIn) return;
+
+    for (var entry in cart.entries) {
+      final item = entry.value;
+      try {
+        if (item.cartItemId.isNotEmpty && item.cartItemId != 'local') {
+          await api.updateCartItem(item.cartItemId, item.quantity);
+        } else if (item.quantity > 0) {
+          await api.addToCart(
+            item.product.id,
+            item.quantity,
+            options: item.selectedOptions.map((e) => e.toJson()).toList(),
+          );
+        }
+      } catch (e) {
+        debugPrint('flushDebounces sync item error: $e');
+      }
+    }
+    isUpdatingCart = false;
+    await fetchCart();
+  }
+
   Future<List<String>> addToCart(
     String productId, {
     List<ProductOption> options = const [],
