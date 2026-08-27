@@ -35,16 +35,28 @@ class MockApiForCart extends ApiService {
     List<dynamic>? options,
   }) async {
     addedProducts.add(productId);
+    final prod = Catalog.instance.products.firstWhere(
+      (p) => p.id == productId,
+      orElse: () => const Product(
+        id: 'default',
+        name: 'Test Coffee',
+        category: ProductCategory.hotCoffee,
+        price: 120.0,
+        icon: '☕',
+        rating: 5,
+        ratingCount: 1,
+      ),
+    );
     serverCartItems.add({
       'id': 'server-item-${serverCartItems.length + 1}',
       'product_id': productId,
       'quantity': quantity,
-      'unit_price': 120.0,
+      'unit_price': prod.price,
       'selected_options': options ?? [],
       'products': {
         'id': productId,
-        'name': 'Test Coffee',
-        'base_price': 120.0,
+        'name': prod.name,
+        'base_price': prod.price,
         'category_id': 'cat1',
         'categories': {'name': 'Sıcak Kahve'}
       }
@@ -60,6 +72,11 @@ class MockApiForCart extends ApiService {
         item['quantity'] = qty;
       }
     }
+  }
+
+  @override
+  Future<void> deleteCartItem(String cartItemId) async {
+    serverCartItems.removeWhere((item) => item['id'] == cartItemId);
   }
 
   @override
@@ -197,6 +214,48 @@ void main() {
       expect(cartNotifier.cart.containsKey('remote-uuid-999'), true);
       expect(cartNotifier.cart['remote-uuid-999']!.product.name, 'Remote Special Blend');
       expect(cartNotifier.cartTotal, 300.0);
+    });
+
+    test('Deleting item and immediately flushing debounces removes it from backend without resurrecting', () async {
+      final p1 = Product(
+        id: 'del-prod-1',
+        name: 'Item 1',
+        category: ProductCategory.hotCoffee,
+        price: 50.0,
+        icon: '☕',
+        rating: 5.0,
+        ratingCount: 1,
+      );
+      final p2 = Product(
+        id: 'del-prod-2',
+        name: 'Item 2',
+        category: ProductCategory.hotCoffee,
+        price: 100.0,
+        icon: '☕',
+        rating: 5.0,
+        ratingCount: 1,
+      );
+      Catalog.instance.registerProducts([p1, p2]);
+
+      await cartNotifier.addToCart('del-prod-1');
+      await cartNotifier.addToCart('del-prod-2');
+      await cartNotifier.flushDebounces();
+
+      expect(cartNotifier.cartCount, 2);
+      expect(cartNotifier.cartTotal, 150.0);
+
+      // Now delete item 2 (e.g. quantity becomes 0)
+      await cartNotifier.changeQty('del-prod-2', -1);
+      expect(cartNotifier.cartCount, 1);
+      expect(cartNotifier.cartTotal, 50.0);
+
+      // Immediately tap checkout (which calls flushDebounces)
+      await cartNotifier.flushDebounces();
+
+      // Ensure item 2 is NOT resurrected from backend
+      expect(cartNotifier.cartCount, 1);
+      expect(cartNotifier.cartTotal, 50.0);
+      expect(cartNotifier.cart.containsKey('del-prod-2'), false);
     });
   });
 }

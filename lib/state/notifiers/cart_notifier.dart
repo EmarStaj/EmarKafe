@@ -21,6 +21,7 @@ class CartNotifier extends ChangeNotifier {
   double cartTotal = 0.0;
   bool isUpdatingCart = false;
   final Map<String, Timer> _cartDebounceTimers = {};
+  final Set<String> _pendingDeletions = {};
 
   CartNotifier(this.api, this.auth);
 
@@ -113,6 +114,10 @@ class CartNotifier extends ChangeNotifier {
 
     if (nextQty <= 0) {
       cart.remove(localId);
+      if (originalItem.cartItemId.isNotEmpty &&
+          originalItem.cartItemId != 'local') {
+        _pendingDeletions.add(originalItem.cartItemId);
+      }
     } else {
       cart[localId] = originalItem.copyWith(quantity: nextQty);
     }
@@ -135,10 +140,16 @@ class CartNotifier extends ChangeNotifier {
           final finalItem = cart[localId];
           final finalQty = finalItem?.quantity ?? 0;
 
-          if (originalItem.cartItemId.isNotEmpty &&
+          if (finalQty <= 0) {
+            if (originalItem.cartItemId.isNotEmpty &&
+                originalItem.cartItemId != 'local') {
+              await api.deleteCartItem(originalItem.cartItemId);
+              _pendingDeletions.remove(originalItem.cartItemId);
+            }
+          } else if (originalItem.cartItemId.isNotEmpty &&
               originalItem.cartItemId != 'local') {
             await api.updateCartItem(originalItem.cartItemId, finalQty);
-          } else if (finalQty > 0 && finalItem != null) {
+          } else if (finalItem != null) {
             await api.addToCart(
               finalItem.product.id,
               finalQty,
@@ -170,6 +181,20 @@ class CartNotifier extends ChangeNotifier {
 
     if (!auth.loggedIn) return;
 
+    // 1. Process any pending deletions
+    if (_pendingDeletions.isNotEmpty) {
+      final deletions = Set<String>.from(_pendingDeletions);
+      for (var cartItemId in deletions) {
+        try {
+          await api.deleteCartItem(cartItemId);
+          _pendingDeletions.remove(cartItemId);
+        } catch (e) {
+          debugPrint('flushDebounces delete error: $e');
+        }
+      }
+    }
+
+    // 2. Sync remaining items
     for (var entry in cart.entries) {
       final item = entry.value;
       try {

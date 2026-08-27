@@ -390,6 +390,11 @@ class ApiService {
     _processResponse(res);
   }
 
+  Future<void> deleteCartItem(String cartItemId) async {
+    final res = await _delete('$baseUrl/api/v1/cart/$cartItemId');
+    _processResponse(res);
+  }
+
   Future<void> clearCart() async {
     final res = await _delete('$baseUrl/api/v1/cart');
     _processResponse(res);
