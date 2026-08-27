@@ -16,6 +16,9 @@ import 'services/api_service.dart';
 import 'theme.dart';
 import 'utils/page_transitions.dart';
 
+import 'router/app_router.dart';
+import 'package:go_router/go_router.dart';
+
 final navigatorKey = GlobalKey<NavigatorState>();
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -118,10 +121,14 @@ class _AppWidget extends StatefulWidget {
 
 class _AppWidgetState extends State<_AppWidget> {
   OrderNotifier? _orderNotifier;
+  GoRouter? _router;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final auth = context.read<AuthNotifier>();
+    _router ??= AppRouter.createRouter(auth, rootNavigatorKey: navigatorKey);
+
     final notifier = context.read<OrderNotifier>();
     if (_orderNotifier != notifier) {
       _orderNotifier?.rateReminderNotifier.removeListener(_onRateReminder);
@@ -162,34 +169,16 @@ class _AppWidgetState extends State<_AppWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    final auth = context.read<AuthNotifier>();
+    _router ??= AppRouter.createRouter(auth, rootNavigatorKey: navigatorKey);
+
+    return MaterialApp.router(
       title: 'EMAR Kafe',
       debugShowCheckedModeBanner: false,
-      navigatorKey: navigatorKey,
       scaffoldMessengerKey: scaffoldMessengerKey,
       theme: EmarTheme.light(),
-
       themeMode: ThemeMode.system,
-      home: const _RootRouter(),
+      routerConfig: _router,
     );
-  }
-}
-
-class _RootRouter extends StatelessWidget {
-  const _RootRouter();
-
-  @override
-  Widget build(BuildContext context) {
-    final app = context.watch<AppState>();
-    // Girişsiz kullanıcı da ana ekranı misafir olarak gezebilir;
-    // giriş yalnızca sağ üstteki profil ikonuyla tetiklenir.
-    if (!app.loggedIn) return const CustomerShell();
-    return switch (app.role) {
-      UserRole.customer => const CustomerShell(),
-      UserRole.barista => const BaristaScreen(),
-      UserRole.manager => const ManagerScreen(),
-      UserRole.branchManager => const ManagerScreen(),
-      UserRole.admin => const AdminScreen(),
-    };
   }
 }
