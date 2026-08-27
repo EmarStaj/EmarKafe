@@ -28,33 +28,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   void initState() {
     super.initState();
     _initQrToken();
-    _ticker = Timer.periodic(const Duration(seconds: 2), (_) async {
-      if (!mounted) return;
-      final app = context.read<AppState>();
-      final prevOrderCount = app.orderHistory.length;
-      await app.orders.fetchOrders();
-      await app.fetchCart();
-      if (!mounted) return;
-
-      if (widget.order.isPendingQR) {
-        if (app.orderHistory.length > prevOrderCount || app.cart.cart.isEmpty) {
-          _ticker?.cancel();
-          if (mounted) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Siparişiniz onaylandı ve hazırlanıyor! ☕'),
-                backgroundColor: EmarColors.moss,
-              ),
-            );
-          }
-          return;
-        }
-      }
-
-      setState(() {});
-      if (widget.order.computedStatus == OrderStatus.ready) {
-        _ticker?.cancel();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        final app = context.read<AppState>();
+        await app.orders.fetchOrders();
       }
     });
   }

@@ -13,6 +13,7 @@ import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 import 'state/app_state.dart';
 import 'services/api_service.dart';
+import 'services/realtime_service.dart';
 import 'theme.dart';
 import 'utils/page_transitions.dart';
 
@@ -52,6 +53,7 @@ class EmarKafeApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<ApiService>(create: (_) => ApiService()),
+        Provider<RealtimeService>(create: (_) => RealtimeService()..init()),
         ChangeNotifierProxyProvider<ApiService, AuthNotifier>(
           create: (ctx) => AuthNotifier(ctx.read<ApiService>()),
           update: (_, api, auth) => auth ?? AuthNotifier(api),
@@ -78,9 +80,10 @@ class EmarKafeApp extends StatelessWidget {
             ctx.read<AuthNotifier>(),
             ctx.read<CartNotifier>(),
             ctx.read<WalletNotifier>(),
+            realtime: ctx.read<RealtimeService>(),
           ),
-          update: (_, api, auth, cart, wallet, orders) =>
-              orders ?? OrderNotifier(api, auth, cart, wallet),
+          update: (ctx, api, auth, cart, wallet, orders) =>
+              orders ?? OrderNotifier(api, auth, cart, wallet, realtime: ctx.read<RealtimeService>()),
         ),
         ChangeNotifierProxyProvider<ApiService, MenuNotifier>(
           create: (ctx) => MenuNotifier(ctx.read<ApiService>()),

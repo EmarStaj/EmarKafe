@@ -27,6 +27,7 @@ class AuthNotifier extends ChangeNotifier {
   final ApiService api;
 
   bool loggedIn = false;
+  String userId = '';
   String userName = '';
   String userEmail = '';
   DateTime? birthday;
@@ -63,6 +64,7 @@ class AuthNotifier extends ChangeNotifier {
       final userObj = res['user'] as Map<String, dynamic>? ?? res;
       final metadata = userObj['user_metadata'] as Map<String, dynamic>?;
 
+      userId = userObj['id'] ?? '';
       userEmail = userObj['email'] ?? '';
 
       String fallbackName = metadata?['full_name'] ?? '';
@@ -180,6 +182,7 @@ class AuthNotifier extends ChangeNotifier {
   Future<void> logout() async {
     await api.logout();
     loggedIn = false;
+    userId = '';
     userName = '';
     userEmail = '';
     role = UserRole.customer;
@@ -195,6 +198,7 @@ class AuthNotifier extends ChangeNotifier {
   Future<void> deleteAccount() async {
     await api.deleteAccount();
     loggedIn = false;
+    userId = '';
     userName = '';
     userEmail = '';
     role = UserRole.customer;

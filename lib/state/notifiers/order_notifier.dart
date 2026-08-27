@@ -6,6 +6,8 @@ import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
 import 'package:emar_kafe/state/notifiers/cart_notifier.dart';
 import 'package:emar_kafe/state/notifiers/wallet_notifier.dart';
 
+import 'package:emar_kafe/services/realtime_service.dart';
+
 class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
   void clear() {
     orderHistory = [];
@@ -13,6 +15,7 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
     freeCoffeesEarned = 0;
     rateReminderNotifier.value = null;
     stopPolling();
+    realtime?.unsubscribe();
     notifyListeners();
   }
   final ValueNotifier<OrderRecord?> rateReminderNotifier = ValueNotifier(null);
@@ -20,6 +23,7 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
   final AuthNotifier auth;
   final CartNotifier cart;
   final WalletNotifier wallet;
+  final RealtimeService? realtime;
 
   List<OrderRecord> orderHistory = [];
   List<OrderRecord> get activeBaristaOrders => orderHistory;
@@ -28,14 +32,16 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
 
   Timer? _pollingTimer;
 
-  OrderNotifier(this.api, this.auth, this.cart, this.wallet) {
+  OrderNotifier(this.api, this.auth, this.cart, this.wallet, {this.realtime}) {
     WidgetsBinding.instance.addObserver(this);
+    initRealtime();
     startPolling();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      initRealtime();
       startPolling();
       if (auth.loggedIn) fetchOrders();
     } else if (state == AppLifecycleState.paused) {
@@ -47,12 +53,28 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _pollingTimer?.cancel();
+    realtime?.unsubscribe();
     super.dispose();
+  }
+
+  void initRealtime() {
+    if (!auth.loggedIn) return;
+    if (auth.role == UserRole.customer && auth.userId.isNotEmpty) {
+      realtime?.subscribeToUserOrders(auth.userId, (record) {
+        fetchOrders();
+      });
+    } else if ((auth.role == UserRole.barista || auth.role == UserRole.manager || auth.role == UserRole.admin) &&
+        (auth.selectedBranchId?.isNotEmpty ?? false)) {
+      realtime?.subscribeToBranchOrders(auth.selectedBranchId!, (record) {
+        fetchOrders();
+      });
+    }
   }
 
   void startPolling() {
     _pollingTimer?.cancel();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+    // Lightweight 60s fallback heartbeat (realtime handles instant updates)
+    _pollingTimer = Timer.periodic(const Duration(seconds: 60), (_) {
       if (auth.loggedIn) fetchOrders();
     });
   }
