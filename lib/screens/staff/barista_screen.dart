@@ -139,7 +139,7 @@ class _BaristaScreenState extends State<BaristaScreen> {
                         Row(
                           children: [
                             Text(
-                              o.pickupCode != null ? '#${o.pickupCode}' : o.shortId,
+                              o.shortId,
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 13,

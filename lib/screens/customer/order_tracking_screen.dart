@@ -84,47 +84,20 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         _jwtToken ?? widget.qrToken ?? widget.order.qrToken ?? widget.order.id;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          order.pickupCode != null
-              ? 'Sipariş #${order.pickupCode}'
-              : 'Sipariş ${order.shortId}',
-        ),
-      ),
+      appBar: AppBar(title: Text('Sipariş ${order.shortId}')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    branchName,
-                    style: const TextStyle(
-                      color: EmarColors.espresso,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  if (order.pickupCode != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: EmarColors.oatDark,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'Alma Kodu: #${order.pickupCode}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: EmarColors.espresso,
-                        ),
-                      ),
-                    ),
-                ],
+              Text(
+                branchName,
+                style: const TextStyle(
+                  color: EmarColors.espresso,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 24),
               Row(
