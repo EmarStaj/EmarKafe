@@ -6,6 +6,7 @@ enum OrderStatus { created, received, preparing, ready, completed, cancelled }
 class OrderRecord {
   final String id;
   final String shortId;
+  final String? pickupCode;
   final String userId;
   final String? branchId;
   final Map<String, int> items;
@@ -14,6 +15,9 @@ class OrderRecord {
   String? get branch => branchId;
   String? customerName;
   final DateTime createdAt;
+  final DateTime? readyAt;
+  final DateTime? completedAt;
+  final String? completedBy;
   final String status;
   final OrderStatus manualStatus;
   final String? qrToken;
@@ -21,11 +25,15 @@ class OrderRecord {
   OrderRecord({
     required this.id,
     required this.shortId,
+    this.pickupCode,
     required this.userId,
     this.branchId,
     required this.items,
     required this.totalPrice,
     required this.createdAt,
+    this.readyAt,
+    this.completedAt,
+    this.completedBy,
     required this.status,
     required this.manualStatus,
     this.qrToken,
@@ -36,6 +44,7 @@ class OrderRecord {
       manualStatus == OrderStatus.cancelled;
   OrderStatus get computedStatus => manualStatus;
   bool get isPendingQR => status == 'pending_qr';
+  bool get isAutoCompleted => completedBy == 'system_auto';
   int get remainingSeconds => 300;
 
   factory OrderRecord.fromJson(Map<String, dynamic> db) {
@@ -74,9 +83,15 @@ class OrderRecord {
       name = db['profiles']['full_name']?.toString();
     }
 
+    final pickupCode = db['pickup_code']?.toString() ?? (id.length >= 4 ? id.substring(0, 4) : id);
+    final readyAt = db['ready_at'] != null ? DateTime.tryParse(db['ready_at'].toString())?.toLocal() : null;
+    final completedAt = db['completed_at'] != null ? DateTime.tryParse(db['completed_at'].toString())?.toLocal() : null;
+    final completedBy = db['completed_by']?.toString();
+
     return OrderRecord(
       id: id,
       shortId: short,
+      pickupCode: pickupCode,
       userId: db['user_id']?.toString() ?? '',
       branchId: db['branch_id']?.toString(),
       items: itemsMap,
@@ -84,6 +99,9 @@ class OrderRecord {
       createdAt: db['created_at'] != null
           ? DateTime.parse(db['created_at']).toLocal()
           : DateTime.now(),
+      readyAt: readyAt,
+      completedAt: completedAt,
+      completedBy: completedBy,
       status: statusStr,
       manualStatus: parsedStatus,
       qrToken: db['qr_token']?.toString() ?? db['qrToken']?.toString(),

@@ -106,63 +106,107 @@ class _BaristaScreenState extends State<BaristaScreen> {
           ),
           const SizedBox(height: 8),
           ...items.map(
-            (o) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: EmarColors.surface,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: EmarColors.espresso.withValues(alpha: 0.03),
-                    blurRadius: 4,
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        o.shortId,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12.5,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 9,
-                            backgroundColor: _colColor(
-                              status,
-                            ).withValues(alpha: 0.15),
-                            child: Text(
-                              ((o.customerName ?? '').isNotEmpty)
-                                  ? (o.customerName?[0] ?? '?').toUpperCase()
-                                  : '?',
+            (o) {
+              final readySince = o.readyAt ?? o.createdAt;
+              final waitMinutes = status == OrderStatus.ready
+                  ? DateTime.now().difference(readySince).inMinutes
+                  : 0;
+              final isWaitingLong =
+                  status == OrderStatus.ready && waitMinutes >= 10;
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: EmarColors.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: isWaitingLong
+                      ? Border.all(color: EmarColors.paprika, width: 1.5)
+                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: EmarColors.espresso.withValues(alpha: 0.03),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              o.pickupCode != null ? '#${o.pickupCode}' : o.shortId,
                               style: TextStyle(
-                                fontSize: 9.5,
                                 fontWeight: FontWeight.w800,
-                                color: _colColor(status),
+                                fontSize: 13,
+                                color: isWaitingLong
+                                    ? EmarColors.paprika
+                                    : EmarColors.espresso,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            _shortName(o.customerName ?? 'Müşteri'),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: EmarColors.espresso,
+                            if (status == OrderStatus.ready) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: (isWaitingLong
+                                          ? EmarColors.paprika
+                                          : EmarColors.gold)
+                                      .withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '${waitMinutes}dk',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: isWaitingLong
+                                        ? EmarColors.paprika
+                                        : EmarColors.roast,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 9,
+                              backgroundColor: _colColor(
+                                status,
+                              ).withValues(alpha: 0.15),
+                              child: Text(
+                                ((o.customerName ?? '').isNotEmpty)
+                                    ? (o.customerName?[0] ?? '?').toUpperCase()
+                                    : '?',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: _colColor(status),
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                            const SizedBox(width: 5),
+                            Text(
+                              _shortName(o.customerName ?? 'Müşteri'),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: EmarColors.espresso,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 5),
                   Text(
                     _formatItems(o.items),
