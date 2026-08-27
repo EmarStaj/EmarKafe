@@ -233,6 +233,98 @@ class _BaristaScreenState extends State<BaristaScreen> {
     OrderStatus.cancelled => EmarColors.paprikaDim,
   };
 
+  void _showManualTokenDialog(BuildContext context, AppState app) {
+    final ctrl = TextEditingController();
+    bool isProcessing = false;
+
+    showDialog(
+      context: context,
+      builder: (c) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          backgroundColor: EmarColors.surface,
+          title: const Row(
+            children: [
+              Icon(Icons.vpn_key_outlined, color: EmarColors.espresso),
+              SizedBox(width: 8),
+              Text(
+                'Manuel QR Token Gir',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 340,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Müşterinin ekranında görünen QR tokeni buraya yapıştırın:',
+                  style: TextStyle(fontSize: 13, color: EmarColors.espresso),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: ctrl,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    hintText: 'Token yapıştırın (ey...)',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isProcessing ? null : () => Navigator.pop(dialogCtx),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: EmarColors.moss),
+              onPressed: isProcessing
+                  ? null
+                  : () async {
+                      final token = ctrl.text.trim();
+                      if (token.isEmpty) return;
+                      setDialogState(() => isProcessing = true);
+                      try {
+                        await app.confirmOrderFromQR(token);
+                        if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Sipariş başarıyla onaylandı ve oluşturuldu! ✅'),
+                              backgroundColor: EmarColors.moss,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() => isProcessing = false);
+                        if (dialogCtx.mounted) {
+                          ScaffoldMessenger.of(dialogCtx).showSnackBar(
+                            SnackBar(
+                              content: Text('Hata: ${e.toString().replaceAll('Exception: ', '')}'),
+                              backgroundColor: EmarColors.paprika,
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: isProcessing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Siparişi Onayla'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
@@ -255,6 +347,11 @@ class _BaristaScreenState extends State<BaristaScreen> {
             tooltip: 'Yenile',
             icon: const Icon(Icons.refresh),
             onPressed: () => app.orders.fetchOrders(),
+          ),
+          IconButton(
+            tooltip: 'Manuel Token Gir',
+            icon: const Icon(Icons.keyboard),
+            onPressed: () => _showManualTokenDialog(context, app),
           ),
           IconButton(
             tooltip: 'QR Okut',

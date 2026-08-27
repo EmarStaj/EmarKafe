@@ -57,15 +57,38 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     showDialog(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text(
-          'Manuel Kod Gir',
-          style: TextStyle(color: EmarColors.espresso),
+        backgroundColor: EmarColors.surface,
+        title: const Row(
+          children: [
+            Icon(Icons.vpn_key_outlined, color: EmarColors.espresso),
+            SizedBox(width: 8),
+            Text(
+              'Manuel QR Token Gir',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ],
         ),
-        content: TextField(
-          controller: _manualInputCtrl,
-          decoration: const InputDecoration(
-            hintText: 'Sipariş No (Örn: #1046)',
-            border: OutlineInputBorder(),
+        content: SizedBox(
+          width: 320,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Müşterinin ekranındaki QR tokeni yapıştırın:',
+                style: TextStyle(fontSize: 13, color: EmarColors.espresso),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _manualInputCtrl,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  hintText: 'Token yapıştırın (ey...)',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
@@ -81,7 +104,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                 _processQR(_manualInputCtrl.text);
               }
             },
-            child: const Text('Onayla'),
+            child: const Text('Siparişi Onayla'),
           ),
         ],
       ),
