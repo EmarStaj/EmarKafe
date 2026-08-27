@@ -397,6 +397,9 @@ class _CartTabState extends State<CartTab> {
                 pollTimer?.cancel();
                 if (Navigator.canPop(c)) {
                   Navigator.pop(c);
+                }
+                if (mounted) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Siparişiniz kasada başarıyla onaylandı! ✅'),

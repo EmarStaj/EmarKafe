@@ -28,10 +28,30 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   void initState() {
     super.initState();
     _initQrToken();
-    // Durum, sipariş saatinden türetildiği için burada sadece görünümü
-    // her saniye tazeliyoruz — hiçbir alanı biz mutasyona uğratmıyoruz.
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+    _ticker = Timer.periodic(const Duration(seconds: 2), (_) async {
       if (!mounted) return;
+      final app = context.read<AppState>();
+      final prevOrderCount = app.orderHistory.length;
+      await app.orders.fetchOrders();
+      await app.fetchCart();
+      if (!mounted) return;
+
+      if (widget.order.isPendingQR) {
+        if (app.orderHistory.length > prevOrderCount || app.cart.cart.isEmpty) {
+          _ticker?.cancel();
+          if (mounted) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Siparişiniz onaylandı ve hazırlanıyor! ☕'),
+                backgroundColor: EmarColors.moss,
+              ),
+            );
+          }
+          return;
+        }
+      }
+
       setState(() {});
       if (widget.order.computedStatus == OrderStatus.ready) {
         _ticker?.cancel();
@@ -256,7 +276,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
                     child: const Text('Menüye Dön'),
                   ),
                 ),
