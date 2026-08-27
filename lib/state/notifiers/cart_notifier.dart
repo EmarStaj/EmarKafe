@@ -75,7 +75,13 @@ class CartNotifier extends ChangeNotifier {
         }
 
         try {
-          final product = productById(productId);
+          Product product;
+          if (item['products'] != null && item['products'] is Map) {
+            product = Product.fromDb(item['products'] as Map<String, dynamic>);
+            Catalog.instance.registerProducts([product]);
+          } else {
+            product = productById(productId);
+          }
           final localId = _generateLocalId(productId, options);
           newCart[localId] = CartItem(
             serverUnitPrice: (item['unit_price'] as num?)?.toDouble(),
