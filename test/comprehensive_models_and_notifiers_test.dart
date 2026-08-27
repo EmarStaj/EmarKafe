@@ -187,7 +187,7 @@ class MockApiComprehensive extends ApiService {
   Future<void> topupWallet(double amount) async {}
 
   @override
-  Future<String> getWalletQrToken() async {
+  Future<String> getWalletQrToken({String? rewardId, bool useReward = false}) async {
     return 'token';
   }
 

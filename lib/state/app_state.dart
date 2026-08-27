@@ -181,8 +181,16 @@ class AppState extends ChangeNotifier {
   Future<void> fetchWalletBalance() => wallet.fetchWalletBalance();
   Future<void> addWalletBalance(double amount) =>
       wallet.addWalletBalance(amount);
-  Future<String?> generateWalletToken() => wallet.generateWalletToken();
-  Future<String?> generateWalletQR() => wallet.generateWalletToken();
+  Future<String?> generateWalletToken({
+    String? rewardId,
+    bool useReward = false,
+  }) =>
+      wallet.generateWalletToken(rewardId: rewardId, useReward: useReward);
+  Future<String?> generateWalletQR({
+    String? rewardId,
+    bool useReward = false,
+  }) =>
+      wallet.generateWalletToken(rewardId: rewardId, useReward: useReward);
 
   bool hasOrderedProduct(String productId) {
     for (var order in orders.orderHistory) {

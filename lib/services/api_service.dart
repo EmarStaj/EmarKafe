@@ -341,10 +341,21 @@ class ApiService {
     _processResponse(res);
   }
 
-  Future<String> getWalletQrToken() async {
-    final res = await _get('$baseUrl/api/v1/wallet/qr');
+  Future<String> getWalletQrToken({String? rewardId, bool useReward = false}) async {
+    final params = <String, dynamic>{};
+    if (rewardId != null && rewardId.isNotEmpty) {
+      params['reward_id'] = rewardId;
+    }
+    if (useReward) {
+      params['use_reward'] = 'true';
+    }
+    final res = await _get(
+      '$baseUrl/api/v1/wallet/qr',
+      queryParameters: params.isNotEmpty ? params : null,
+    );
     final data = _processResponse(res);
-    return data['qr_token'] as String;
+    final token = data['data']?['qr_token'] ?? data['qr_token'];
+    return token.toString();
   }
 
   // --- Cart ---

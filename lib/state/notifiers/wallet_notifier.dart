@@ -59,12 +59,18 @@ class WalletNotifier extends ChangeNotifier {
     }
   }
 
-  Future<String?> generateWalletToken() async {
+  Future<String?> generateWalletToken({
+    String? rewardId,
+    bool useReward = false,
+  }) async {
     if (!auth.loggedIn) throw Exception('Lütfen önce giriş yapınız.');
     isUpdatingWallet = true;
     notifyListeners();
     try {
-      final token = await api.getWalletQrToken();
+      final token = await api.getWalletQrToken(
+        rewardId: rewardId,
+        useReward: useReward,
+      );
       debugPrint('generateWalletToken success: $token');
       return token;
     } catch (e) {

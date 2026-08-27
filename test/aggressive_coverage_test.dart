@@ -55,7 +55,7 @@ class MockApiAggressive extends ApiService {
     return {'data': {'wallet_balance': 100.0}};
   }
   @override Future<void> topupWallet(double amount) async { throw Exception('topup error'); }
-  @override Future<String> getWalletQrToken() async { throw Exception('qr error'); }
+  @override Future<String> getWalletQrToken({String? rewardId, bool useReward = false}) async { throw Exception('qr error'); }
   @override Future<void> updateOrderStatus(String orderId, String status) async { throw Exception('status error'); }
   @override Future<void> scanQrOrder(String token) async { throw Exception('scan error'); }
   @override Future<Map<String, dynamic>> getLoyaltyProgress() async {

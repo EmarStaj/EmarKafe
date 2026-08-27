@@ -44,7 +44,7 @@ class MockApiService extends ApiService {
     if (shouldFail) throw Exception('API Error');
     return {'balance': 150.0, 'coins': 20.0};
   }
-  @override Future<String> getWalletQrToken() async {
+  @override Future<String> getWalletQrToken({String? rewardId, bool useReward = false}) async {
     if (shouldFail) throw Exception('API Error');
     return 'qr-token-123';
   }

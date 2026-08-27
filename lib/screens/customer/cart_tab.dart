@@ -446,7 +446,10 @@ class _CartTabState extends State<CartTab> {
       }
 
       debugPrint('>>> [_handleQrCheckout] Requesting QR token from backend...');
-      final token = await app.generateWalletToken();
+      final token = await app.generateWalletToken(
+        rewardId: app.useFreeCoffeeReward ? app.orders.availableRewardId : null,
+        useReward: app.useFreeCoffeeReward,
+      );
       debugPrint('>>> [_handleQrCheckout] QR token received: $token');
       if (!mounted) return;
 
