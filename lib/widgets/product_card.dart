@@ -27,16 +27,33 @@ class ProductCard extends StatelessWidget {
     );
 
     return InkWell(
-      onTap: onTap,
+      onTap: outOfStock
+          ? () {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '${product.name} seçili şubede şu an tükenmiştir.',
+                  ),
+                  backgroundColor: EmarColors.paprika,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          : onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: 132,
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: EmarColors.surface,
+          color: outOfStock
+              ? EmarColors.surface.withValues(alpha: 0.65)
+              : EmarColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: EmarColors.espresso.withValues(alpha: 0.06),
+            color: outOfStock
+                ? EmarColors.paprika.withValues(alpha: 0.25)
+                : EmarColors.espresso.withValues(alpha: 0.06),
           ),
         ),
         child: Column(
@@ -46,7 +63,7 @@ class ProductCard extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Opacity(
-                  opacity: outOfStock ? 0.45 : 1,
+                  opacity: outOfStock ? 0.35 : 1.0,
                   child: Hero(
                     tag: 'product-icon-${product.id}',
                     child: Container(
@@ -72,22 +89,47 @@ class ProductCard extends StatelessWidget {
                 ),
                 if (outOfStock)
                   Positioned.fill(
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: EmarColors.espresso,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: const Text(
-                          'Tükendi',
-                          style: TextStyle(
-                            color: EmarColors.surface,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: EmarColors.paprika,
+                            borderRadius: BorderRadius.circular(999),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.25),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.block_rounded,
+                                size: 11,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Tükendi',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -106,9 +148,12 @@ class ProductCard extends StatelessWidget {
               product.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 12.5,
+                color: outOfStock
+                    ? EmarColors.espresso.withValues(alpha: 0.45)
+                    : EmarColors.espresso,
               ),
             ),
             const SizedBox(height: 3),
@@ -117,18 +162,22 @@ class ProductCard extends StatelessWidget {
               children: [
                 Text(
                   '★ ${product.rating.toStringAsFixed(1)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: EmarColors.gold,
+                    color: outOfStock
+                        ? EmarColors.gold.withValues(alpha: 0.4)
+                        : EmarColors.gold,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
-                  '${product.price.toStringAsFixed(0)}₺',
+                  outOfStock ? 'Şubede Yok' : '${product.price.toStringAsFixed(0)}₺',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: EmarColors.espresso.withValues(alpha: 0.65),
+                    color: outOfStock
+                        ? EmarColors.paprika
+                        : EmarColors.espresso.withValues(alpha: 0.65),
                   ),
                 ),
               ],
