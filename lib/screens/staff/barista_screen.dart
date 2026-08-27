@@ -171,27 +171,31 @@ class _BaristaScreenState extends State<BaristaScreen> {
                       color: EmarColors.espresso,
                     ),
                   ),
-                  if (status != OrderStatus.ready) ...[
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: EmarColors.moss,
-                              foregroundColor: EmarColors.surface,
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              minimumSize: Size.zero,
-                            ),
-                            onPressed: () => _advance(o, app),
-                            child: Text(
-                              (status == OrderStatus.received || status == OrderStatus.created)
-                                  ? 'Onayla'
-                                  : 'Hazır',
-                              style: const TextStyle(fontSize: 10.5),
-                            ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: status == OrderStatus.ready
+                                ? EmarColors.espresso
+                                : EmarColors.moss,
+                            foregroundColor: EmarColors.surface,
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            minimumSize: Size.zero,
+                          ),
+                          onPressed: () => _advance(o, app),
+                          child: Text(
+                            (status == OrderStatus.received || status == OrderStatus.created)
+                                ? 'Onayla'
+                                : (status == OrderStatus.preparing
+                                    ? 'Hazır'
+                                    : 'Teslim Et'),
+                            style: const TextStyle(fontSize: 10.5),
                           ),
                         ),
+                      ),
+                      if (status != OrderStatus.ready) ...[
                         const SizedBox(width: 4),
                         SizedBox(
                           width: 32,
@@ -209,8 +213,8 @@ class _BaristaScreenState extends State<BaristaScreen> {
                           ),
                         ),
                       ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ],
               ),
             ),

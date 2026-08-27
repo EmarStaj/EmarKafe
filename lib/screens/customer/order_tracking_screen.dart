@@ -234,6 +234,24 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                 ),
               const Spacer(),
+              if (ready) ...[
+                PressableScale(
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: EmarColors.moss,
+                      ),
+                      onPressed: () async {
+                        await app.orders.markPickedUp(order);
+                        if (context.mounted) Navigator.of(context).pop();
+                      },
+                      child: const Text('Teslim Aldım'),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
               PressableScale(
                 child: SizedBox(
                   width: double.infinity,
