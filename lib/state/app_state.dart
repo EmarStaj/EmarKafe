@@ -82,6 +82,9 @@ class AppState extends ChangeNotifier {
         wallet.fetchWalletBalance();
         orders.fetchOrders();
         cart.fetchCart();
+        if (auth.selectedBranchId != null) {
+          stock.fetchBranchStock(auth.selectedBranchId!);
+        }
       }
       notifyListeners();
     });
@@ -95,6 +98,9 @@ class AppState extends ChangeNotifier {
       wallet.fetchWalletBalance();
       orders.fetchOrders();
       cart.fetchCart();
+      if (auth.selectedBranchId != null) {
+        stock.fetchBranchStock(auth.selectedBranchId!);
+      }
     }
   }
 
@@ -120,7 +126,7 @@ class AppState extends ChangeNotifier {
     await orders.fetchOrders();
     if (auth.selectedBranchId != null) {
       stock.fetchBranchStock(auth.selectedBranchId!);
-      menu.fetchFirstPage(branchId: auth.selectedBranchId);
+      menu.fetchFirstPage();
     }
   }
   Future<String?> register({
@@ -145,7 +151,7 @@ class AppState extends ChangeNotifier {
     await orders.fetchOrders();
     if (auth.selectedBranchId != null) {
       stock.fetchBranchStock(auth.selectedBranchId!);
-      menu.fetchFirstPage(branchId: auth.selectedBranchId);
+      menu.fetchFirstPage();
     }
     return res;
   }
@@ -159,7 +165,7 @@ class AppState extends ChangeNotifier {
   void selectBranch(String branchId) {
     auth.selectBranch(branchId);
     stock.fetchBranchStock(branchId);
-    menu.fetchFirstPage(branchId: branchId);
+    menu.fetchFirstPage();
   }
 
   Future<List<String>> changeQty(String productId, int delta) =>

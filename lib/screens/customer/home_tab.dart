@@ -37,7 +37,7 @@ class _HomeTabState extends State<HomeTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final app = context.read<AppState>();
       final bId = app.selectedBranchId;
-      app.menu.fetchFirstPage(branchId: bId);
+      app.menu.fetchFirstPage();
       if (bId != null) {
         app.stock.fetchBranchStock(bId);
       }

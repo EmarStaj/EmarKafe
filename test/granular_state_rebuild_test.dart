@@ -26,6 +26,7 @@ class MockApiForGranular extends ApiService {
   @override Future<List<dynamic>> getStaff({String? branchId}) async => [];
   @override Future<Map<String, dynamic>> getLoyaltyProgress() async => {'data': {'progress': [], 'rewards': []}};
   @override Future<Map<String, dynamic>> getWalletBalance() async => {'data': {'balance': 100.0}};
+  @override Future<List<dynamic>> getBranchProducts(String branchId) async => [];
   @override Future<Map<String, dynamic>> getMenu({int page = 1, int limit = 20, String? categoryId, String? search, String? branchId}) async => {'data': []};
 }
 

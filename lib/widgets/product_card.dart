@@ -24,6 +24,7 @@ class ProductCard extends StatelessWidget {
           .fold(0, (s, i) => s + i.quantity),
     );
     final selectedBranch = context.select<AuthNotifier, String?>((a) => a.selectedBranchId);
+    final selectedBranchName = context.select<AuthNotifier, String>((a) => a.selectedBranchName);
     final outOfStock = context.select<StockNotifier, bool>(
       (s) => s.isOutOfStock(product.id, branchId: selectedBranch),
     );
@@ -35,7 +36,7 @@ class ProductCard extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    '${product.name} seçili şubede şu an tükenmiştir.',
+                    '${product.name}, $selectedBranchName şubesinde şu an bulunmamaktadır.',
                   ),
                   backgroundColor: EmarColors.paprika,
                   duration: const Duration(seconds: 2),
