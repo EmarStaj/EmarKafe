@@ -1,17 +1,23 @@
 import 'package:flutter/foundation.dart';
 import 'package:emar_kafe/services/api_service.dart';
+import 'package:emar_kafe/services/realtime_service.dart';
 import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
 
 class StockNotifier extends ChangeNotifier {
   final ApiService api;
   final AuthNotifier auth;
+  final RealtimeService? realtime;
 
   // branchId -> set of productIds out of stock
   final Map<String, Set<String>> _outOfStockByBranch = {};
 
-  StockNotifier(this.api, this.auth);
+  StockNotifier(this.api, this.auth, {this.realtime});
 
   Future<void> fetchBranchStock(String branchId) async {
+    // 1. Subscribe to realtime updates for this branch
+    realtime?.subscribeToBranchStock(branchId, _handleRealtimeStockUpdate);
+
+    // 2. Fetch current snapshot from API
     try {
       final list = await api.getBranchProducts(branchId);
       final stockSet = _getBranchStock(branchId);
@@ -24,6 +30,22 @@ class StockNotifier extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Fetch branch stock error: $e');
+    }
+  }
+
+  void _handleRealtimeStockUpdate(Map<String, dynamic> record) {
+    final branchId = record['branch_id']?.toString();
+    final productId = record['product_id']?.toString();
+    final isAvailable = record['is_available'] == true;
+
+    if (branchId != null && productId != null) {
+      final stockSet = _getBranchStock(branchId);
+      if (isAvailable) {
+        stockSet.remove(productId);
+      } else {
+        stockSet.add(productId);
+      }
+      notifyListeners();
     }
   }
 

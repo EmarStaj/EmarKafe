@@ -92,10 +92,19 @@ class EmarKafeApp extends StatelessWidget {
           create: (ctx) => MenuNotifier(ctx.read<ApiService>()),
           update: (_, api, menu) => menu ?? MenuNotifier(api),
         ),
-        ChangeNotifierProxyProvider2<ApiService, AuthNotifier, StockNotifier>(
-          create: (ctx) =>
-              StockNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>()),
-          update: (_, api, auth, stock) => stock ?? StockNotifier(api, auth),
+        ChangeNotifierProxyProvider3<
+          ApiService,
+          AuthNotifier,
+          RealtimeService,
+          StockNotifier
+        >(
+          create: (ctx) => StockNotifier(
+            ctx.read<ApiService>(),
+            ctx.read<AuthNotifier>(),
+            realtime: ctx.read<RealtimeService>(),
+          ),
+          update: (ctx, api, auth, realtime, stock) =>
+              stock ?? StockNotifier(api, auth, realtime: ctx.read<RealtimeService>()),
         ),
         ChangeNotifierProxyProvider<ApiService, StaffNotifier>(
           create: (ctx) => StaffNotifier(ctx.read<ApiService>()),

@@ -78,97 +78,206 @@ class _CartTabState extends State<CartTab> {
               ),
             )
           else ...[
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                itemCount: entries.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, i) {
-                  final entry = entries[i];
-                  final localId = entry.key;
-                  final cartItem = entry.value;
-                  final product = cartItem.product;
-                  final qty = cartItem.quantity;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Row(
-                      children: [
-                        Text(
-                          product.icon,
-                          style: const TextStyle(fontSize: 22),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                product.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13.5,
+            Builder(
+              builder: (context) {
+                final outOfStockLocalIds = entries
+                    .where((e) => app.isOutOfStock(e.value.product.id))
+                    .map((e) => e.key)
+                    .toList();
+                final hasOutOfStock = outOfStockLocalIds.isNotEmpty;
+
+                return Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                    itemCount: entries.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (context, i) {
+                      final entry = entries[i];
+                      final localId = entry.key;
+                      final cartItem = entry.value;
+                      final product = cartItem.product;
+                      final qty = cartItem.quantity;
+                      final isOutOfStock = app.isOutOfStock(product.id);
+
+                      return Container(
+                        margin: EdgeInsets.symmetric(vertical: isOutOfStock ? 4 : 0),
+                        padding: isOutOfStock
+                            ? const EdgeInsets.all(8)
+                            : const EdgeInsets.symmetric(vertical: 10),
+                        decoration: isOutOfStock
+                            ? BoxDecoration(
+                                color: EmarColors.paprika.withValues(alpha: 0.07),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: EmarColors.paprika.withValues(alpha: 0.3),
                                 ),
+                              )
+                            : null,
+                        child: Row(
+                          children: [
+                            Text(
+                              product.icon,
+                              style: TextStyle(
+                                fontSize: 22,
+                                color: isOutOfStock
+                                    ? Colors.grey.withValues(alpha: 0.5)
+                                    : null,
                               ),
-                              if (cartItem.selectedOptions.isNotEmpty)
-                                Text(
-                                  cartItem.selectedOptions
-                                      .map((o) => o.name)
-                                      .join(', '),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: EmarColors.espresso.withValues(
-                                      alpha: 0.6,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    product.name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13.5,
+                                      color: isOutOfStock
+                                          ? EmarColors.espresso.withValues(alpha: 0.5)
+                                          : null,
+                                      decoration: isOutOfStock
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                    ),
+                                  ),
+                                  if (isOutOfStock)
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: EmarColors.paprika.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.block_rounded,
+                                            size: 10,
+                                            color: EmarColors.paprika,
+                                          ),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'Şubede Tükendi',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: EmarColors.paprika,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  else if (cartItem.selectedOptions.isNotEmpty)
+                                    Text(
+                                      cartItem.selectedOptions
+                                          .map((o) => o.name)
+                                          .join(', '),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: EmarColors.espresso.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            if (isOutOfStock)
+                              PressableScale(
+                                child: GestureDetector(
+                                  onTap: () => context
+                                      .read<AppState>()
+                                      .changeQty(localId, -qty),
+                                  child: Container(
+                                    width: 36,
+                                    height: 36,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: EmarColors.paprika.withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 18,
+                                      color: EmarColors.paprika,
                                     ),
                                   ),
                                 ),
+                              )
+                            else ...[
+                              PressableScale(
+                                child: GestureDetector(
+                                  onTap: () => context
+                                      .read<AppState>()
+                                      .changeQty(localId, -1),
+                                  child: Container(
+                                    width: 36,
+                                    height: 36,
+                                    alignment: Alignment.center,
+                                    decoration: const BoxDecoration(
+                                      color: EmarColors.oatDark,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.remove,
+                                      size: 16,
+                                      color: EmarColors.espresso,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '$qty',
+                                style: const TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                              PressableScale(
+                                child: GestureDetector(
+                                  onTap: () => context
+                                      .read<AppState>()
+                                      .changeQty(localId, 1),
+                                  child: Container(
+                                    width: 36,
+                                    height: 36,
+                                    alignment: Alignment.center,
+                                    decoration: const BoxDecoration(
+                                      color: EmarColors.espresso,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.add,
+                                      size: 16,
+                                      color: EmarColors.surface,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ],
-                          ),
-                        ),
-                        PressableScale(
-                          child: GestureDetector(
-                            onTap: () => context.read<AppState>().changeQty(localId, -1),
-                            child: Container(
-                              width: 36, height: 36,
-                              alignment: Alignment.center,
-                              decoration: const BoxDecoration(
-                                color: EmarColors.oatDark,
-                                shape: BoxShape.circle,
+                            SizedBox(
+                              width: 56,
+                              child: Text(
+                                '${cartItem.totalPrice.toStringAsFixed(0)}₺',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: isOutOfStock
+                                      ? EmarColors.espresso.withValues(alpha: 0.4)
+                                      : null,
+                                ),
                               ),
-                              child: const Icon(Icons.remove, size: 16, color: EmarColors.espresso),
                             ),
-                          ),
+                          ],
                         ),
-                        Text(
-                          '$qty',
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        PressableScale(
-                          child: GestureDetector(
-                            onTap: () => context.read<AppState>().changeQty(localId, 1),
-                            child: Container(
-                              width: 36, height: 36,
-                              alignment: Alignment.center,
-                              decoration: const BoxDecoration(
-                                color: EmarColors.espresso,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.add, size: 16, color: EmarColors.surface),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 56,
-                          child: Text(
-                            '${cartItem.totalPrice.toStringAsFixed(0)}₺',
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                      );
+                    },
+                  ),
+                );
+              },
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 108),
@@ -338,6 +447,69 @@ class _CartTabState extends State<CartTab> {
                       ],
                     ),
                   ],
+                  if (entries.any((e) => app.isOutOfStock(e.value.product.id))) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: EmarColors.paprika.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: EmarColors.paprika.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: EmarColors.paprika,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Sepetinde seçili şubede (${app.selectedBranchName}) tükenmiş ürünler var.',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: EmarColors.paprikaDim,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: EmarColors.paprika,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              elevation: 0,
+                            ),
+                            onPressed: () {
+                              final toRemove = entries
+                                  .where((e) => app.isOutOfStock(e.value.product.id))
+                                  .toList();
+                              for (final entry in toRemove) {
+                                app.changeQty(entry.key, -entry.value.quantity);
+                              }
+                            },
+                            child: const Text(
+                              'Temizle',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -360,25 +532,32 @@ class _CartTabState extends State<CartTab> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  PressableScale(
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: EmarColors.espresso,
+                  Builder(
+                    builder: (context) {
+                      final hasOos = entries.any((e) => app.isOutOfStock(e.value.product.id));
+                      return PressableScale(
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: hasOos ? Colors.grey.shade400 : EmarColors.espresso,
+                            ),
+                            onPressed: (app.isUpdatingCart || _isOrdering || hasOos)
+                                ? null
+                                : () => _handleQrCheckout(context, app),
+                            child: Text(
+                              hasOos
+                                  ? 'Tükenen Ürünleri Kaldırın'
+                                  : _isOrdering
+                                      ? 'QR Kod Üretiliyor...'
+                                      : (app.loggedIn
+                                            ? 'Kasada QR Kod ile Öde'
+                                            : 'Sipariş İçin Giriş Yap'),
+                            ),
+                          ),
                         ),
-                        onPressed: (app.isUpdatingCart || _isOrdering)
-                            ? null
-                            : () => _handleQrCheckout(context, app),
-                        child: Text(
-                          _isOrdering
-                              ? 'QR Kod Üretiliyor...'
-                              : (app.loggedIn
-                                    ? 'Kasada QR Kod ile Öde'
-                                    : 'Sipariş İçin Giriş Yap'),
-                        ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ],
               ),

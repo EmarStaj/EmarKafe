@@ -2,14 +2,16 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 typedef OrderRealtimeCallback = void Function(Map<String, dynamic> record);
+typedef StockRealtimeCallback = void Function(Map<String, dynamic> record);
 
 class RealtimeService {
   SupabaseClient? _client;
-  RealtimeChannel? _channel;
+  RealtimeChannel? _orderChannel;
+  RealtimeChannel? _stockChannel;
   bool _initialized = false;
 
   bool get isInitialized => _initialized;
-  bool get hasActiveSubscription => _channel != null;
+  bool get hasActiveSubscription => _orderChannel != null || _stockChannel != null;
 
   Future<void> init({String? url, String? anonKey}) async {
     final supabaseUrl = url ?? const String.fromEnvironment('SUPABASE_URL');
@@ -38,10 +40,10 @@ class RealtimeService {
 
   Future<void> subscribeToUserOrders(String userId, OrderRealtimeCallback onOrderUpdated) async {
     if (_client == null || userId.isEmpty) return;
-    await unsubscribe();
+    await unsubscribeOrders();
 
     try {
-      _channel = _client!
+      _orderChannel = _client!
           .channel('public:orders:user:$userId')
           .onPostgresChanges(
             event: PostgresChangeEvent.all,
@@ -67,10 +69,10 @@ class RealtimeService {
 
   Future<void> subscribeToBranchOrders(String branchId, OrderRealtimeCallback onOrderUpdated) async {
     if (_client == null || branchId.isEmpty) return;
-    await unsubscribe();
+    await unsubscribeOrders();
 
     try {
-      _channel = _client!
+      _orderChannel = _client!
           .channel('public:orders:branch:$branchId')
           .onPostgresChanges(
             event: PostgresChangeEvent.all,
@@ -94,15 +96,61 @@ class RealtimeService {
     }
   }
 
-  Future<void> unsubscribe() async {
-    if (_channel != null && _client != null) {
+  Future<void> subscribeToBranchStock(String branchId, StockRealtimeCallback onStockUpdated) async {
+    if (_client == null || branchId.isEmpty) return;
+    await unsubscribeStock();
+
+    try {
+      _stockChannel = _client!
+          .channel('public:branch_products:$branchId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'branch_products',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'branch_id',
+              value: branchId,
+            ),
+            callback: (payload) {
+              final newRecord = payload.newRecord;
+              if (newRecord.isNotEmpty) {
+                onStockUpdated(newRecord);
+              }
+            },
+          )
+          .subscribe();
+    } catch (e) {
+      debugPrint('Realtime branch stock subscription error: $e');
+    }
+  }
+
+  Future<void> unsubscribeOrders() async {
+    if (_orderChannel != null && _client != null) {
       try {
-        await _client!.removeChannel(_channel!);
+        await _client!.removeChannel(_orderChannel!);
       } catch (e) {
-        debugPrint('Realtime unsubscribe error: $e');
+        debugPrint('Realtime unsubscribe orders error: $e');
       } finally {
-        _channel = null;
+        _orderChannel = null;
       }
     }
+  }
+
+  Future<void> unsubscribeStock() async {
+    if (_stockChannel != null && _client != null) {
+      try {
+        await _client!.removeChannel(_stockChannel!);
+      } catch (e) {
+        debugPrint('Realtime unsubscribe stock error: $e');
+      } finally {
+        _stockChannel = null;
+      }
+    }
+  }
+
+  Future<void> unsubscribe() async {
+    await unsubscribeOrders();
+    await unsubscribeStock();
   }
 }
