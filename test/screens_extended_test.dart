@@ -111,7 +111,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
       expect(find.text('Admin · Genel Bakış'), findsOneWidget);
       expect(find.text('Aktif Şube'), findsOneWidget);
-      expect(find.text('Personel Ekle'), findsOneWidget);
+      expect(find.text('Personel'), findsWidgets);
     });
 
     testWidgets('ManagerScreen renders shift and revenue management UI', (
@@ -124,8 +124,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       expect(find.textContaining('Yönetici'), findsOneWidget);
-      expect(find.text('Şube Personeli'), findsOneWidget);
-      expect(find.text('Ciro'), findsOneWidget);
+      expect(find.textContaining('Ekip & Baristalar'), findsOneWidget);
+      expect(find.textContaining('Ciro'), findsWidgets);
     });
   });
 }

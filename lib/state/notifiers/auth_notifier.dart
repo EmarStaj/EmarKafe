@@ -60,7 +60,6 @@ class AuthNotifier extends ChangeNotifier {
   UserRole role = UserRole.customer;
   String? selectedBranchId;
   List<Branch> get branches => Catalog.instance.branches;
-
   String get selectedBranchName => getBranchName(selectedBranchId);
 
   String getBranchName(String? branchId) {
@@ -70,6 +69,75 @@ class AuthNotifier extends ChangeNotifier {
       orElse: () => Branch(id: branchId, name: branchId),
     );
     return branch.name;
+  }
+
+  Future<void> refreshBranches() async {
+    try {
+      final list = await api.getBranches();
+      if (list.isNotEmpty) {
+        final bList = list.map((b) => Branch.fromDb(b as Map<String, dynamic>)).toList();
+        Catalog.instance.registerBranches(bList);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Refresh branches error: $e');
+    }
+  }
+
+  Future<bool> createBranch({
+    required String name,
+    String? address,
+    String? phoneNumber,
+    bool isActive = true,
+  }) async {
+    try {
+      await api.createBranch(
+        name: name,
+        address: address,
+        phoneNumber: phoneNumber,
+        isActive: isActive,
+      );
+      await refreshBranches();
+      return true;
+    } catch (e) {
+      debugPrint('Create branch error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updateBranch(
+    String branchId, {
+    String? name,
+    String? address,
+    String? phoneNumber,
+    bool? isActive,
+  }) async {
+    try {
+      await api.updateBranch(
+        branchId,
+        name: name,
+        address: address,
+        phoneNumber: phoneNumber,
+        isActive: isActive,
+      );
+      await refreshBranches();
+      return true;
+    } catch (e) {
+      debugPrint('Update branch error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteBranch(String branchId) async {
+    try {
+      await api.deleteBranch(branchId);
+      Catalog.instance.removeBranch(branchId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Delete branch error: $e');
+      return false;
+    }
   }
 
   AuthNotifier(this.api) {

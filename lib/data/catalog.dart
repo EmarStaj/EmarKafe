@@ -35,6 +35,19 @@ class Catalog {
     }
   }
 
+  void registerBranches(List<Branch> bList) {
+    _branches = List.of(bList);
+  }
+
+  void removeProduct(String id) {
+    _products.removeWhere((p) => p.id == id);
+    _byId.remove(id);
+  }
+
+  void removeBranch(String id) {
+    _branches.removeWhere((b) => b.id == id);
+  }
+
   Product byId(String id) =>
       _byId[id] ??
       Product(

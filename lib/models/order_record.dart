@@ -47,6 +47,14 @@ class OrderRecord {
   bool get isAutoCompleted => completedBy == 'system_auto';
   int get remainingSeconds => 300;
 
+  String get itemsSummary {
+    if (items.isEmpty) return 'Sipariş içeriği';
+    return items.entries.map((e) {
+      final p = Catalog.instance.byId(e.key);
+      return '${e.value}x ${p.name}';
+    }).join(', ');
+  }
+
   factory OrderRecord.fromJson(Map<String, dynamic> db) {
     final Map<String, int> itemsMap = {};
     if (db['items'] != null && db['items'] is Map) {

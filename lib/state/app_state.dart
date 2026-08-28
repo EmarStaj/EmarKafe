@@ -117,6 +117,63 @@ class AppState extends ChangeNotifier {
   bool isOutOfStock(String productId) => stock.isOutOfStock(productId);
   Future<void> toggleStock(String productId) => stock.toggleStock(productId);
 
+  Future<bool> createBranch({
+    required String name,
+    String? address,
+    String? phoneNumber,
+    bool isActive = true,
+  }) => auth.createBranch(name: name, address: address, phoneNumber: phoneNumber, isActive: isActive);
+
+  Future<bool> updateBranch(
+    String branchId, {
+    String? name,
+    String? address,
+    String? phoneNumber,
+    bool? isActive,
+  }) => auth.updateBranch(branchId, name: name, address: address, phoneNumber: phoneNumber, isActive: isActive);
+
+  Future<bool> deleteBranch(String branchId) => auth.deleteBranch(branchId);
+
+  Future<bool> createProduct({
+    required String categoryId,
+    required String name,
+    required double basePrice,
+    String? description,
+    String? imageUrl,
+    bool isActive = true,
+    bool isLoyaltyEligible = true,
+  }) => menu.createProduct(
+    categoryId: categoryId,
+    name: name,
+    basePrice: basePrice,
+    description: description,
+    imageUrl: imageUrl,
+    isActive: isActive,
+    isLoyaltyEligible: isLoyaltyEligible,
+  );
+
+  Future<bool> updateProduct(
+    String productId, {
+    String? categoryId,
+    String? name,
+    double? basePrice,
+    String? description,
+    String? imageUrl,
+    bool? isActive,
+    bool? isLoyaltyEligible,
+  }) => menu.updateProduct(
+    productId,
+    categoryId: categoryId,
+    name: name,
+    basePrice: basePrice,
+    description: description,
+    imageUrl: imageUrl,
+    isActive: isActive,
+    isLoyaltyEligible: isLoyaltyEligible,
+  );
+
+  Future<bool> deleteProduct(String productId) => menu.deleteProduct(productId);
+
   Future<void> loginWithCredentials({
     required String email,
     required String password,

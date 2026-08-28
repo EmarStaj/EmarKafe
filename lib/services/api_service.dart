@@ -326,6 +326,122 @@ class ApiService {
     _processResponse(res);
   }
 
+  Future<Map<String, dynamic>> createBranch({
+    required String name,
+    String? address,
+    String? phoneNumber,
+    bool isActive = true,
+  }) async {
+    final res = await _post(
+      '$baseUrl/api/v1/branches',
+      data: {
+        'name': name,
+        if (address != null && address.isNotEmpty) 'address': address,
+        if (phoneNumber != null && phoneNumber.isNotEmpty) 'phone_number': phoneNumber,
+        'is_active': isActive,
+      },
+    );
+    return _processResponse(res);
+  }
+
+  Future<Map<String, dynamic>> updateBranch(
+    String branchId, {
+    String? name,
+    String? address,
+    String? phoneNumber,
+    bool? isActive,
+  }) async {
+    final data = <String, dynamic>{};
+    if (name != null) data['name'] = name;
+    if (address != null) data['address'] = address;
+    if (phoneNumber != null) data['phone_number'] = phoneNumber;
+    if (isActive != null) data['is_active'] = isActive;
+
+    final res = await _put(
+      '$baseUrl/api/v1/branches/$branchId',
+      data: data,
+    );
+    return _processResponse(res);
+  }
+
+  Future<void> deleteBranch(String branchId) async {
+    final res = await _delete('$baseUrl/api/v1/branches/$branchId');
+    _processResponse(res);
+  }
+
+  // --- Menu CRUD (Admin) ---
+
+  Future<Map<String, dynamic>> createProduct({
+    required String categoryId,
+    required String name,
+    required double basePrice,
+    String? description,
+    String? imageUrl,
+    bool isActive = true,
+    bool isLoyaltyEligible = true,
+  }) async {
+    final res = await _post(
+      '$baseUrl/api/v1/menu',
+      data: {
+        'category_id': categoryId,
+        'name': name,
+        'base_price': basePrice,
+        if (description != null) 'description': description,
+        if (imageUrl != null) 'image_url': imageUrl,
+        'is_active': isActive,
+        'is_loyalty_eligible': isLoyaltyEligible,
+      },
+    );
+    return _processResponse(res);
+  }
+
+  Future<Map<String, dynamic>> updateProduct(
+    String productId, {
+    String? categoryId,
+    String? name,
+    double? basePrice,
+    String? description,
+    String? imageUrl,
+    bool? isActive,
+    bool? isLoyaltyEligible,
+  }) async {
+    final data = <String, dynamic>{};
+    if (categoryId != null) data['category_id'] = categoryId;
+    if (name != null) data['name'] = name;
+    if (basePrice != null) data['base_price'] = basePrice;
+    if (description != null) data['description'] = description;
+    if (imageUrl != null) data['image_url'] = imageUrl;
+    if (isActive != null) data['is_active'] = isActive;
+    if (isLoyaltyEligible != null) data['is_loyalty_eligible'] = isLoyaltyEligible;
+
+    final res = await _put(
+      '$baseUrl/api/v1/menu/$productId',
+      data: data,
+    );
+    return _processResponse(res);
+  }
+
+  Future<void> deleteProduct(String productId) async {
+    final res = await _delete('$baseUrl/api/v1/menu/$productId');
+    _processResponse(res);
+  }
+
+  // --- System Settings (Admin) ---
+
+  Future<Map<String, dynamic>> getSystemSettings() async {
+    final res = await _get('$baseUrl/api/v1/settings');
+    final data = _processResponse(res);
+    return data['data'] as Map<String, dynamic>? ?? {};
+  }
+
+  Future<Map<String, dynamic>> updateSystemSettings(Map<String, dynamic> settings) async {
+    final res = await _put(
+      '$baseUrl/api/v1/settings',
+      data: settings,
+    );
+    return _processResponse(res);
+  }
+
   // --- Wallet ---
 
   Future<Map<String, dynamic>> getWalletBalance() async {
