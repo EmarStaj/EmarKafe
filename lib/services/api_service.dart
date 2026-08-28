@@ -442,6 +442,25 @@ class ApiService {
     return _processResponse(res);
   }
 
+  // --- AI Chatbot ---
+
+  Future<Map<String, dynamic>> sendChatMessage({
+    required String message,
+    List<Map<String, String>> history = const [],
+    String? branchId,
+  }) async {
+    final res = await _post(
+      '$baseUrl/api/v1/chat/message',
+      data: {
+        'message': message,
+        'history': history,
+        if (branchId != null) 'branchId': branchId,
+      },
+    );
+    final data = _processResponse(res);
+    return data['data'] as Map<String, dynamic>? ?? {};
+  }
+
   // --- Wallet ---
 
   Future<Map<String, dynamic>> getWalletBalance() async {
