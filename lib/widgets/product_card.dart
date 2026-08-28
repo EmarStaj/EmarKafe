@@ -7,6 +7,8 @@ import '../state/notifiers/cart_notifier.dart';
 import '../state/notifiers/stock_notifier.dart';
 import '../state/notifiers/auth_notifier.dart';
 import '../theme.dart';
+import '../widgets/pressable_scale.dart';
+
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -278,28 +280,31 @@ class _StepBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      customBorder: const CircleBorder(),
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: filled ? EmarColors.espresso : Colors.transparent,
-          boxShadow: filled
-              ? [
-                  BoxShadow(
-                    color: EmarColors.espresso.withValues(alpha: 0.35),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
+    return PressableScale(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: filled ? EmarColors.espresso : Colors.transparent,
+            boxShadow: filled
+                ? [
+                    BoxShadow(
+                      color: EmarColors.espresso.withValues(alpha: 0.35),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Icon(icon, size: 15, color: EmarColors.surface),
         ),
-        child: Icon(icon, size: 15, color: EmarColors.surface),
       ),
     );
   }
 }
+

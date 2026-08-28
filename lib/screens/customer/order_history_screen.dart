@@ -13,8 +13,7 @@ class OrderHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final app = context.watch<AppState>();
-    final orders = app.orderHistory;
+    final orders = context.select<AppState, List<OrderRecord>>((app) => app.orderHistory);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Geçmiş Siparişlerim')),
@@ -28,11 +27,13 @@ class OrderHistoryScreen extends StatelessWidget {
                   ),
                 ),
               )
-            : ListView.separated(
-                padding: const EdgeInsets.all(20),
-                itemCount: orders.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (context, i) => _OrderCard(order: orders[i]),
+            : RepaintBoundary(
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: orders.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (context, i) => _OrderCard(order: orders[i]),
+                ),
               ),
       ),
     );
@@ -75,7 +76,6 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final app = context.watch<AppState>();
     final live = !order.pickedUp && order.computedStatus != OrderStatus.ready;
 
     return InkWell(
@@ -162,8 +162,8 @@ class _OrderCard extends StatelessWidget {
             const SizedBox(height: 10),
             ...order.items.entries.map((e) {
               final product = productById(e.key);
-              final canRate = app.canRateProduct(product.id);
-              final myRating = app.ratings[product.id];
+              final canRate = context.select<AppState, bool>((app) => app.canRateProduct(product.id));
+              final myRating = context.select<AppState, double?>((app) => app.ratings[product.id]);
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(

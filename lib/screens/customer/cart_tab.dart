@@ -31,7 +31,6 @@ class _CartTabState extends State<CartTab> {
         final app = context.read<AppState>();
         if (app.loggedIn) {
           app.wallet.fetchWalletBalance();
-          app.fetchCart();
         }
       }
     });
@@ -40,18 +39,18 @@ class _CartTabState extends State<CartTab> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    final entries = app.cartItems.values.toList()
-      ..sort((a, b) => a.product.name.compareTo(b.product.name));
+    final entries = app.cartItems.entries.toList()
+      ..sort((a, b) => a.value.product.name.compareTo(b.value.product.name));
     final now = DateTime.now();
-    final prepMap = {for (final e in entries) e.product.id: e.quantity};
+    final prepMap = {for (final e in entries) e.value.product.id: e.value.quantity};
     final prep = app.prepMinutesFor(prepMap, now);
     final beforeSix = now.hour < 18;
     final coffeeQty = entries
-        .where((e) => e.product.isCoffee)
-        .fold(0, (s, e) => s + e.quantity);
+        .where((e) => e.value.product.isCoffee)
+        .fold(0, (s, e) => s + e.value.quantity);
     final dessertQty = entries
-        .where((e) => e.product.category == ProductCategory.dessert)
-        .fold(0, (s, e) => s + e.quantity);
+        .where((e) => e.value.product.category == ProductCategory.dessert)
+        .fold(0, (s, e) => s + e.value.quantity);
 
     return SafeArea(
       child: Column(
@@ -85,12 +84,11 @@ class _CartTabState extends State<CartTab> {
                 itemCount: entries.length,
                 separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, i) {
-                  final cartItem = entries[i];
+                  final entry = entries[i];
+                  final localId = entry.key;
+                  final cartItem = entry.value;
                   final product = cartItem.product;
                   final qty = cartItem.quantity;
-                  final localId = app.cartItems.keys.firstWhere(
-                    (k) => app.cartItems[k] == cartItem,
-                  );
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Row(
@@ -126,22 +124,37 @@ class _CartTabState extends State<CartTab> {
                             ],
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.remove_circle_outline,
-                            size: 20,
+                        PressableScale(
+                          child: GestureDetector(
+                            onTap: () => context.read<AppState>().changeQty(localId, -1),
+                            child: Container(
+                              width: 36, height: 36,
+                              alignment: Alignment.center,
+                              decoration: const BoxDecoration(
+                                color: EmarColors.oatDark,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.remove, size: 16, color: EmarColors.espresso),
+                            ),
                           ),
-                          onPressed: () =>
-                              context.read<AppState>().changeQty(localId, -1),
                         ),
                         Text(
                           '$qty',
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.add_circle_outline, size: 20),
-                          onPressed: () =>
-                              context.read<AppState>().changeQty(localId, 1),
+                        PressableScale(
+                          child: GestureDetector(
+                            onTap: () => context.read<AppState>().changeQty(localId, 1),
+                            child: Container(
+                              width: 36, height: 36,
+                              alignment: Alignment.center,
+                              decoration: const BoxDecoration(
+                                color: EmarColors.espresso,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.add, size: 16, color: EmarColors.surface),
+                            ),
+                          ),
                         ),
                         SizedBox(
                           width: 56,

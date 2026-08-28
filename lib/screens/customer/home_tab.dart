@@ -16,9 +16,6 @@ import '../../widgets/loyalty_card.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/product_detail_sheet.dart';
 import '../login_screen.dart';
-
-import '../../state/notifiers/auth_notifier.dart';
-import '../../state/notifiers/order_notifier.dart';
 import '../../state/notifiers/menu_notifier.dart';
 
 class HomeTab extends StatefulWidget {
@@ -32,7 +29,6 @@ class HomeTab extends StatefulWidget {
 class _HomeTabState extends State<HomeTab> {
   ProductCategory? _filter;
   final _promoController = PageController();
-  int _promoPage = 0;
   final _scrollController = ScrollController();
 
   @override
@@ -92,7 +88,6 @@ class _HomeTabState extends State<HomeTab> {
                 child: PageView.builder(
                   controller: _promoController,
                   itemCount: app.campaignList.length,
-                  onPageChanged: (i) => setState(() => _promoPage = i),
                   itemBuilder: (context, i) => Padding(
                     padding: const EdgeInsets.only(right: 4),
                     child: _PromoCard(campaign: app.campaignList[i]),
@@ -100,21 +95,9 @@ class _HomeTabState extends State<HomeTab> {
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(app.campaignList.length, (i) {
-                  final active = i == _promoPage;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: active ? 16 : 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: active ? EmarColors.paprika : EmarColors.oatDark,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  );
-                }),
+              _PromoDots(
+                controller: _promoController,
+                count: app.campaignList.length,
               ),
               Selector<OrderNotifier, OrderRecord?>(
                 selector: (_, o) => o.orderHistory.where((ord) => !ord.pickedUp).firstOrNull,
@@ -208,44 +191,46 @@ class _HomeTabState extends State<HomeTab> {
               ),
               const SizedBox(height: 18),
               AnimatedSwitcher(
-                duration: const Duration(milliseconds: 280),
+                duration: const Duration(milliseconds: 180),
                 switchInCurve: Curves.easeOutCubic,
                 switchOutCurve: Curves.easeInCubic,
                 transitionBuilder: (child, anim) => FadeTransition(
                   opacity: anim,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 03),
-                      end: Offset.zero,
-                    ).animate(anim),
-                    child: child,
-                  ),
+                  child: child,
                 ),
                 child: Column(
                   key: ValueKey(_filter),
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: _filter == null
-                      ? [
-                          _ProductRow(
-                            title: 'Öne Çıkanlar',
-                            category: ProductCategory.hotCoffee,
+                      ? const [
+                          RepaintBoundary(
+                            child: _ProductRow(
+                              title: 'Öne Çıkanlar',
+                              category: ProductCategory.hotCoffee,
+                            ),
                           ),
-                          const SizedBox(height: 22),
-                          _ProductRow(
-                            title: 'Soğuk Kahveler',
-                            category: ProductCategory.icedCoffee,
+                          SizedBox(height: 22),
+                          RepaintBoundary(
+                            child: _ProductRow(
+                              title: 'Soğuk Kahveler',
+                              category: ProductCategory.icedCoffee,
+                            ),
                           ),
-                          const SizedBox(height: 22),
-                          _ProductRow(
-                            title: 'Tatlılar',
-                            category: ProductCategory.dessert,
+                          SizedBox(height: 22),
+                          RepaintBoundary(
+                            child: _ProductRow(
+                              title: 'Tatlılar',
+                              category: ProductCategory.dessert,
+                            ),
                           ),
                         ]
                       : [
-                          _ProductRow(
-                            title: _filter!.label,
-                            category: _filter!,
-                            wrap: true,
+                          RepaintBoundary(
+                            child: _ProductRow(
+                              title: _filter!.label,
+                              category: _filter!,
+                              wrap: true,
+                            ),
                           ),
                         ],
                 ),
@@ -565,11 +550,7 @@ class _ProductRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var products = context
-        .watch<AppState>()
-        .menu
-        .products
-        .where((p) => p.category == category)
-        .toList();
+        .select<MenuNotifier, List<Product>>((m) => m.products.where((p) => p.category == category).toList());
     if (products.isEmpty) {
       products = Catalog.instance.products
           .where((p) => p.category == category)
@@ -616,6 +597,73 @@ class _ProductRow extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _PromoDots extends StatefulWidget {
+  final PageController controller;
+  final int count;
+
+  const _PromoDots({
+    required this.controller,
+    required this.count,
+  });
+
+  @override
+  State<_PromoDots> createState() => _PromoDotsState();
+}
+
+class _PromoDotsState extends State<_PromoDots> {
+  int _promoPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PromoDots oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onScroll);
+      widget.controller.addListener(_onScroll);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (widget.controller.hasClients) {
+      final page = widget.controller.page?.round() ?? 0;
+      if (page != _promoPage) {
+        setState(() => _promoPage = page);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(widget.count, (i) {
+        final active = i == _promoPage;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          width: active ? 16 : 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: active ? EmarColors.paprika : EmarColors.oatDark,
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
+      }),
     );
   }
 }
