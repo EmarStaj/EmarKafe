@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/product.dart';
+import '../data/catalog.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 
@@ -84,9 +85,14 @@ class _StockManagerSheet extends StatelessWidget {
                 controller: scrollCtrl,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: ProductCategory.values.map((cat) {
-                  final items = app.menu.products
+                  var items = app.menu.products
                       .where((p) => p.category == cat)
                       .toList();
+                  if (items.isEmpty) {
+                    items = Catalog.instance.products
+                        .where((p) => p.category == cat)
+                        .toList();
+                  }
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
