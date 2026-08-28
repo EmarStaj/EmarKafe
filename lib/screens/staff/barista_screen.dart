@@ -21,7 +21,13 @@ class _BaristaScreenState extends State<BaristaScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<AppState>().orders.fetchOrders();
+        final app = context.read<AppState>();
+        app.orders.fetchOrders();
+        app.menu.fetchFirstPage();
+        final bId = app.selectedBranchId;
+        if (bId != null) {
+          app.stock.fetchBranchStock(bId);
+        }
       }
     });
   }

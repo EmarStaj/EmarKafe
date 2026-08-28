@@ -48,6 +48,10 @@ class _ManagerScreenState extends State<ManagerScreen> {
     if (!mounted) return;
     final app = context.read<AppState>();
     await app.staff.fetchStaff(branchId: app.selectedBranchId);
+    app.menu.fetchFirstPage();
+    if (app.selectedBranchId != null) {
+      app.stock.fetchBranchStock(app.selectedBranchId!);
+    }
     if (mounted) setState(() {});
   }
 

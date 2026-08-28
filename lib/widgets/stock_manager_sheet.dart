@@ -20,8 +20,28 @@ Future<void> showStockManager(BuildContext context) {
   );
 }
 
-class _StockManagerSheet extends StatelessWidget {
+class _StockManagerSheet extends StatefulWidget {
   const _StockManagerSheet();
+
+  @override
+  State<_StockManagerSheet> createState() => _StockManagerSheetState();
+}
+
+class _StockManagerSheetState extends State<_StockManagerSheet> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final app = context.read<AppState>();
+        app.menu.fetchFirstPage();
+        final bId = app.selectedBranchId;
+        if (bId != null) {
+          app.stock.fetchBranchStock(bId);
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

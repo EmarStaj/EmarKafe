@@ -95,6 +95,8 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       await tester.pumpWidget(buildTestableWidget(const BaristaScreen()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(find.textContaining('Bugün Tamamlanan:'), findsOneWidget);
     });
 
