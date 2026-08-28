@@ -21,8 +21,8 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
     const ChatTurn(
       fromUser: false,
       text:
-          'Merhaba! Ben EMAR Kafe AI Baristanım ☕ Sana en uygun kahveyi önerebilir, tatlı eşleştirmeleri yapabilir ve siparişine yardımcı olabilirim. Bugün nasıl bir tat arıyorsun?',
-      quickReplies: ['☕ Ne içmeliyim?', '⚡ Sert bir kahve', '🍰 Tatlı öner', '🧊 Soğuk kahve', '🎁 Kaç yıldızım var?'],
+          'Merhaba! Ben EMAR Kafe AI Baristanım ☕ Sana en uygun kahveyi önerebilir, cüzdan ve hediye durumunu söyleyebilir veya siparişine yardımcı olabilirim.',
+      quickReplies: ['✨ Neler yapabilirsin?', '☕ Ne içmeliyim?', '⚡ Sert kahve', '🍰 Tatlı öner', '🎁 Kaç yıldızım var?', '💳 Cüzdanım', '📦 Siparişim nerede?'],
     ),
   ];
   bool _sending = false;
@@ -59,12 +59,23 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
     });
     _scrollToBottom();
 
+    final userCtx = UserContext(
+      userName: app.userName,
+      branchName: app.selectedBranchName,
+      loyaltyStars: app.loyaltyProgress,
+      freeCoffees: app.freeCoffeesEarned,
+      walletBalance: app.walletBalance,
+      activeOrder: app.activeOrder,
+      campaigns: app.campaignList,
+    );
+
     try {
       final responseTurn = await AssistantService.sendMessage(
         api: app.api,
         history: history,
         userMessage: text,
         branchId: app.selectedBranchId,
+        userContext: userCtx,
       );
       setState(() => _turns.add(responseTurn));
     } catch (_) {
@@ -152,6 +163,26 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
                     ],
                   ),
                 ),
+                InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: _sending ? null : () => _send('Neler yapabilirsin?'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: EmarColors.moss.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: EmarColors.moss.withValues(alpha: 0.4)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome, size: 14, color: EmarColors.surface),
+                        SizedBox(width: 4),
+                        Text('Yetenekler', style: TextStyle(fontSize: 11, color: EmarColors.surface, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -164,7 +195,10 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
               itemCount: _turns.length + (_sending ? 1 : 0),
               itemBuilder: (context, i) {
                 if (i >= _turns.length) return const _TypingBubble();
-                return _ChatBubble(turn: _turns[i]);
+                return _ChatBubble(
+                  turn: _turns[i],
+                  onActionTap: (query) => _send(query),
+                );
               },
             ),
           ),
@@ -253,7 +287,12 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
 
 class _ChatBubble extends StatelessWidget {
   final ChatTurn turn;
-  const _ChatBubble({required this.turn});
+  final Function(String query)? onActionTap;
+
+  const _ChatBubble({
+    required this.turn,
+    this.onActionTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -266,7 +305,7 @@ class _ChatBubble extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.82,
+          maxWidth: MediaQuery.of(context).size.width * 0.84,
         ),
         decoration: BoxDecoration(
           color: mine ? EmarColors.paprika : EmarColors.surface,
@@ -298,6 +337,43 @@ class _ChatBubble extends StatelessWidget {
                 height: 1.4,
               ),
             ),
+            if (!mine && turn.actionButtons.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              ...turn.actionButtons.map((action) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () => onActionTap?.call(action.query),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: EmarColors.oatDark,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: EmarColors.espresso.withValues(alpha: 0.08)),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(action.icon, style: const TextStyle(fontSize: 18)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              action.label,
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: EmarColors.espresso,
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios, size: 12, color: EmarColors.paprika),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
             if (!mine && turn.suggestedProducts.isNotEmpty) ...[
               const SizedBox(height: 10),
               const Divider(height: 1),
