@@ -174,14 +174,18 @@ class _CartTabState extends State<CartTab> {
                                       ),
                                     )
                                   else if (cartItem.selectedOptions.isNotEmpty)
-                                    Text(
-                                      cartItem.selectedOptions
-                                          .map((o) => o.name)
-                                          .join(', '),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: EmarColors.espresso.withValues(
-                                          alpha: 0.6,
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Text(
+                                        cartItem.selectedOptions
+                                            .map((o) => o.name.contains(': ') ? o.name.split(': ').last : o.name)
+                                            .join(' · '),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                          color: EmarColors.espresso.withValues(
+                                            alpha: 0.65,
+                                          ),
                                         ),
                                       ),
                                     ),
