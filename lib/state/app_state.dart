@@ -9,19 +9,21 @@ import 'package:emar_kafe/models/cart_item.dart';
 import 'package:emar_kafe/models/product.dart';
 import 'package:emar_kafe/state/notifiers/menu_notifier.dart';
 
-import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
-import 'package:emar_kafe/state/notifiers/cart_notifier.dart';
-import 'package:emar_kafe/state/notifiers/order_notifier.dart';
-import 'package:emar_kafe/state/notifiers/wallet_notifier.dart';
-import 'package:emar_kafe/state/notifiers/stock_notifier.dart';
-import 'package:emar_kafe/state/notifiers/staff_notifier.dart';
+import 'notifiers/auth_notifier.dart';
+import 'notifiers/cart_notifier.dart';
+import 'notifiers/order_notifier.dart';
+import 'notifiers/wallet_notifier.dart';
+import 'notifiers/stock_notifier.dart';
+import 'notifiers/staff_notifier.dart';
+import 'notifiers/favorites_notifier.dart';
 
-export 'package:emar_kafe/state/notifiers/auth_notifier.dart';
-export 'package:emar_kafe/state/notifiers/cart_notifier.dart';
-export 'package:emar_kafe/state/notifiers/order_notifier.dart';
-export 'package:emar_kafe/state/notifiers/wallet_notifier.dart';
-export 'package:emar_kafe/state/notifiers/stock_notifier.dart';
-export 'package:emar_kafe/state/notifiers/staff_notifier.dart';
+export 'notifiers/auth_notifier.dart';
+export 'notifiers/cart_notifier.dart';
+export 'notifiers/order_notifier.dart';
+export 'notifiers/wallet_notifier.dart';
+export 'notifiers/stock_notifier.dart';
+export 'notifiers/staff_notifier.dart';
+export 'notifiers/favorites_notifier.dart';
 
 class AppState extends ChangeNotifier {
   final AuthNotifier auth;
@@ -31,6 +33,7 @@ class AppState extends ChangeNotifier {
   final StockNotifier stock;
   final MenuNotifier menu;
   final StaffNotifier staff;
+  final FavoritesNotifier favorites;
 
   ApiService get api => auth.api;
 
@@ -63,6 +66,9 @@ class AppState extends ChangeNotifier {
   int get loyaltyProgress => orders.loyaltyProgress;
   int get freeCoffeesEarned => orders.freeCoffeesEarned;
 
+  bool isFavorite(String id) => favorites.isFavorite(id);
+  Future<void> toggleFavorite(String id) => favorites.toggleFavorite(id);
+
   List<Campaign> campaignList = [];
   Map<String, double> ratings = {};
 
@@ -75,16 +81,20 @@ class AppState extends ChangeNotifier {
     this.wallet,
     this.stock,
     this.menu,
-    this.staff,
-  ) {
+    this.staff, [
+    FavoritesNotifier? favNotifier,
+  ]) : favorites = favNotifier ?? FavoritesNotifier(auth.api, auth) {
     auth.addListener(() {
       if (auth.loggedIn) {
         wallet.fetchWalletBalance();
         orders.fetchOrders();
         cart.fetchCart();
+        favorites.fetchFavorites();
         if (auth.selectedBranchId != null) {
           stock.fetchBranchStock(auth.selectedBranchId!);
         }
+      } else {
+        favorites.clear();
       }
       notifyListeners();
     });
@@ -93,11 +103,13 @@ class AppState extends ChangeNotifier {
     wallet.addListener(notifyListeners);
     stock.addListener(notifyListeners);
     staff.addListener(notifyListeners);
+    favorites.addListener(notifyListeners);
     campaignList = List.of(Catalog.instance.campaigns);
     if (auth.loggedIn) {
       wallet.fetchWalletBalance();
       orders.fetchOrders();
       cart.fetchCart();
+      favorites.fetchFavorites();
       if (auth.selectedBranchId != null) {
         stock.fetchBranchStock(auth.selectedBranchId!);
       }

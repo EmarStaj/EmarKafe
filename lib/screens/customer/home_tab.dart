@@ -15,6 +15,7 @@ import '../../widgets/campaign_detail_sheet.dart';
 import '../../widgets/loyalty_card.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/product_detail_sheet.dart';
+import 'favorites_screen.dart';
 import '../login_screen.dart';
 import '../../state/notifiers/menu_notifier.dart';
 
@@ -282,27 +283,14 @@ class _DarkHeader extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          InkWell(
-            borderRadius: BorderRadius.circular(999),
-            onTap: onProfileTap,
-            child: CircleAvatar(
-              radius: 15,
-              backgroundColor: EmarColors.surface.withValues(alpha: 0.14),
-              child: loggedIn
-                  ? Text(
-                      userName.isNotEmpty ? userName[0].toUpperCase() : '?',
-                      style: const TextStyle(
-                        color: EmarColors.surface,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12.5,
-                      ),
-                    )
-                  : const Icon(
-                      Icons.person_outline,
-                      color: EmarColors.surface,
-                      size: 17,
-                    ),
+          IconButton(
+            icon: const Icon(
+              Icons.favorite_rounded,
+              color: EmarColors.paprika,
+              size: 22,
             ),
+            tooltip: 'Favorilerim',
+            onPressed: () => Navigator.of(context).push(softRoute(const FavoritesScreen())),
           ),
         ],
       ),

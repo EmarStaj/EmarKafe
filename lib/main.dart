@@ -110,6 +110,10 @@ class EmarKafeApp extends StatelessWidget {
           create: (ctx) => StaffNotifier(ctx.read<ApiService>()),
           update: (_, api, staff) => staff ?? StaffNotifier(api),
         ),
+        ChangeNotifierProxyProvider2<ApiService, AuthNotifier, FavoritesNotifier>(
+          create: (ctx) => FavoritesNotifier(ctx.read<ApiService>(), ctx.read<AuthNotifier>()),
+          update: (_, api, auth, fav) => fav ?? FavoritesNotifier(api, auth),
+        ),
         ChangeNotifierProvider<AppState>(
           create: (ctx) => AppState(
             ctx.read<AuthNotifier>(),
@@ -119,6 +123,7 @@ class EmarKafeApp extends StatelessWidget {
             ctx.read<StockNotifier>(),
             ctx.read<MenuNotifier>(),
             ctx.read<StaffNotifier>(),
+            ctx.read<FavoritesNotifier>(),
           ),
         ),
       ],
