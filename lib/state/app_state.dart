@@ -81,6 +81,7 @@ class AppState extends ChangeNotifier {
       if (auth.loggedIn) {
         wallet.fetchWalletBalance();
         orders.fetchOrders();
+        cart.fetchCart();
       }
       notifyListeners();
     });
@@ -93,6 +94,7 @@ class AppState extends ChangeNotifier {
     if (auth.loggedIn) {
       wallet.fetchWalletBalance();
       orders.fetchOrders();
+      cart.fetchCart();
     }
   }
 

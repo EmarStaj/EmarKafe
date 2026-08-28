@@ -7,26 +7,32 @@ import 'package:emar_kafe/models/cart_item.dart';
 import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
 
 class CartNotifier extends ChangeNotifier {
+  final ApiService api;
+  final AuthNotifier auth;
+
+  Map<String, CartItem> cart = {};
+  double cartTotal = 0.0;
+  bool isUpdatingCart = false;
+  bool useFreeCoffeeReward = false;
+
+  final Map<String, Timer> _debounceTimers = {};
+  final Map<String, int> _pendingQty = {};
+  final Map<String, CartItem> _pendingOriginal = {};
+
+  CartNotifier(this.api, this.auth);
+
   void clear() {
+    for (final t in _debounceTimers.values) t.cancel();
+    _debounceTimers.clear();
+    _pendingQty.clear();
+    _pendingOriginal.clear();
     cart = {};
     cartTotal = 0.0;
     isUpdatingCart = false;
     notifyListeners();
   }
-  final ApiService api;
-  final AuthNotifier auth;
 
-  // localId -> CartItem (localId can be productId + options hash)
-  Map<String, CartItem> cart = {};
-  double cartTotal = 0.0;
-  bool isUpdatingCart = false;
-  bool useFreeCoffeeReward = false;
-  final Map<String, Timer> _cartDebounceTimers = {};
-  final Set<String> _pendingDeletions = {};
-
-  CartNotifier(this.api, this.auth);
-
-  int get cartCount => cart.values.fold(0, (sum, item) => sum + item.quantity);
+  int get cartCount => cart.values.fold(0, (s, i) => s + i.quantity);
 
   void setUseFreeCoffeeReward(bool value) {
     useFreeCoffeeReward = value;
@@ -34,45 +40,34 @@ class CartNotifier extends ChangeNotifier {
   }
 
   CartItem? get mostExpensiveCoffeeItem {
-    CartItem? mostExpensive;
-    for (var item in cart.values) {
+    CartItem? best;
+    for (final item in cart.values) {
       final cat = item.product.category;
       if (cat == ProductCategory.hotCoffee || cat == ProductCategory.icedCoffee) {
-        if (mostExpensive == null || item.unitPrice > mostExpensive.unitPrice) {
-          mostExpensive = item;
-        }
+        if (best == null || item.unitPrice > best.unitPrice) best = item;
       }
     }
-    return mostExpensive;
+    return best;
   }
 
   double get freeCoffeeDiscount {
     if (!useFreeCoffeeReward) return 0.0;
-    final coffee = mostExpensiveCoffeeItem;
-    if (coffee == null) return 0.0;
-    return coffee.unitPrice;
+    return mostExpensiveCoffeeItem?.unitPrice ?? 0.0;
   }
 
-  double get effectiveCartTotal {
-    final total = cartTotal - freeCoffeeDiscount;
-    return total < 0 ? 0.0 : total;
-  }
+  double get effectiveCartTotal =>
+      (cartTotal - freeCoffeeDiscount).clamp(0.0, double.infinity);
 
-  Product productById(String id) {
-    return Catalog.instance.byId(id);
-  }
+  Product _productById(String id) => Catalog.instance.byId(id);
 
   void _recalcTotal() {
-    cartTotal = 0.0;
-    cart.forEach((key, item) {
-      cartTotal += item.totalPrice;
-    });
+    cartTotal = cart.values.fold(0.0, (s, i) => s + i.totalPrice);
   }
 
   String _generateLocalId(String productId, List<ProductOption> options) {
     if (options.isEmpty) return productId;
-    final optIds = options.map((e) => e.id).toList()..sort();
-    return '$productId-${optIds.join('-')}';
+    final sortedIds = (options.map((e) => e.id).toList())..sort();
+    return '$productId-${sortedIds.join('-')}';
   }
 
   Future<void> fetchCart() async {
@@ -81,214 +76,194 @@ class CartNotifier extends ChangeNotifier {
       final res = await api.getCart();
       List<dynamic> items = [];
       if (res['items'] is List) {
-        items = res['items'] as List<dynamic>;
+        items = res['items'] as List;
       } else if (res['data'] is Map && res['data']['items'] is List) {
-        items = res['data']['items'] as List<dynamic>;
+        items = res['data']['items'] as List;
       } else if (res['data'] is List) {
-        items = res['data'] as List<dynamic>;
+        items = res['data'] as List;
       }
 
-      final Map<String, CartItem> newCart = {};
-      for (var item in items) {
-        final productId =
-            item['product_id']?.toString() ??
-            item['productId']?.toString() ??
-            '';
+      final Map<String, CartItem> serverCart = {};
+      for (final raw in items) {
+        final productId = raw['product_id']?.toString() ?? raw['productId']?.toString() ?? '';
         if (productId.isEmpty) continue;
-        final qty = (item['quantity'] as num?)?.toInt() ?? 1;
-        final cartItemId = item['id']?.toString() ?? '';
-
+        final cartItemId = raw['id']?.toString() ?? '';
+        final qty = (raw['quantity'] as num?)?.toInt() ?? 1;
         List<ProductOption> options = [];
-        final rawOps = item['selected_options'] ?? item['options'];
-        if (rawOps != null && rawOps is List) {
-          options = (rawOps as List)
-              .map((o) => ProductOption.fromJson(o))
-              .toList();
-        }
-
+        final rawOps = raw['selected_options'] ?? raw['options'];
+        if (rawOps is List) options = rawOps.map((o) => ProductOption.fromJson(o)).toList();
         try {
           Product product;
-          if (item['products'] != null && item['products'] is Map) {
-            product = Product.fromDb(item['products'] as Map<String, dynamic>);
+          if (raw['products'] is Map) {
+            product = Product.fromDb(raw['products'] as Map<String, dynamic>);
             Catalog.instance.registerProducts([product]);
           } else {
-            product = productById(productId);
+            product = _productById(productId);
           }
           final localId = _generateLocalId(productId, options);
-          newCart[localId] = CartItem(
-            serverUnitPrice: (item['unit_price'] as num?)?.toDouble(),
+          serverCart[localId] = CartItem(
             cartItemId: cartItemId,
             product: product,
             quantity: qty,
             selectedOptions: options,
+            serverUnitPrice: (raw['unit_price'] as num?)?.toDouble(),
           );
         } catch (_) {}
       }
-      cart = newCart;
+
+      final Map<String, CartItem> merged = {};
+      for (final entry in serverCart.entries) {
+        final key = entry.key;
+        final serverItem = entry.value;
+        final pendingQty = _pendingQty[key];
+        if (pendingQty != null) {
+          if (pendingQty > 0) merged[key] = serverItem.copyWith(quantity: pendingQty);
+        } else {
+          merged[key] = serverItem;
+        }
+      }
+      for (final entry in cart.entries) {
+        final key = entry.key;
+        if (!merged.containsKey(key)) {
+          final pending = _pendingQty[key];
+          if (pending != null && pending > 0) merged[key] = entry.value.copyWith(quantity: pending);
+        }
+      }
+
+      cart = merged;
       _recalcTotal();
       notifyListeners();
     } catch (e, s) {
-      debugPrint('fetchCart error: $e, \n$s');
+      debugPrint('fetchCart error: $e\n$s');
     }
+  }
+
+  Future<List<String>> addToCart(String productId, {List<ProductOption> options = const []}) async {
+    final localId = _generateLocalId(productId, options);
+    if (cart.containsKey(localId)) return changeQty(localId, 1);
+    try {
+      final product = _productById(productId);
+      cart[localId] = CartItem(cartItemId: 'local', product: product, quantity: 1, selectedOptions: options);
+      _pendingQty[localId] = 1;
+      _recalcTotal();
+      notifyListeners();
+      if (!auth.loggedIn) return [];
+      isUpdatingCart = true;
+      notifyListeners();
+      try {
+        final warnings = await api.addToCart(productId, 1, options: options.map((e) => e.toJson()).toList());
+        await _syncIds();
+        return warnings;
+      } catch (e) {
+        debugPrint('addToCart API error: $e');
+        cart.remove(localId);
+        _pendingQty.remove(localId);
+        _recalcTotal();
+        notifyListeners();
+      } finally {
+        _pendingQty.remove(localId);
+        isUpdatingCart = false;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('addToCart local error: $e');
+    }
+    return [];
   }
 
   Future<List<String>> changeQty(String localId, int delta) async {
-    final originalItem = cart[localId];
-    if (originalItem == null) {
-      if (delta > 0) {
-        return addToCart(localId);
-      }
+    final original = cart[localId];
+    if (original == null) {
+      if (delta > 0) return addToCart(localId);
       return [];
     }
-
-    final nextQty = originalItem.quantity + delta;
-
-    if (nextQty <= 0) {
+    final newQty = original.quantity + delta;
+    if (newQty <= 0) {
       cart.remove(localId);
-      if (originalItem.cartItemId.isNotEmpty &&
-          originalItem.cartItemId != 'local') {
-        _pendingDeletions.add(originalItem.cartItemId);
-      }
     } else {
-      cart[localId] = originalItem.copyWith(quantity: nextQty);
+      cart[localId] = original.copyWith(quantity: newQty);
     }
-
+    _pendingQty[localId] = newQty;
     _recalcTotal();
     notifyListeners();
-
     if (!auth.loggedIn) return [];
-
-    _cartDebounceTimers[localId]?.cancel();
+    _debounceTimers[localId]?.cancel();
+    _pendingOriginal.putIfAbsent(localId, () => original);
     isUpdatingCart = true;
     notifyListeners();
-
-    _cartDebounceTimers[localId] = Timer(
-      const Duration(milliseconds: 1000),
-      () async {
-        _cartDebounceTimers.remove(localId);
-
-        try {
-          final finalItem = cart[localId];
-          final finalQty = finalItem?.quantity ?? 0;
-
-          if (finalQty <= 0) {
-            if (originalItem.cartItemId.isNotEmpty &&
-                originalItem.cartItemId != 'local') {
-              await api.deleteCartItem(originalItem.cartItemId);
-              _pendingDeletions.remove(originalItem.cartItemId);
-            }
-          } else if (originalItem.cartItemId.isNotEmpty &&
-              originalItem.cartItemId != 'local') {
-            await api.updateCartItem(originalItem.cartItemId, finalQty);
-          } else if (finalItem != null) {
-            await api.addToCart(
-              finalItem.product.id,
-              finalQty,
-              options: finalItem.selectedOptions.map((e) => e.toJson()).toList(),
-            );
-          }
-          await fetchCart();
-        } catch (e) {
-          debugPrint('Cart sync error: $e');
-        } finally {
-          if (_cartDebounceTimers.isEmpty) {
-            isUpdatingCart = false;
-          }
-          notifyListeners();
-        }
-      },
+    _debounceTimers[localId] = Timer(
+      const Duration(milliseconds: 500),
+      () => _flushItem(localId),
     );
-
     return [];
+  }
+
+  Future<void> _flushItem(String localId) async {
+    _debounceTimers.remove(localId);
+    final targetQty = _pendingQty.remove(localId);
+    final originalItem = _pendingOriginal.remove(localId);
+    if (targetQty == null) { _maybeStopUpdating(); return; }
+    try {
+      if (targetQty <= 0) {
+        final cartItemId = originalItem?.cartItemId ?? '';
+        if (cartItemId.isNotEmpty && cartItemId != 'local') await api.deleteCartItem(cartItemId);
+      } else {
+        final cartItemId = originalItem?.cartItemId ?? '';
+        if (cartItemId.isNotEmpty && cartItemId != 'local') {
+          await api.updateCartItem(cartItemId, targetQty);
+        } else {
+          final currentItem = cart[localId];
+          if (currentItem != null) {
+            await api.addToCart(currentItem.product.id, targetQty,
+                options: currentItem.selectedOptions.map((e) => e.toJson()).toList());
+          }
+        }
+        await _syncIds();
+      }
+    } catch (e) {
+      debugPrint('_flushItem error for $localId: $e');
+      await fetchCart();
+    }
+    _maybeStopUpdating();
+  }
+
+  void _maybeStopUpdating() {
+    if (_debounceTimers.isEmpty) { isUpdatingCart = false; notifyListeners(); }
+  }
+
+  Future<void> _syncIds() async {
+    if (!auth.loggedIn) return;
+    try {
+      final res = await api.getCart();
+      List<dynamic> items = [];
+      if (res['items'] is List) items = res['items'] as List;
+      else if (res['data'] is Map && res['data']['items'] is List) items = res['data']['items'] as List;
+      else if (res['data'] is List) items = res['data'] as List;
+      for (final raw in items) {
+        final productId = raw['product_id']?.toString() ?? raw['productId']?.toString() ?? '';
+        if (productId.isEmpty) continue;
+        final cartItemId = raw['id']?.toString() ?? '';
+        if (cartItemId.isEmpty) continue;
+        List<ProductOption> options = [];
+        final rawOps = raw['selected_options'] ?? raw['options'];
+        if (rawOps is List) options = rawOps.map((o) => ProductOption.fromJson(o)).toList();
+        final localId = _generateLocalId(productId, options);
+        final local = cart[localId];
+        if (local != null && local.cartItemId != cartItemId) {
+          cart[localId] = local.copyWith(cartItemId: cartItemId);
+        }
+      }
+      notifyListeners();
+    } catch (e) { debugPrint('_syncIds error: $e'); }
   }
 
   Future<void> flushDebounces() async {
-    if (_cartDebounceTimers.isNotEmpty) {
-      for (var timer in _cartDebounceTimers.values) {
-        timer.cancel();
-      }
-      _cartDebounceTimers.clear();
-    }
-
+    final keys = List<String>.from(_debounceTimers.keys);
+    for (final key in keys) { _debounceTimers[key]?.cancel(); _debounceTimers.remove(key); }
     if (!auth.loggedIn) return;
-
-    // 1. Process any pending deletions
-    if (_pendingDeletions.isNotEmpty) {
-      final deletions = Set<String>.from(_pendingDeletions);
-      for (var cartItemId in deletions) {
-        try {
-          await api.deleteCartItem(cartItemId);
-          _pendingDeletions.remove(cartItemId);
-        } catch (e) {
-          debugPrint('flushDebounces delete error: $e');
-        }
-      }
-    }
-
-    // 2. Sync remaining items
-    for (var entry in cart.entries) {
-      final item = entry.value;
-      try {
-        if (item.cartItemId.isNotEmpty && item.cartItemId != 'local') {
-          await api.updateCartItem(item.cartItemId, item.quantity);
-        } else if (item.quantity > 0) {
-          await api.addToCart(
-            item.product.id,
-            item.quantity,
-            options: item.selectedOptions.map((e) => e.toJson()).toList(),
-          );
-        }
-      } catch (e) {
-        debugPrint('flushDebounces sync item error: $e');
-      }
-    }
+    final pendingKeys = List<String>.from(_pendingQty.keys);
+    for (final localId in pendingKeys) await _flushItem(localId);
     isUpdatingCart = false;
-    await fetchCart();
-  }
-
-  Future<List<String>> addToCart(
-    String productId, {
-    List<ProductOption> options = const [],
-  }) async {
-    final localId = _generateLocalId(productId, options);
-    final existing = cart[localId];
-
-    if (existing != null) {
-      return changeQty(localId, 1);
-    }
-
-    try {
-      final product = productById(productId);
-      cart[localId] = CartItem(
-        cartItemId: 'local',
-        product: product,
-        quantity: 1,
-        selectedOptions: options,
-      );
-      _recalcTotal();
-      notifyListeners();
-
-      if (auth.loggedIn) {
-        isUpdatingCart = true;
-        notifyListeners();
-        try {
-          final warnings = await api.addToCart(
-            productId,
-            1,
-            options: options.map((e) => e.toJson()).toList(),
-          );
-          await fetchCart();
-          return warnings;
-        } catch (e) {
-          debugPrint('addToCart API error: $e');
-        } finally {
-          isUpdatingCart = false;
-          notifyListeners();
-        }
-      }
-    } catch (e) {
-      debugPrint('addToCart error: $e');
-    }
-    return [];
+    notifyListeners();
   }
 }
