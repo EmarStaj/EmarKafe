@@ -6,32 +6,49 @@ import 'package:emar_kafe/state/notifiers/auth_notifier.dart';
 import 'package:emar_kafe/state/notifiers/cart_notifier.dart';
 import 'package:emar_kafe/state/notifiers/wallet_notifier.dart';
 
+import 'package:emar_kafe/services/realtime_service.dart';
+
 class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
+  void clear() {
+    orderHistory = [];
+    loyaltyProgress = 0;
+    freeCoffeesEarned = 0;
+    rateReminderNotifier.value = null;
+    stopPolling();
+    realtime?.unsubscribe();
+    notifyListeners();
+  }
   final ValueNotifier<OrderRecord?> rateReminderNotifier = ValueNotifier(null);
   final ApiService api;
   final AuthNotifier auth;
   final CartNotifier cart;
   final WalletNotifier wallet;
-  
+  final RealtimeService? realtime;
+
   List<OrderRecord> orderHistory = [];
   List<OrderRecord> get activeBaristaOrders => orderHistory;
   int loyaltyProgress = 0;
   int freeCoffeesEarned = 0;
+  List<Map<String, dynamic>> earnedRewards = [];
+
+  String? get availableRewardId => earnedRewards
+      .where((r) => r['status'] == 'earned')
+      .map((r) => r['id']?.toString())
+      .firstOrNull;
 
   Timer? _pollingTimer;
 
-  OrderNotifier(this.api, this.auth, this.cart, this.wallet) {
+  OrderNotifier(this.api, this.auth, this.cart, this.wallet, {this.realtime}) {
     WidgetsBinding.instance.addObserver(this);
+    initRealtime();
     startPolling();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      initRealtime();
       startPolling();
-      if (auth.loggedIn) fetchOrders();
-    } else if (state == AppLifecycleState.paused) {
-      stopPolling();
     }
   }
 
@@ -39,16 +56,32 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _pollingTimer?.cancel();
+    realtime?.unsubscribe();
     super.dispose();
+  }
+
+  void initRealtime() {
+    if (!auth.loggedIn) return;
+    if (auth.role == UserRole.customer && auth.userId.isNotEmpty) {
+      realtime?.subscribeToUserOrders(auth.userId, (record) {
+        fetchOrders();
+      });
+    } else if ((auth.role == UserRole.barista || auth.role == UserRole.branchManager) &&
+        auth.selectedBranchId != null) {
+      realtime?.subscribeToBranchOrders(auth.selectedBranchId!, (record) {
+        fetchOrders();
+      });
+    }
   }
 
   void startPolling() {
     _pollingTimer?.cancel();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+    // Lightweight 60s fallback heartbeat (realtime handles instant updates)
+    _pollingTimer = Timer.periodic(const Duration(seconds: 60), (_) {
       if (auth.loggedIn) fetchOrders();
     });
   }
-  
+
   void stopPolling() {
     _pollingTimer?.cancel();
   }
@@ -70,14 +103,30 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
         }
 
         if (rewardsList != null) {
-          freeCoffeesEarned = rewardsList.where((r) => r['status'] == 'earned').length;
+          earnedRewards = rewardsList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          freeCoffeesEarned = earnedRewards
+              .where((r) => r['status'] == 'earned')
+              .length;
         } else {
+          earnedRewards = [];
           freeCoffeesEarned = 0;
         }
         notifyListeners();
       }
     } catch (e) {
       debugPrint('Loyalty fetch error: $e');
+    }
+  }
+
+  Future<void> redeemAvailableReward({String? branchId}) async {
+    final rewardId = availableRewardId;
+    if (rewardId != null && rewardId.isNotEmpty) {
+      try {
+        await api.redeemLoyaltyReward(rewardId, branchId: branchId);
+        await fetchLoyalty();
+      } catch (e) {
+        debugPrint('Redeem reward error: $e');
+      }
     }
   }
 
@@ -88,6 +137,7 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
         final res = await api.getMyOrders();
         orderHistory = res.map((json) => OrderRecord.fromJson(json)).toList();
         await fetchLoyalty();
+        await wallet.fetchWalletBalance();
         notifyListeners();
       } else {
         final res = await api.getBranchOrders();
@@ -106,18 +156,22 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<OrderRecord?> placeOrder({bool useWallet = false}) async {
     if (!auth.loggedIn) return null;
-    
+
+    await cart.flushDebounces();
+
     if (useWallet) {
-      if (wallet.walletBalance < cart.cartTotal) throw Exception('Yetersiz bakiye');
+      if (wallet.walletBalance < cart.cartTotal) {
+        throw Exception('Yetersiz bakiye');
+      }
     }
-    
+
     if (auth.selectedBranchId == null) throw Exception('Şube seçilmedi');
 
-    await api.placeOrder(auth.selectedBranchId!); 
-    await cart.fetchCart(); 
-    await fetchOrders(); 
+    await api.placeOrder(auth.selectedBranchId!);
+    await cart.fetchCart();
+    await fetchOrders();
     if (useWallet) await wallet.fetchWalletBalance();
-    
+
     return activeOrder;
   }
 
@@ -138,10 +192,10 @@ class OrderNotifier extends ChangeNotifier with WidgetsBindingObserver {
         newStatus = OrderStatus.ready;
         break;
     }
-    
+
     try {
       await api.updateOrderStatus(order.id, newStatus.name);
-      await fetchOrders(); 
+      await fetchOrders();
     } catch (e) {
       debugPrint('Order update error: $e');
     }

@@ -7,7 +7,6 @@ import '../theme.dart';
 import '../utils/page_transitions.dart';
 import '../screens/customer/order_tracking_screen.dart';
 
-
 /// Ana ekranda gösterilen, aktif siparişin canlı geri sayımını taşıyan banner.
 /// Takip ekranından çıkılsa bile burada görünmeye devam eder.
 class ActiveOrderBanner extends StatefulWidget {
@@ -49,7 +48,9 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner> {
 
     return InkWell(
       borderRadius: BorderRadius.circular(18),
-      onTap: () => Navigator.of(context).push(softRoute(OrderTrackingScreen(order: order))),
+      onTap: () => Navigator.of(
+        context,
+      ).push(softRoute(OrderTrackingScreen(order: order))),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -62,8 +63,14 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner> {
               width: 44,
               height: 44,
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: EmarColors.surface.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)),
-              child: Text(pendingQR ? '📱' : (ready ? '🎉' : '⏱'), style: const TextStyle(fontSize: 20)),
+              decoration: BoxDecoration(
+                color: EmarColors.surface.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                pendingQR ? '📱' : (ready ? '🎉' : '⏱'),
+                style: const TextStyle(fontSize: 20),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -71,18 +78,37 @@ class _ActiveOrderBannerState extends State<ActiveOrderBanner> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    pendingQR ? 'QR Kodunuz hazır' : (ready ? 'Siparişin hazır!' : 'Siparişin ${order.shortId} hazırlanıyor'),
-                    style: const TextStyle(color: EmarColors.surface, fontWeight: FontWeight.w700, fontSize: 13),
+                    pendingQR
+                        ? 'QR Kodunuz hazır'
+                        : (ready
+                              ? 'Siparişin hazır!'
+                              : 'Siparişin ${order.shortId} hazırlanıyor'),
+                    style: const TextStyle(
+                      color: EmarColors.surface,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    pendingQR ? 'Baristaya okutmak için tıklayın' : (ready ? 'Şubeden teslim alabilirsin' : '${_formatApprox(order.remainingSeconds)} kaldı — takip et'),
-                    style: TextStyle(color: EmarColors.surface.withValues(alpha: 0.75), fontSize: 11.5),
+                    pendingQR
+                        ? 'Baristaya okutmak için tıklayın'
+                        : (ready
+                              ? 'Şubeden teslim alabilirsin'
+                              : '${_formatApprox(order.remainingSeconds)} kaldı — takip et'),
+                    style: TextStyle(
+                      color: EmarColors.surface.withValues(alpha: 0.75),
+                      fontSize: 11.5,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: EmarColors.surface, size: 20),
+            const Icon(
+              Icons.chevron_right,
+              color: EmarColors.surface,
+              size: 20,
+            ),
           ],
         ),
       ),

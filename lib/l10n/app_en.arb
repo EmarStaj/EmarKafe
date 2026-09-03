@@ -1,0 +1,22 @@
+{
+  "@@locale": "en",
+  "appName": "EMAR Coffee",
+  "home": "Home",
+  "cart": "My Cart",
+  "campaigns": "Offers",
+  "profile": "Profile",
+  "selectBranch": "Select Branch",
+  "login": "Sign In",
+  "logout": "Sign Out",
+  "wallet": "My Wallet",
+  "walletBalance": "Wallet Balance",
+  "topUpBalance": "Add Funds",
+  "orderHistory": "Order History",
+  "orderTracking": "Order Tracking",
+  "emptyCart": "Your cart is empty",
+  "totalPrice": "Total Amount",
+  "checkout": "Complete Order",
+  "loyaltyRewardInfo": "1 Free Coffee Every 5 Orders!",
+  "freeCoffeeReady": "Free Drink Available",
+  "outOfStock": "Out of Stock"
+}

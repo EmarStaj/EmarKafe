@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../state/app_state.dart';
+import '../../state/notifiers/wallet_notifier.dart';
 import '../../theme.dart';
 import '../../widgets/pressable_scale.dart';
 
@@ -22,6 +23,16 @@ class _WalletScreenState extends State<WalletScreen> {
 
   bool _autoValidate = false;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<AppState>().wallet.fetchWalletBalance();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -48,7 +59,9 @@ class _WalletScreenState extends State<WalletScreen> {
     setState(() => _autoValidate = true);
 
     if (!_formKey.currentState!.validate()) {
-      _showWarning('Lütfen tüm kart ve tutar alanlarını eksiksiz ve doğru doldurun.');
+      _showWarning(
+        'Lütfen tüm kart ve tutar alanlarını eksiksiz ve doğru doldurun.',
+      );
       return;
     }
 
@@ -75,7 +88,9 @@ class _WalletScreenState extends State<WalletScreen> {
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${amount.toStringAsFixed(0)}₺ bakiye başarıyla yüklendi!'),
+          content: Text(
+            '${amount.toStringAsFixed(0)}₺ bakiye başarıyla yüklendi!',
+          ),
           backgroundColor: EmarColors.moss,
           duration: const Duration(seconds: 2),
         ),
@@ -93,7 +108,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final balance = context.watch<AppState>().walletBalance;
+    final balance = context.select<WalletNotifier, double>((w) => w.walletBalance);
 
     return Scaffold(
       appBar: AppBar(
@@ -106,7 +121,9 @@ class _WalletScreenState extends State<WalletScreen> {
           padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
-            autovalidateMode: _autoValidate ? AutovalidateMode.onUserInteraction : AutovalidateMode.disabled,
+            autovalidateMode: _autoValidate
+                ? AutovalidateMode.onUserInteraction
+                : AutovalidateMode.disabled,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -125,20 +142,37 @@ class _WalletScreenState extends State<WalletScreen> {
                         color: Colors.black26,
                         blurRadius: 10,
                         offset: Offset(0, 4),
-                      )
+                      ),
                     ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('EMAR Kafe Cüzdan Bakiyesi', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                      const Text(
+                        'EMAR Kafe Cüzdan Bakiyesi',
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
                       const SizedBox(height: 8),
-                      Text('${balance.toStringAsFixed(2)}₺', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                      Text(
+                        '${balance.toStringAsFixed(2)}₺',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 28),
-                const Text('Bakiye Yükle', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: EmarColors.espresso)),
+                const Text(
+                  'Bakiye Yükle',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: EmarColors.espresso,
+                  ),
+                ),
                 const SizedBox(height: 14),
 
                 TextFormField(
@@ -151,8 +185,10 @@ class _WalletScreenState extends State<WalletScreen> {
                   textCapitalization: TextCapitalization.words,
                   validator: (val) {
                     final text = val?.trim() ?? '';
-                    if (text.isEmpty) return 'Kart üzerindeki isim boş bırakılamaz';
-                    if (text.length < 3) return 'Geçerli bir isim ve soyisim giriniz';
+                    if (text.isEmpty)
+                      return 'Kart üzerindeki isim boş bırakılamaz';
+                    if (text.length < 3)
+                      return 'Geçerli bir isim ve soyisim giriniz';
                     return null;
                   },
                 ),
@@ -194,7 +230,9 @@ class _WalletScreenState extends State<WalletScreen> {
                         validator: (val) {
                           final text = val?.trim() ?? '';
                           if (text.isEmpty) return 'SKT boş bırakılamaz';
-                          if (!RegExp(r'^(0[1-9]|1[0-2])\/?([0-9]{2})$').hasMatch(text)) {
+                          if (!RegExp(
+                            r'^(0[1-9]|1[0-2])\/?([0-9]{2})$',
+                          ).hasMatch(text)) {
                             return 'Geçerli format: AA/YY';
                           }
                           return null;
@@ -257,13 +295,24 @@ class _WalletScreenState extends State<WalletScreen> {
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: EmarColors.surface,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: EmarColors.espresso.withValues(alpha: 0.15)),
+                          border: Border.all(
+                            color: EmarColors.espresso.withValues(alpha: 0.15),
+                          ),
                         ),
-                        child: Text('+$val₺', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        child: Text(
+                          '+$val₺',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
                     );
                   }).toList(),
@@ -275,17 +324,26 @@ class _WalletScreenState extends State<WalletScreen> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: EmarColors.paprika),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: EmarColors.paprika,
+                      ),
                       onPressed: _isLoading ? null : _addBalance,
                       child: _isLoading
                           ? const SizedBox(
                               width: 22,
                               height: 22,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
                             )
                           : const Text(
                               'Güvenli Ödeme Yap',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                     ),
                   ),

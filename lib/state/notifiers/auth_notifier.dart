@@ -5,29 +5,61 @@ import 'package:emar_kafe/data/catalog.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 enum UserRole { customer, barista, manager, branchManager, admin }
+
 extension UserRoleExt on UserRole {
   String get label {
     switch (this) {
-      case UserRole.customer: return 'Müşteri';
-      case UserRole.barista: return 'Barista';
-      case UserRole.manager: return 'Yönetici';
-      case UserRole.branchManager: return 'Şube Yöneticisi';
-      case UserRole.admin: return 'Sistem Yöneticisi';
+      case UserRole.customer:
+        return 'Müşteri';
+      case UserRole.barista:
+        return 'Barista';
+      case UserRole.manager:
+        return 'Yönetici';
+      case UserRole.branchManager:
+        return 'Şube Yöneticisi';
+      case UserRole.admin:
+        return 'Sistem Yöneticisi';
     }
+  }
+
+  String get backendValue {
+    switch (this) {
+      case UserRole.customer:
+        return 'customer';
+      case UserRole.barista:
+        return 'barista';
+      case UserRole.manager:
+      case UserRole.branchManager:
+        return 'branch_manager';
+      case UserRole.admin:
+        return 'admin';
+    }
+  }
+
+  static UserRole fromString(String? roleStr) {
+    if (roleStr == null) return UserRole.customer;
+    final normalized =
+        roleStr.toLowerCase().replaceAll('_', '').replaceAll('-', '');
+    if (normalized == 'branchmanager' || normalized == 'manager') {
+      return UserRole.branchManager;
+    }
+    if (normalized == 'barista') return UserRole.barista;
+    if (normalized == 'admin') return UserRole.admin;
+    return UserRole.customer;
   }
 }
 
 class AuthNotifier extends ChangeNotifier {
   final ApiService api;
-  
+
   bool loggedIn = false;
+  String userId = '';
   String userName = '';
   String userEmail = '';
   DateTime? birthday;
   UserRole role = UserRole.customer;
   String? selectedBranchId;
   List<Branch> get branches => Catalog.instance.branches;
-  
   String get selectedBranchName => getBranchName(selectedBranchId);
 
   String getBranchName(String? branchId) {
@@ -38,7 +70,76 @@ class AuthNotifier extends ChangeNotifier {
     );
     return branch.name;
   }
-  
+
+  Future<void> refreshBranches() async {
+    try {
+      final list = await api.getBranches();
+      if (list.isNotEmpty) {
+        final bList = list.map((b) => Branch.fromDb(b as Map<String, dynamic>)).toList();
+        Catalog.instance.registerBranches(bList);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Refresh branches error: $e');
+    }
+  }
+
+  Future<bool> createBranch({
+    required String name,
+    String? address,
+    String? phoneNumber,
+    bool isActive = true,
+  }) async {
+    try {
+      await api.createBranch(
+        name: name,
+        address: address,
+        phoneNumber: phoneNumber,
+        isActive: isActive,
+      );
+      await refreshBranches();
+      return true;
+    } catch (e) {
+      debugPrint('Create branch error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updateBranch(
+    String branchId, {
+    String? name,
+    String? address,
+    String? phoneNumber,
+    bool? isActive,
+  }) async {
+    try {
+      await api.updateBranch(
+        branchId,
+        name: name,
+        address: address,
+        phoneNumber: phoneNumber,
+        isActive: isActive,
+      );
+      await refreshBranches();
+      return true;
+    } catch (e) {
+      debugPrint('Update branch error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteBranch(String branchId) async {
+    try {
+      await api.deleteBranch(branchId);
+      Catalog.instance.removeBranch(branchId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Delete branch error: $e');
+      return false;
+    }
+  }
+
   AuthNotifier(this.api) {
     selectedBranchId = branches.firstOrNull?.id;
     init();
@@ -57,16 +158,23 @@ class AuthNotifier extends ChangeNotifier {
       final userObj = res['user'] as Map<String, dynamic>? ?? res;
       final metadata = userObj['user_metadata'] as Map<String, dynamic>?;
 
+      userId = userObj['id'] ?? '';
       userEmail = userObj['email'] ?? '';
-      
+
       String fallbackName = metadata?['full_name'] ?? '';
-      
+
       try {
         final profile = await api.getProfile();
         userName = profile['full_name'] ?? fallbackName;
-        role = UserRole.values.firstWhere((e) => e.name == (profile['role'] ?? userObj['role'] ?? metadata?['role'] ?? 'customer'), orElse: () => UserRole.customer);
-        
-        if (profile['birth_date'] != null) birthday = DateTime.tryParse(profile['birth_date']);
+        role = UserRoleExt.fromString(
+          profile['role'] ??
+              userObj['role'] ??
+              metadata?['role'] ??
+              'customer',
+        );
+
+        if (profile['birth_date'] != null)
+          birthday = DateTime.tryParse(profile['birth_date']);
         final branchData = profile['branch_id'] ?? profile['branch'];
         if (branchData != null) {
           if (branchData is Map) {
@@ -109,12 +217,13 @@ class AuthNotifier extends ChangeNotifier {
         password,
         name,
         birthDate.toIso8601String().split('T').first,
-        role: selectedRole.name,
+        role: selectedRole.backendValue,
         branchId: branch,
       );
-      
+
       final session = res['session'] as Map<String, dynamic>?;
-      final token = res['token'] ?? res['access_token'] ?? session?['access_token'];
+      final token =
+          res['token'] ?? res['access_token'] ?? session?['access_token'];
       final refreshToken = session?['refresh_token'];
 
       if (token != null) {
@@ -135,13 +244,17 @@ class AuthNotifier extends ChangeNotifier {
     }
   }
 
-  Future<String?> loginWithCredentials({required String email, required String password}) async {
+  Future<String?> loginWithCredentials({
+    required String email,
+    required String password,
+  }) async {
     try {
       final res = await api.login(email.trim(), password);
       final session = res['session'] as Map<String, dynamic>?;
-      final token = res['token'] ?? res['access_token'] ?? session?['access_token'];
+      final token =
+          res['token'] ?? res['access_token'] ?? session?['access_token'];
       final refreshToken = session?['refresh_token'];
-                    
+
       if (token != null) {
         await api.saveTokens(token, refreshToken: refreshToken);
         await fetchMe();
@@ -160,6 +273,7 @@ class AuthNotifier extends ChangeNotifier {
   Future<void> logout() async {
     await api.logout();
     loggedIn = false;
+    userId = '';
     userName = '';
     userEmail = '';
     role = UserRole.customer;
@@ -175,6 +289,7 @@ class AuthNotifier extends ChangeNotifier {
   Future<void> deleteAccount() async {
     await api.deleteAccount();
     loggedIn = false;
+    userId = '';
     userName = '';
     userEmail = '';
     role = UserRole.customer;

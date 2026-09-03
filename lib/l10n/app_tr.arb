@@ -1,0 +1,79 @@
+{
+  "@@locale": "tr",
+  "appName": "EMAR Kafe",
+  "@appName": {
+    "description": "Uygulama adı"
+  },
+  "home": "Anasayfa",
+  "@home": {
+    "description": "Anasayfa sekme başlığı"
+  },
+  "cart": "Sepetim",
+  "@cart": {
+    "description": "Sepetim sekme başlığı"
+  },
+  "campaigns": "Kampanyalar",
+  "@campaigns": {
+    "description": "Kampanyalar sekme başlığı"
+  },
+  "profile": "Hesabım",
+  "@profile": {
+    "description": "Hesabım sekme başlığı"
+  },
+  "selectBranch": "Şube Seç",
+  "@selectBranch": {
+    "description": "Şube seçici metni"
+  },
+  "login": "Giriş Yap",
+  "@login": {
+    "description": "Giriş butonu metni"
+  },
+  "logout": "Çıkış Yap",
+  "@logout": {
+    "description": "Çıkış yap butonu metni"
+  },
+  "wallet": "Cüzdanım",
+  "@wallet": {
+    "description": "Cüzdan sekmesi veya ekranı"
+  },
+  "walletBalance": "Cüzdan Bakiyesi",
+  "@walletBalance": {
+    "description": "Cüzdan bakiyesi başlığı"
+  },
+  "topUpBalance": "Bakiye Yükle",
+  "@topUpBalance": {
+    "description": "Bakiye yükleme butonu"
+  },
+  "orderHistory": "Sipariş Geçmişim",
+  "@orderHistory": {
+    "description": "Sipariş geçmişi başlığı"
+  },
+  "orderTracking": "Sipariş Takibi",
+  "@orderTracking": {
+    "description": "Sipariş takip başlığı"
+  },
+  "emptyCart": "Sepetiniz boş",
+  "@emptyCart": {
+    "description": "Boş sepet mesajı"
+  },
+  "totalPrice": "Toplam Tutar",
+  "@totalPrice": {
+    "description": "Toplam tutar etiketi"
+  },
+  "checkout": "Siparişi Tamamla",
+  "@checkout": {
+    "description": "Ödeme butonu"
+  },
+  "loyaltyRewardInfo": "5 Siparişte 1 Kahve Hediye!",
+  "@loyaltyRewardInfo": {
+    "description": "Sadakat kartı bilgi metni"
+  },
+  "freeCoffeeReady": "Bedava İçecek Kullanılabilir",
+  "@freeCoffeeReady": {
+    "description": "Kazanılan bedava kahve metni"
+  },
+  "outOfStock": "Tükendi",
+  "@outOfStock": {
+    "description": "Stok yok rozeti"
+  }
+}

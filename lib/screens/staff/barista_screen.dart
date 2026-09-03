@@ -16,6 +16,22 @@ class BaristaScreen extends StatefulWidget {
 }
 
 class _BaristaScreenState extends State<BaristaScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final app = context.read<AppState>();
+        app.orders.fetchOrders();
+        app.menu.fetchFirstPage();
+        final bId = app.selectedBranchId;
+        if (bId != null) {
+          app.stock.fetchBranchStock(bId);
+        }
+      }
+    });
+  }
+
   void _advance(OrderRecord o, AppState app) {
     app.advanceOrderStatus(o);
   }
@@ -34,6 +50,7 @@ class _BaristaScreenState extends State<BaristaScreen> {
   }
 
   String _formatItems(Map<String, int> items) {
+    if (items.isEmpty) return 'Sipariş içeriği yükleniyor...';
     return items.entries
         .map((e) {
           final p = productById(e.key);
@@ -56,11 +73,14 @@ class _BaristaScreenState extends State<BaristaScreen> {
   ) {
     final items = orders.where((o) {
       final s = o.manualStatus;
+      if (status == OrderStatus.received || status == OrderStatus.created) {
+        return s == OrderStatus.created || s == OrderStatus.received;
+      }
       return s == status;
     }).toList();
 
     return Container(
-      width: 210,
+      width: 230,
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -72,16 +92,19 @@ class _BaristaScreenState extends State<BaristaScreen> {
         children: [
           Row(
             children: [
-              Text(
-                '${title.toUpperCase()}  ·  ${items.length}',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: .3,
-                  color: EmarColors.espresso,
+              Expanded(
+                child: Text(
+                  '${title.toUpperCase()}  ·  ${items.length}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: .3,
+                    color: EmarColors.espresso,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (status == OrderStatus.received && items.isNotEmpty) ...[
+              if ((status == OrderStatus.received || status == OrderStatus.created) && items.isNotEmpty) ...[
                 const SizedBox(width: 6),
                 _PulseDot(color: _colColor(status)),
               ],
@@ -89,63 +112,107 @@ class _BaristaScreenState extends State<BaristaScreen> {
           ),
           const SizedBox(height: 8),
           ...items.map(
-            (o) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: EmarColors.surface,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: EmarColors.espresso.withValues(alpha: 0.03),
-                    blurRadius: 4,
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        o.shortId,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12.5,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 9,
-                            backgroundColor: _colColor(
-                              status,
-                            ).withValues(alpha: 0.15),
-                            child: Text(
-                              ((o.customerName ?? '').isNotEmpty)
-                                  ? (o.customerName?[0] ?? '?').toUpperCase()
-                                  : '?',
+            (o) {
+              final readySince = o.readyAt ?? o.createdAt;
+              final waitMinutes = status == OrderStatus.ready
+                  ? DateTime.now().difference(readySince).inMinutes
+                  : 0;
+              final isWaitingLong =
+                  status == OrderStatus.ready && waitMinutes >= 10;
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: EmarColors.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: isWaitingLong
+                      ? Border.all(color: EmarColors.paprika, width: 1.5)
+                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: EmarColors.espresso.withValues(alpha: 0.03),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              o.shortId,
                               style: TextStyle(
-                                fontSize: 9.5,
                                 fontWeight: FontWeight.w800,
-                                color: _colColor(status),
+                                fontSize: 13,
+                                color: isWaitingLong
+                                    ? EmarColors.paprika
+                                    : EmarColors.espresso,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            _shortName(o.customerName ?? 'Müşteri'),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: EmarColors.espresso,
+                            if (status == OrderStatus.ready) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: (isWaitingLong
+                                          ? EmarColors.paprika
+                                          : EmarColors.gold)
+                                      .withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '${waitMinutes}dk',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: isWaitingLong
+                                        ? EmarColors.paprika
+                                        : EmarColors.roast,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 9,
+                              backgroundColor: _colColor(
+                                status,
+                              ).withValues(alpha: 0.15),
+                              child: Text(
+                                ((o.customerName ?? '').isNotEmpty)
+                                    ? (o.customerName?[0] ?? '?').toUpperCase()
+                                    : '?',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: _colColor(status),
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                            const SizedBox(width: 5),
+                            Text(
+                              _shortName(o.customerName ?? 'Müşteri'),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: EmarColors.espresso,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 5),
                   Text(
                     _formatItems(o.items),
@@ -154,27 +221,31 @@ class _BaristaScreenState extends State<BaristaScreen> {
                       color: EmarColors.espresso,
                     ),
                   ),
-                  if (status != OrderStatus.ready) ...[
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: EmarColors.moss,
-                              foregroundColor: EmarColors.surface,
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              minimumSize: Size.zero,
-                            ),
-                            onPressed: () => _advance(o, app),
-                            child: Text(
-                              status == OrderStatus.received
-                                  ? 'Onayla'
-                                  : 'Hazır',
-                              style: const TextStyle(fontSize: 10.5),
-                            ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: status == OrderStatus.ready
+                                ? EmarColors.espresso
+                                : EmarColors.moss,
+                            foregroundColor: EmarColors.surface,
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            minimumSize: Size.zero,
+                          ),
+                          onPressed: () => _advance(o, app),
+                          child: Text(
+                            (status == OrderStatus.received || status == OrderStatus.created)
+                                ? 'Onayla'
+                                : (status == OrderStatus.preparing
+                                    ? 'Hazır'
+                                    : 'Teslim Et'),
+                            style: const TextStyle(fontSize: 10.5),
                           ),
                         ),
+                      ),
+                      if (status != OrderStatus.ready) ...[
                         const SizedBox(width: 4),
                         SizedBox(
                           width: 32,
@@ -192,12 +263,12 @@ class _BaristaScreenState extends State<BaristaScreen> {
                           ),
                         ),
                       ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ],
               ),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );
@@ -211,6 +282,98 @@ class _BaristaScreenState extends State<BaristaScreen> {
     OrderStatus.completed => EmarColors.moss,
     OrderStatus.cancelled => EmarColors.paprikaDim,
   };
+
+  void _showManualTokenDialog(BuildContext context, AppState app) {
+    final ctrl = TextEditingController();
+    bool isProcessing = false;
+
+    showDialog(
+      context: context,
+      builder: (c) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          backgroundColor: EmarColors.surface,
+          title: const Row(
+            children: [
+              Icon(Icons.vpn_key_outlined, color: EmarColors.espresso),
+              SizedBox(width: 8),
+              Text(
+                'Manuel QR Token Gir',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 340,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Müşterinin ekranında görünen QR tokeni buraya yapıştırın:',
+                  style: TextStyle(fontSize: 13, color: EmarColors.espresso),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: ctrl,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    hintText: 'Token yapıştırın (ey...)',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isProcessing ? null : () => Navigator.pop(dialogCtx),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: EmarColors.moss),
+              onPressed: isProcessing
+                  ? null
+                  : () async {
+                      final token = ctrl.text.trim();
+                      if (token.isEmpty) return;
+                      setDialogState(() => isProcessing = true);
+                      try {
+                        await app.confirmOrderFromQR(token);
+                        if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Sipariş başarıyla onaylandı ve oluşturuldu! ✅'),
+                              backgroundColor: EmarColors.moss,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() => isProcessing = false);
+                        if (dialogCtx.mounted) {
+                          ScaffoldMessenger.of(dialogCtx).showSnackBar(
+                            SnackBar(
+                              content: Text('Hata: ${e.toString().replaceAll('Exception: ', '')}'),
+                              backgroundColor: EmarColors.paprika,
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: isProcessing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Siparişi Onayla'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -230,6 +393,16 @@ class _BaristaScreenState extends State<BaristaScreen> {
       appBar: AppBar(
         title: Text('Barista – ${app.auth.selectedBranchId ?? ''}'),
         actions: [
+          IconButton(
+            tooltip: 'Yenile',
+            icon: const Icon(Icons.refresh),
+            onPressed: () => app.orders.fetchOrders(),
+          ),
+          IconButton(
+            tooltip: 'Manuel Token Gir',
+            icon: const Icon(Icons.keyboard),
+            onPressed: () => _showManualTokenDialog(context, app),
+          ),
           IconButton(
             tooltip: 'QR Okut',
             icon: const Icon(Icons.qr_code_scanner),

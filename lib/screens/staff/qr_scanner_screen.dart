@@ -16,7 +16,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   final MobileScannerController _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
   );
-  
+
   bool _isProcessing = false;
   final TextEditingController _manualInputCtrl = TextEditingController();
 
@@ -42,7 +42,11 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: ${e.toString().replaceAll('Exception: ', '')}')),
+          SnackBar(
+            content: Text(
+              'Hata: ${e.toString().replaceAll('Exception: ', '')}',
+            ),
+          ),
         );
         setState(() => _isProcessing = false);
       }
@@ -53,12 +57,38 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     showDialog(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Manuel Kod Gir', style: TextStyle(color: EmarColors.espresso)),
-        content: TextField(
-          controller: _manualInputCtrl,
-          decoration: const InputDecoration(
-            hintText: 'Sipariş No (Örn: #1046)',
-            border: OutlineInputBorder(),
+        backgroundColor: EmarColors.surface,
+        title: const Row(
+          children: [
+            Icon(Icons.vpn_key_outlined, color: EmarColors.espresso),
+            SizedBox(width: 8),
+            Text(
+              'Manuel QR Token Gir',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 320,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Müşterinin ekranındaki QR tokeni yapıştırın:',
+                style: TextStyle(fontSize: 13, color: EmarColors.espresso),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _manualInputCtrl,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  hintText: 'Token yapıştırın (ey...)',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
@@ -74,7 +104,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                 _processQR(_manualInputCtrl.text);
               }
             },
-            child: const Text('Onayla'),
+            child: const Text('Siparişi Onayla'),
           ),
         ],
       ),
@@ -98,10 +128,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: _onDetect,
-          ),
+          MobileScanner(controller: _controller, onDetect: _onDetect),
           // Scanner overlay
           Container(
             decoration: ShapeDecoration(
@@ -122,10 +149,16 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: EmarColors.espresso,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                 ),
                 icon: const Icon(Icons.keyboard),
-                label: const Text('Manuel Kod Gir', style: TextStyle(fontSize: 16)),
+                label: const Text(
+                  'Manuel Kod Gir',
+                  style: TextStyle(fontSize: 16),
+                ),
                 onPressed: _showManualInputDialog,
               ),
             ),
@@ -175,6 +208,7 @@ class QrScannerOverlayShape extends ShapeBorder {
         ..lineTo(rect.left, rect.top)
         ..lineTo(rect.right, rect.top);
     }
+
     return getLeftTopPath(rect)
       ..lineTo(rect.right, rect.bottom)
       ..lineTo(rect.left, rect.bottom)
@@ -186,18 +220,20 @@ class QrScannerOverlayShape extends ShapeBorder {
     final width = rect.width;
     final borderWidthSize = width / 2;
     final borderOffset = borderWidth / 2;
-    final adjustedBorderLength = borderLength > cutOutSize / 2 + borderWidthSize ? cutOutSize / 2 + borderOffset : borderLength;
+    final adjustedBorderLength = borderLength > cutOutSize / 2 + borderWidthSize
+        ? cutOutSize / 2 + borderOffset
+        : borderLength;
     final adjustedCutOutSize = cutOutSize;
-    
+
     final backgroundPaint = Paint()
       ..color = Colors.black.withAlpha(overlayColor.toInt())
       ..style = PaintingStyle.fill;
-      
+
     final borderPaint = Paint()
       ..color = borderColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = borderWidth;
-      
+
     final boxPaint = Paint()
       ..color = borderColor
       ..style = PaintingStyle.fill
@@ -210,69 +246,84 @@ class QrScannerOverlayShape extends ShapeBorder {
     );
 
     canvas
-      ..saveLayer(
-        rect,
-        backgroundPaint,
-      )
-      ..drawRect(
-        rect,
-        backgroundPaint,
-      )
+      ..saveLayer(rect, backgroundPaint)
+      ..drawRect(rect, backgroundPaint)
       ..drawRRect(
-        RRect.fromRectAndRadius(
-          cutOutRect,
-          Radius.circular(borderRadius),
-        ),
+        RRect.fromRectAndRadius(cutOutRect, Radius.circular(borderRadius)),
         boxPaint,
       )
       ..restore();
-      
+
     // Draw corners
     // Top Left
     canvas.drawLine(
       Offset(cutOutRect.left, cutOutRect.top + borderOffset),
-      Offset(cutOutRect.left + adjustedBorderLength, cutOutRect.top + borderOffset),
+      Offset(
+        cutOutRect.left + adjustedBorderLength,
+        cutOutRect.top + borderOffset,
+      ),
       borderPaint,
     );
     canvas.drawLine(
       Offset(cutOutRect.left + borderOffset, cutOutRect.top),
-      Offset(cutOutRect.left + borderOffset, cutOutRect.top + adjustedBorderLength),
+      Offset(
+        cutOutRect.left + borderOffset,
+        cutOutRect.top + adjustedBorderLength,
+      ),
       borderPaint,
     );
-    
+
     // Top Right
     canvas.drawLine(
       Offset(cutOutRect.right, cutOutRect.top + borderOffset),
-      Offset(cutOutRect.right - adjustedBorderLength, cutOutRect.top + borderOffset),
+      Offset(
+        cutOutRect.right - adjustedBorderLength,
+        cutOutRect.top + borderOffset,
+      ),
       borderPaint,
     );
     canvas.drawLine(
       Offset(cutOutRect.right - borderOffset, cutOutRect.top),
-      Offset(cutOutRect.right - borderOffset, cutOutRect.top + adjustedBorderLength),
+      Offset(
+        cutOutRect.right - borderOffset,
+        cutOutRect.top + adjustedBorderLength,
+      ),
       borderPaint,
     );
-    
+
     // Bottom Left
     canvas.drawLine(
       Offset(cutOutRect.left, cutOutRect.bottom - borderOffset),
-      Offset(cutOutRect.left + adjustedBorderLength, cutOutRect.bottom - borderOffset),
+      Offset(
+        cutOutRect.left + adjustedBorderLength,
+        cutOutRect.bottom - borderOffset,
+      ),
       borderPaint,
     );
     canvas.drawLine(
       Offset(cutOutRect.left + borderOffset, cutOutRect.bottom),
-      Offset(cutOutRect.left + borderOffset, cutOutRect.bottom - adjustedBorderLength),
+      Offset(
+        cutOutRect.left + borderOffset,
+        cutOutRect.bottom - adjustedBorderLength,
+      ),
       borderPaint,
     );
-    
+
     // Bottom Right
     canvas.drawLine(
       Offset(cutOutRect.right, cutOutRect.bottom - borderOffset),
-      Offset(cutOutRect.right - adjustedBorderLength, cutOutRect.bottom - borderOffset),
+      Offset(
+        cutOutRect.right - adjustedBorderLength,
+        cutOutRect.bottom - borderOffset,
+      ),
       borderPaint,
     );
     canvas.drawLine(
       Offset(cutOutRect.right - borderOffset, cutOutRect.bottom),
-      Offset(cutOutRect.right - borderOffset, cutOutRect.bottom - adjustedBorderLength),
+      Offset(
+        cutOutRect.right - borderOffset,
+        cutOutRect.bottom - adjustedBorderLength,
+      ),
       borderPaint,
     );
   }

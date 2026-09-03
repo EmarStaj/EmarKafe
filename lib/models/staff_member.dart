@@ -20,7 +20,8 @@ class StaffMember {
   factory StaffMember.fromJson(Map<String, dynamic> json) {
     return StaffMember(
       id: json['id'] as String? ?? '',
-      fullName: json['full_name'] as String? ?? json['name'] as String? ?? 'İsimsiz',
+      fullName:
+          json['full_name'] as String? ?? json['name'] as String? ?? 'İsimsiz',
       email: json['email'] as String?,
       role: json['role'] as String? ?? 'barista',
       branchId: json['branch_id'] as String?,
@@ -30,9 +31,9 @@ class StaffMember {
   }
 
   String get roleLabel => switch (role) {
-        'barista' => 'Barista',
-        'branch_manager' => 'Şube Müdürü',
-        'admin' => 'Admin',
-        _ => role,
-      };
+    'barista' => 'Barista',
+    'branch_manager' => 'Şube Müdürü',
+    'admin' => 'Admin',
+    _ => role,
+  };
 }

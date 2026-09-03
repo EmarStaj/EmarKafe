@@ -28,13 +28,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   void initState() {
     super.initState();
     _initQrToken();
-    // Durum, sipariş saatinden türetildiği için burada sadece görünümü
-    // her saniye tazeliyoruz — hiçbir alanı biz mutasyona uğratmıyoruz.
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      setState(() {});
-      if (widget.order.computedStatus == OrderStatus.ready) {
-        _ticker?.cancel();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        final app = context.read<AppState>();
+        await app.orders.fetchOrders();
       }
     });
   }
@@ -44,7 +41,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       setState(() => _jwtToken = widget.qrToken);
       return;
     }
-    if (widget.order.qrToken != null && widget.order.qrToken!.startsWith('ey')) {
+    if (widget.order.qrToken != null &&
+        widget.order.qrToken!.startsWith('ey')) {
       setState(() => _jwtToken = widget.order.qrToken);
       return;
     }
@@ -71,28 +69,44 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    final liveOrder = app.orderHistory.firstWhere((o) => o.id == widget.order.id, orElse: () => widget.order);
+    final liveOrder = app.orderHistory.firstWhere(
+      (o) => o.id == widget.order.id,
+      orElse: () => widget.order,
+    );
     final order = liveOrder;
     final status = order.computedStatus;
     final ready = status == OrderStatus.ready;
     final branchName = app.getBranchName(order.branch);
-    final effectiveQrToken = _jwtToken ?? widget.qrToken ?? widget.order.qrToken ?? widget.order.id;
+    final effectiveQrToken =
+        _jwtToken ?? widget.qrToken ?? widget.order.qrToken ?? widget.order.id;
 
     return Scaffold(
       appBar: AppBar(title: Text('Sipariş ${order.shortId}')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(branchName, style: const TextStyle(color: EmarColors.espresso, fontWeight: FontWeight.w600, fontSize: 14)),
+              Text(
+                branchName,
+                style: const TextStyle(
+                  color: EmarColors.espresso,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
               const SizedBox(height: 24),
               Row(
                 children: [
                   _Step(label: 'Alındı', done: true, active: false),
                   _StepLine(done: status != OrderStatus.received),
-                  _Step(label: 'Hazırlanıyor', done: ready, active: status == OrderStatus.preparing),
+                  _Step(
+                    label: 'Hazırlanıyor',
+                    done: ready,
+                    active: status == OrderStatus.preparing,
+                  ),
                   _StepLine(done: ready),
                   _Step(label: 'Hazır', done: ready, active: false),
                 ],
@@ -104,20 +118,37 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 320),
                       transitionBuilder: (child, anim) => ScaleTransition(
-                        scale: CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+                        scale: CurvedAnimation(
+                          parent: anim,
+                          curve: Curves.easeOutBack,
+                        ),
                         child: FadeTransition(opacity: anim, child: child),
                       ),
                       child: Text(
-                        ready ? 'Hazır! 🎉' : _formatApprox(order.remainingSeconds),
+                        ready
+                            ? 'Hazır! 🎉'
+                            : _formatApprox(order.remainingSeconds),
                         key: ValueKey(ready),
-                        style: const TextStyle(fontFamily: 'Georgia', fontSize: 48, fontWeight: FontWeight.w700, color: EmarColors.espresso),
+                        style: const TextStyle(
+                          fontFamily: 'Georgia',
+                          fontSize: 48,
+                          fontWeight: FontWeight.w700,
+                          color: EmarColors.espresso,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      ready ? (order.pickedUp ? 'Teslim alındı' : 'Siparişini alabilirsin') : 'Siparişiniz hazır olduğunda bildirim alacaksınız',
+                      ready
+                          ? (order.pickedUp
+                                ? 'Teslim alındı'
+                                : 'Siparişini alabilirsin')
+                          : 'Siparişiniz hazır olduğunda bildirim alacaksınız',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: EmarColors.moss, fontSize: 14),
+                      style: const TextStyle(
+                        color: EmarColors.moss,
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
@@ -126,13 +157,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: EmarColors.oatDark, borderRadius: BorderRadius.circular(14)),
+                decoration: BoxDecoration(
+                  color: EmarColors.oatDark,
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: order.items.entries.map((e) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Text('${e.value}× ${productById(e.key).name}', style: const TextStyle(fontSize: 13)),
+                      child: Text(
+                        '${e.value}× ${productById(e.key).name}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
                     );
                   }).toList(),
                 ),
@@ -148,9 +185,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: EmarColors.espresso.withValues(alpha: 0.05)),
+                            border: Border.all(
+                              color: EmarColors.espresso.withValues(
+                                alpha: 0.05,
+                              ),
+                            ),
                             boxShadow: [
-                              BoxShadow(color: EmarColors.espresso.withValues(alpha: 0.08), blurRadius: 24, offset: const Offset(0, 12))
+                              BoxShadow(
+                                color: EmarColors.espresso.withValues(
+                                  alpha: 0.08,
+                                ),
+                                blurRadius: 24,
+                                offset: const Offset(0, 12),
+                              ),
                             ],
                           ),
                           child: QrImageView(
@@ -172,7 +219,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: SelectableText(
                             effectiveQrToken,
-                            style: TextStyle(fontSize: 10.5, color: EmarColors.espresso.withValues(alpha: 0.6), fontFamily: 'monospace'),
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: EmarColors.espresso.withValues(alpha: 0.6),
+                              fontFamily: 'monospace',
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -180,18 +231,37 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     ),
                   ),
                 ),
-              const Spacer(),
+              const SizedBox(height: 20),
+              if (ready) ...[
+                PressableScale(
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: EmarColors.moss,
+                      ),
+                      onPressed: () async {
+                        await app.orders.markPickedUp(order);
+                        if (context.mounted) Navigator.of(context).pop();
+                      },
+                      child: const Text('Teslim Aldım'),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
               PressableScale(
                 child: SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
                     child: const Text('Menüye Dön'),
                   ),
                 ),
               ),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -239,7 +309,9 @@ class _StepState extends State<_Step> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.done ? EmarColors.moss : (widget.active ? EmarColors.paprika : EmarColors.espresso);
+    final color = widget.done
+        ? EmarColors.moss
+        : (widget.active ? EmarColors.paprika : EmarColors.espresso);
     return Column(
       children: [
         AnimatedBuilder(
@@ -253,10 +325,21 @@ class _StepState extends State<_Step> with SingleTickerProviderStateMixin {
                 height: 18,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: widget.done || widget.active ? color : Colors.transparent,
-                  border: Border.all(color: color.withValues(alpha: 0.6), width: 2),
+                  color: widget.done || widget.active
+                      ? color
+                      : Colors.transparent,
+                  border: Border.all(
+                    color: color.withValues(alpha: 0.6),
+                    width: 2,
+                  ),
                   boxShadow: widget.active
-                      ? [BoxShadow(color: color.withValues(alpha: 0.35 * _pulse.value), blurRadius: 8, spreadRadius: 2)]
+                      ? [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.35 * _pulse.value),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          ),
+                        ]
                       : null,
                 ),
               ),
@@ -284,7 +367,9 @@ class _StepLine extends StatelessWidget {
       child: Container(
         height: 2,
         margin: const EdgeInsets.only(bottom: 18),
-        color: done ? EmarColors.moss : EmarColors.espresso.withValues(alpha: 0.15),
+        color: done
+            ? EmarColors.moss
+            : EmarColors.espresso.withValues(alpha: 0.15),
       ),
     );
   }

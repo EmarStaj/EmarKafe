@@ -29,10 +29,20 @@ class _CampaignsTabState extends State<CampaignsTab> {
         Container(
           width: double.infinity,
           color: EmarColors.espresso,
-          padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 14, 20, 18),
+          padding: EdgeInsets.fromLTRB(
+            20,
+            MediaQuery.of(context).padding.top + 14,
+            20,
+            18,
+          ),
           child: const Text(
             'Kampanyalar',
-            style: TextStyle(color: EmarColors.surface, fontFamily: 'Georgia', fontSize: 20, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              color: EmarColors.surface,
+              fontFamily: 'Georgia',
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         Expanded(
@@ -44,16 +54,28 @@ class _CampaignsTabState extends State<CampaignsTab> {
                   Expanded(
                     child: TextField(
                       controller: _codeCtrl,
-                      decoration: const InputDecoration(hintText: 'Promosyon Kodu Girin'),
+                      decoration: const InputDecoration(
+                        hintText: 'Promosyon Kodu Girin',
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: EmarColors.moss, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: EmarColors.moss,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                    ),
                     onPressed: () {
                       if (_codeCtrl.text.trim().isEmpty) return;
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('"${_codeCtrl.text.trim()}" kodu kontrol ediliyor...')),
+                        SnackBar(
+                          content: Text(
+                            '"${_codeCtrl.text.trim()}" kodu kontrol ediliyor...',
+                          ),
+                        ),
                       );
                     },
                     child: const Text('Kaydet'),
@@ -63,70 +85,112 @@ class _CampaignsTabState extends State<CampaignsTab> {
               const SizedBox(height: 20),
               Text(
                 'Devam Eden Kampanyalar (${campaigns.length})',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
-              ...campaigns.map((c) => Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: () => showCampaignDetail(context, c),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: double.infinity,
-                            height: 108,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(18),
-                              gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: c.colors),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(color: EmarColors.surface.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(999)),
-                                        child: Text(c.badge, style: const TextStyle(color: EmarColors.surface, fontSize: 9.5, fontWeight: FontWeight.w800)),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        c.title,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(color: EmarColors.surface, fontWeight: FontWeight.w800, fontSize: 15),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(c.icon, style: const TextStyle(fontSize: 34)),
-                              ],
+              ...campaigns.map(
+                (c) => Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: () => showCampaignDetail(context, c),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 108,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(18),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: c.colors,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Row(
+                          child: Row(
                             children: [
                               Expanded(
-                                child: Text(
-                                  c.subtitle,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, color: EmarColors.espresso.withValues(alpha: 0.75)),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: EmarColors.surface.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        c.badge,
+                                        style: const TextStyle(
+                                          color: EmarColors.surface,
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      c.title,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: EmarColors.surface,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(width: 6),
-                              const Icon(Icons.chevron_right, size: 18, color: EmarColors.espresso),
+                              Text(
+                                c.icon,
+                                style: const TextStyle(fontSize: 34),
+                              ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                c.subtitle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12.5,
+                                  color: EmarColors.espresso.withValues(
+                                    alpha: 0.75,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(
+                              Icons.chevron_right,
+                              size: 18,
+                              color: EmarColors.espresso,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  )),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

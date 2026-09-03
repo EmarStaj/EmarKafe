@@ -1,7 +1,7 @@
 /// EMAR Kafe Uygulama Konfigürasyonu
 /// Backend sunucu adresi ve global API yollarını tek bir merkezi noktadan yönetir.
-/// 
-/// Backend adresi değiştiğinde yalnızca bu dosyadaki [_defaultBaseUrl] değerini 
+///
+/// Backend adresi değiştiğinde yalnızca bu dosyadaki [_defaultBaseUrl] değerini
 /// güncellemek yeterlidir. Ayrıca derleme anında `--dart-define=API_BASE_URL=https://yeni-adres.com`
 /// parametresiyle de esnekçe ezilebilir.
 class AppConfig {
