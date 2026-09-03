@@ -100,9 +100,10 @@ class AssistantService {
         // Fall back to backend
       }
     }
-      // 2. Try backend endpoint
-      try {
-        final historyPayload = history.map((t) => {
+
+    // 2. Try backend endpoint
+    try {
+      final historyPayload = history.map((t) => {
           'role': t.fromUser ? 'user' : 'model',
           'content': t.text,
         }).toList();
@@ -150,8 +151,7 @@ class AssistantService {
             quickReplies: quickReplies,
           );
         }
-      } catch (_) {}
-    }
+    } catch (_) {}
 
     // 3. Fallback to rich local coffee sommelier
     return _localBaristaFallback(userMessage, userContext);
